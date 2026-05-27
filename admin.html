@@ -518,6 +518,17 @@
                 <button type="button" id="btn-add-data-cat"
                   style="margin-left:.5rem;background:var(--primary);color:white;border:none;border-radius:4px;padding:.1rem .5rem;font-size:.72rem;cursor:pointer;">+ Data</button>
               </label>
+              <!-- Período: adiciona intervalo de datas de uma vez -->
+              <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem;padding:.5rem .7rem;background:#f3f6ff;border-radius:6px;border:1px dashed #b0bfe8;">
+                <span style="font-size:.73rem;color:var(--gray);white-space:nowrap;font-weight:600;">📅 Período:</span>
+                <input type="date" id="cat-periodo-inicio" class="form-control"
+                  style="flex:1;min-width:110px;font-size:.8rem;padding:.3rem .5rem;"/>
+                <span style="font-size:.73rem;color:var(--gray);">até</span>
+                <input type="date" id="cat-periodo-fim" class="form-control"
+                  style="flex:1;min-width:110px;font-size:.8rem;padding:.3rem .5rem;"/>
+                <button type="button" id="btn-add-periodo"
+                  style="background:var(--primary-dark);color:white;border:none;border-radius:4px;padding:.3rem .7rem;font-size:.73rem;cursor:pointer;white-space:nowrap;">➕ Adicionar período</button>
+              </div>
               <div id="cat-datas-list" style="display:flex;flex-direction:column;gap:.4rem;margin-top:.3rem;"></div>
             </div>
             <div class="form-group">
@@ -1314,6 +1325,22 @@
   }
 
   document.getElementById('btn-add-data-cat').addEventListener('click', () => adicionarDataCategoria());
+
+  document.getElementById('btn-add-periodo').addEventListener('click', () => {
+    const inicio = document.getElementById('cat-periodo-inicio').value;
+    const fim    = document.getElementById('cat-periodo-fim').value;
+    if (!inicio || !fim) { showToast('Selecione a data de início e fim do período', 'warning'); return; }
+    if (inicio > fim)    { showToast('Data de início deve ser antes do fim', 'error'); return; }
+    let d = new Date(inicio + 'T12:00:00');
+    const fimDate = new Date(fim + 'T12:00:00');
+    let added = 0;
+    while (d <= fimDate) {
+      adicionarDataCategoria(d.toISOString().slice(0, 10));
+      d.setDate(d.getDate() + 1);
+      added++;
+    }
+    showToast(`${added} data(s) adicionada(s) ao período!`, 'success');
+  });
 
   document.getElementById('btn-nova-categoria').addEventListener('click', () => {
     document.getElementById('cat-edit-id').value   = '';

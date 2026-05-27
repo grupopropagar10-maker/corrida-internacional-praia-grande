@@ -246,11 +246,26 @@
   function renderDashboard() {
     const postos = DB.get('postos');
     const dist   = DB.get('distribuicoes');
+    const congCfgAll = DB.get('cong_config', {});
+    const participantesSet = new Set();
+
+    Object.values(congCfgAll).forEach(cfg => {
+      const turnos = cfg?.turnos || {};
+      Object.values(turnos).forEach(slotMap => {
+        Object.values(slotMap || {}).forEach(pessoas => {
+          (pessoas || []).forEach(pessoa => {
+            const nome = typeof pessoa === 'string' ? pessoa : pessoa?.nome;
+            if (nome) participantesSet.add(nome.trim().toLowerCase());
+          });
+        });
+      });
+    });
 
     // ---- KPI ----
     const totalPub    = dist.reduce((s, r) => s + (r.qty || 1), 0);
     const totalCont   = dist.filter(r => r.tipo === 'conversa' || r.tipo === 'contato_especial').length;
     const totalQR     = dist.filter(r => r.tipo === 'qrcode').length;
+    const totalParticipantes = participantesSet.size;
     const postosAtiv  = postos.filter(p => p.status === 'ativo').length;
 
     document.getElementById('kpi-cards').innerHTML = `
@@ -265,6 +280,10 @@
       <div class="stat-card">
         <div class="stat-icon green">📱</div>
         <div class="stat-info"><h3>${totalQR}</h3><p>QR Codes escaneados</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#7b4f00;">👥</div>
+        <div class="stat-info"><h3>${totalParticipantes}</h3><p>Irmãos participantes</p></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon purple">📍</div>
@@ -392,7 +411,6 @@
     }
 
     // ---- Publicações previstas ----
-    const congCfgAll = DB.get('cong_config', {});
     const congsConf  = DB.get('congregacoes', []).filter(c => c.confirmada);
     const PD = [{id:'atalaias',nome:'Sentinela'},{id:'despertar',nome:'Despertai'},{id:'biblia',nome:'Bíblia'},{id:'folheto',nome:'Folheto'},{id:'livro',nome:'Livro'},{id:'site',nome:'Site'}];
     const ptots = {}; PD.forEach(p => { ptots[p.id] = 0; });
@@ -487,10 +505,23 @@
   document.getElementById('btn-export-csv').addEventListener('click', () => {
     const postos = DB.get('postos');
     const dist   = DB.get('distribuicoes');
+    const congCfgAll = DB.get('cong_config', {});
+    const participantes = new Set();
+    Object.values(congCfgAll).forEach(cfg => {
+      Object.values(cfg?.turnos || {}).forEach(slotMap => {
+        Object.values(slotMap || {}).forEach(pessoas => {
+          (pessoas || []).forEach(pessoa => {
+            const nome = typeof pessoa === 'string' ? pessoa : pessoa?.nome;
+            if (nome) participantes.add(nome.trim());
+          });
+        });
+      });
+    });
     let csv = 'Posto,Responsável,Status,Publicações Disp.,Contatos\n';
     postos.forEach(p => {
       csv += `"${p.nome}","${p.responsavel}","${p.status}",${p.publicacoes},${p.contatos || 0}\n`;
     });
+    csv += `\nResumo\nIrmãos participantes únicos,${participantes.size}\n`;
     csv += '\nRegistros de Distribuição\nHora,Posto,Publicação,Tipo,Qty,Observação\n';
     dist.forEach(r => {
       csv += `"${r.hora}","${r.postoNome}","${r.pub}","${r.tipo}",${r.qty},"${r.obs || ''}"\n`;

@@ -59,6 +59,161 @@
     .tab-pane { display: none; padding: 1.5rem; }
     .tab-pane.active { display: block; }
 
+    .posto-layout {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .posto-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      min-width: 0;
+    }
+    .map-card-shell { padding: 0; overflow: hidden; }
+    .membro-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .45rem .7rem;
+      border-radius: 999px;
+      background: #eef4fb;
+      border: 1px solid #cfe0f4;
+      color: var(--primary-dark);
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .membro-chip button {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-weight: 800;
+      padding: 0;
+      line-height: 1;
+    }
+    .membro-role {
+      display: inline-flex;
+      align-items: center;
+      padding: .16rem .48rem;
+      border-radius: 999px;
+      background: rgba(0,87,168,.12);
+      font-size: .72rem;
+      font-weight: 700;
+    }
+    .agenda-trigger {
+      border: 1px solid #cfe0f4;
+      background: #f5f9ff;
+      color: var(--primary-dark);
+      border-radius: 10px;
+      padding: .45rem .7rem;
+      font-size: .76rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .agenda-trigger:hover {
+      background: #e7f1ff;
+    }
+    .agenda-chooser {
+      display: inline-flex;
+      gap: .4rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-top: .45rem;
+    }
+    .agenda-choice-btn {
+      border: 1px solid #b8d1ee;
+      background: white;
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: .28rem .72rem;
+      font-size: .74rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .agenda-choice-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .repeat-toggle {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .8rem;
+      color: var(--primary-dark);
+      background: #f7fbff;
+      border: 1px solid #d6e5f7;
+      border-radius: 10px;
+      padding: .55rem .7rem;
+      min-width: 250px;
+    }
+    .repeat-toggle input { accent-color: var(--primary); }
+    .escala-status-box {
+      margin-bottom: 1rem;
+      padding: .9rem 1rem;
+      border-radius: 12px;
+      background: #f5f9ff;
+      border: 1px solid #d5e5f7;
+      color: var(--primary-dark);
+      font-size: .84rem;
+    }
+    .escala-status-box.warning {
+      background: #fff8e8;
+      border-color: #f1d48b;
+      color: #7b4f00;
+    }
+    .help-alert {
+      border-radius: 12px;
+      padding: .85rem 1rem;
+      margin-bottom: .8rem;
+      font-size: .82rem;
+      border: 1px solid #d6e5f7;
+      background: #f7fbff;
+      color: var(--primary-dark);
+    }
+    .help-alert.pending {
+      background: #fff7e5;
+      border-color: #f3d080;
+      color: #7b4f00;
+    }
+    .help-alert.closed {
+      background: #edf9f0;
+      border-color: #b9e1c2;
+      color: #1d6b33;
+    }
+    .slot-help-box {
+      margin-top: .55rem;
+      padding: .65rem;
+      border-radius: 10px;
+      background: #f8fbff;
+      border: 1px dashed #c7dbf3;
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      font-size: .76rem;
+    }
+    .slot-help-actions {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+    }
+    .helper-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      margin-left: .35rem;
+      padding: .12rem .45rem;
+      border-radius: 999px;
+      background: rgba(224,123,0,.12);
+      color: #7b4f00;
+      font-size: .68rem;
+      font-weight: 700;
+    }
+
     /* ══ POSTO HERO ══ */
     .posto-hero {
       background: linear-gradient(135deg, #1a5c1a, #28A745);
@@ -73,7 +228,7 @@
     }
     .posto-detail { display: flex; flex-direction: column; gap: .4rem; font-size: .88rem; opacity: .92; }
     .posto-detail span { display: flex; align-items: center; gap: .5rem; }
-    #mini-map { height: 240px; border-radius: var(--radius); }
+    #mini-map { height: clamp(260px, 42vh, 430px); border-radius: var(--radius); }
 
     /* ══ PUBLICAÇÕES ══ */
     .pub-grid {
@@ -172,9 +327,19 @@
     .resultado-item .r-qty   { font-size:1.8rem; font-weight:800; }
     .resultado-item .r-label { font-size:.75rem; opacity:.85; margin-top:.2rem; }
 
+    @media (max-width: 960px) {
+      .posto-layout { grid-template-columns: 1fr; }
+      .tab-pane { padding: 1rem; }
+      .cong-banner { padding: 1.1rem 1rem; }
+      .posto-hero { padding: 1.15rem; }
+    }
+
     @media (max-width:640px) {
       .escala-row { grid-template-columns:1fr 1fr; }
       .escala-row > *:last-child { grid-column:span 2; }
+      .tab-bar { position: sticky; top: 0; z-index: 5; }
+      #mini-map { height: 280px; }
+      .agenda-trigger { width: 100%; }
     }
 
     /* ══ MODAL PARTICIPAÇÃO ══ */
@@ -241,13 +406,6 @@
     <span class="logo-icon">⛪</span>
     <span id="nav-cong-nome">Minha Congregação</span>
   </a>
-  <button class="hamburger" aria-label="Menu">☰</button>
-  <ul class="navbar-nav">
-    <li><a href="#" data-tab="tab-posto">📍 Meu Posto</a></li>
-    <li><a href="#" data-tab="tab-pubs">📚 Publicações</a></li>
-    <li><a href="#" data-tab="tab-escala">👥 Escala</a></li>
-    <li><a href="#" data-tab="tab-reg">📖 Registrar</a></li>
-  </ul>
 </nav>
 
 <!-- BANNER -->
@@ -258,7 +416,6 @@
     <p id="wb-cidade"></p>
     <div class="cong-banner-chips" id="banner-chips"></div>
   </div>
-  <div id="banner-posto-chip"></div>
 </div>
 
 <!-- TELA DE STATUS -->
@@ -282,16 +439,15 @@
       📚 Publicações <span class="tab-badge" id="badge-pubs" style="display:none;"></span>
     </button>
     <button class="tab-btn" data-tab="tab-escala">
-      👥 Escala <span class="tab-badge" id="badge-escala" style="display:none;"></span>
+      👥 Adicionar nomes <span class="tab-badge" id="badge-escala-tab" style="display:none;"></span>
     </button>
     <button class="tab-btn" data-tab="tab-reg">📖 Registrar</button>
   </div>
 
   <!-- ══ ABA 1 — MEU POSTO ══ -->
   <div class="tab-pane active" id="tab-posto">
-    <div style="max-width:900px;margin:0 auto;">
-      <div class="grid grid-2" style="align-items:start;gap:1.5rem;">
-        <div style="display:flex;flex-direction:column;gap:1.2rem;">
+    <div class="posto-layout">
+        <div class="posto-stack">
           <div class="posto-hero">
             <span class="km-badge" id="ph-km">📏 Km ?</span>
             <h2 id="ph-nome">Carregando...</h2>
@@ -320,12 +476,11 @@
             </div>
           </div>
         </div>
-        <div class="card" style="padding:0;overflow:hidden;">
+        <div class="card map-card-shell">
           <div style="padding:.8rem 1.2rem;background:var(--primary-dark);color:white;font-size:.88rem;font-weight:600;">🗺️ Sua localização no percurso</div>
           <div id="mini-map"></div>
           <div style="padding:.6rem 1rem;font-size:.78rem;color:var(--gray);">💡 Marcador colorido = seu posto.</div>
         </div>
-      </div>
     </div>
   </div>
 
@@ -352,7 +507,7 @@
     </div>
   </div>
 
-  <!-- ══ ABA 3 — ESCALA / TURNOS ══ -->
+  <!-- ══ ABA 3 — NOMES / TURNOS ══ -->
   <div class="tab-pane" id="tab-escala">
     <div style="max-width:960px;margin:0 auto;">
 
@@ -360,19 +515,31 @@
       <div class="card" style="margin-bottom:1.2rem;">
         <div class="card-header">
           <span class="icon">👥</span>
-          <h2>Publicadores que participarão</h2>
-          <span id="badge-escala" class="badge" style="display:none;">0</span>
+          <h2>Adicionar nomes</h2>
+          <span id="badge-escala-card" class="badge" style="display:none;">0</span>
         </div>
+        <p style="color:var(--gray);font-size:.84rem;margin:.1rem 0 .8rem;">Cadastre quem vai trabalhar no posto e marque a função: Pioneiro Regular, Pioneiro Auxiliar ou Publicador.</p>
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.4rem 0;min-height:2.2rem;" id="membros-chips">
           <span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>
         </div>
         <div style="display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;">
           <input id="input-membro" class="form-control" placeholder="Nome do publicador (Ex: Irmão Carlos)" style="flex:1;min-width:200px;"/>
+          <select id="select-funcao-membro" class="form-control" style="min-width:220px;flex:.8;">
+            <option value="Pioneiro Regular">Pioneiro Regular</option>
+            <option value="Pioneiro Auxiliar">Pioneiro Auxiliar</option>
+            <option value="Publicador" selected>Publicador</option>
+          </select>
+          <label class="repeat-toggle">
+            <input type="checkbox" id="membro-pode-repetir"/>
+            Ela gostaria de repetir outro horário?
+          </label>
           <button class="btn btn-primary" id="btn-add-membro" style="white-space:nowrap;">➕ Adicionar</button>
         </div>
       </div>
 
       <!-- Carrinhos / Postos com turnos -->
+      <div id="escala-status-resumo" class="escala-status-box warning"></div>
+      <div id="escala-avisos-ajuda"></div>
       <div id="postos-turnos"></div>
 
       <!-- Botões de ação -->
@@ -515,7 +682,39 @@ if (user.type === 'admin') { window.location.href = 'admin.html'; return; }
 const CONG_ID  = user.congId;
 const cong     = DB.get('congregacoes', []).find(c => c.id === CONG_ID);
 const todosPos = DB.get('postos', []);
-const desigs   = DB.get('designacoes', []).filter(d => d.congId === CONG_ID);
+
+function getCategoriaById(categoriaId) {
+  return DB.get('categorias', []).find(c => c.id === categoriaId) || null;
+}
+
+function buildAutoDesignacoesForPosto(posto) {
+  const categoria = getCategoriaById(posto.categoriaId);
+  const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  if (!categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+
+  return datas.map((data, idx) => ({
+    id: `${posto.id}-${idx}`,
+    postoId: posto.id,
+    congId: posto.congId,
+    data,
+    inicio: categoria.horario,
+    fim: categoria.horarioFim,
+    irmaos: 0,
+    obs: posto.obs || '',
+    autoGerada: true,
+  }));
+}
+
+function getMinhasDesignacoes() {
+  const manuais = DB.get('designacoes', []).filter(d => d.congId === CONG_ID && !d.autoGerada);
+  const meusPostosAtuais = todosPos.filter(p => p.congId === CONG_ID);
+  const automaticas = meusPostosAtuais.flatMap(buildAutoDesignacoesForPosto);
+  return manuais.concat(automaticas).sort((a, b) => (a.data + a.inicio).localeCompare(b.data + b.inicio));
+}
+
+const desigs   = getMinhasDesignacoes();
+const meusPostos = todosPos.filter(p => p.congId === CONG_ID);
+const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';
 
 function getCongConfig() {
   const all = DB.get('cong_config', {});
@@ -651,16 +850,7 @@ document.getElementById('banner-chips').innerHTML =
 document.getElementById('conteudo-principal').style.display = 'block';
 
 const desigP = desigs[0];
-const postoP = todosPos.find(p => p.id === desigP.postoId);
-
-if (postoP) {
-  document.getElementById('banner-posto-chip').innerHTML = `
-    <div style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:.6rem 1rem;text-align:right;">
-      <div style="font-size:1.3rem;font-weight:800;">Km ${postoP.km}</div>
-      <div style="font-size:.8rem;opacity:.85;">${postoP.nome}</div>
-      <div style="font-size:.75rem;opacity:.7;">${desigP.inicio} – ${desigP.fim}</div>
-    </div>`;
-}
+const postoP = meusPostos[0] || todosPos.find(p => p.id === desigP.postoId);
 
 // ══════════════════════════════════════════
 //  TABS
@@ -688,18 +878,23 @@ document.querySelectorAll('[data-tab]').forEach(a => {
 // ══════════════════════════════════════════
 (function renderPosto() {
   if (!postoP) return;
-  document.getElementById('ph-km').textContent   = `📏 Km ${postoP.km}`;
+  document.getElementById('ph-km').textContent   = postoP.km ? `📏 Km ${postoP.km}` : `📍 Ponto personalizado`;
   document.getElementById('ph-nome').textContent = postoP.nome;
+  const categoria = getCategoriaById(postoP.categoriaId);
+  const resumoCategoria = categoria
+    ? `📅 ${categoria.nome}${categoria.horario && categoria.horarioFim ? ` · ${categoria.horario}-${categoria.horarioFim}` : ''}`
+    : '';
   document.getElementById('ph-detail').innerHTML = `
     <span>📌 ${postoP.local || 'Local não informado'}</span>
     <span>📊 Status: ${postoP.status==='ativo'?'🟢 Ativo':postoP.status==='standby'?'🟡 Standby':'🔴 Inativo'}</span>
-    ${postoP.responsavel ? `<span>👤 Responsável geral: ${postoP.responsavel}</span>` : ''}`;
+    ${postoP.responsavel ? `<span>👤 Responsável geral: ${postoP.responsavel}</span>` : ''}
+    ${resumoCategoria ? `<span>${resumoCategoria}</span>` : ''}`;
 
   const rows = desigs.map(d => {
     const p  = todosPos.find(x => x.id === d.postoId);
     const dt = d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}) : '—';
     return `<tr>
-      <td><strong>${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">Km ${p?.km||'?'}</div></td>
+      <td><strong>${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
       <td>${dt}</td><td>${d.inicio}–${d.fim}</td>
       <td>${d.irmaos||'?'} irmão(s)</td>
       <td>${d.obs||'—'}</td>
@@ -726,29 +921,37 @@ document.querySelectorAll('[data-tab]').forEach(a => {
     [-23.980,-46.400],[-23.994,-46.407],[-24.003,-46.415],[-24.010,-46.421],
     [-24.018,-46.433],[-24.012,-46.425],[-24.005,-46.418],[-23.980,-46.400],
   ];
+  const getPos = (posto, idx) => (
+    typeof posto.lat === 'number' && typeof posto.lng === 'number'
+      ? [posto.lat, posto.lng]
+      : (coordsBase[idx] || [-24.000,-46.416])
+  );
   const piIdx = todosPos.indexOf(postoP);
-  const center = coordsBase[piIdx] || [-24.000,-46.416];
+  const center = getPos(postoP, piIdx);
   const map = L.map('mini-map').setView(center, 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
   L.polyline(coordsBase,{color:'#0057A8',weight:3,opacity:.4,dashArray:'8,6'}).addTo(map);
   todosPos.forEach((p, i) => {
-    if (!coordsBase[i]) return;
     const isMeu = desigs.some(d => d.postoId === p.id);
     const sz = isMeu ? 44 : 28;
     const icon = L.divIcon({
       html:`<div style="background:${isMeu?cong?.cor||'#0057A8':'#9E9E9E'};color:white;border-radius:50%;
         width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;
         font-size:.62rem;font-weight:800;border:${isMeu?'3px solid white':'2px solid rgba(255,255,255,.4)'};
-        box-shadow:${isMeu?'0 3px 10px rgba(0,0,0,.4)':'none'};opacity:${isMeu?1:.4};">${p.km}km</div>`,
+        box-shadow:${isMeu?'0 3px 10px rgba(0,0,0,.4)':'none'};opacity:${isMeu?1:.4};">${p.km ? `${p.km}km` : '📍'}</div>`,
       iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''
     });
-    const m = L.marker(coordsBase[i],{icon}).addTo(map);
+    const pos = getPos(p, i);
+    const m = L.marker(pos,{icon}).addTo(map);
     if (isMeu) {
       const d = desigs.find(x => x.postoId === p.id);
-      m.bindPopup(`<strong>${p.nome}</strong><br>📏 Km ${p.km}<br>🕐 ${d?.inicio}–${d?.fim}<br>📌 ${p.local||''}`).openPopup();
+      m.bindPopup(`<strong>${p.nome}</strong><br>${p.km ? `📏 Km ${p.km}<br>` : ''}🕐 ${d?.inicio}–${d?.fim}<br>📌 ${p.local||''}`).openPopup();
     }
   });
+  if (typeof postoP.lat === 'number' && typeof postoP.lng === 'number') {
+    map.setView([postoP.lat, postoP.lng], 16);
+  }
 })();
 
 // ══════════════════════════════════════════
@@ -823,28 +1026,235 @@ function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${St
 function gerarSlots(inicio, fim, duracaoH) {
   const slots = [];
   let s = timeToMin(inicio);
-  const e = timeToMin(fim);
+  let e = timeToMin(fim);
+  if (e <= s) e += 24 * 60;
   while (s < e) {
     const t = Math.min(s + duracaoH * 60, e);
-    slots.push({ inicio: minToTime(s), fim: minToTime(t) });
+    slots.push({ inicio: minToTime(s % (24 * 60)), fim: minToTime(t % (24 * 60)) });
     s = t;
   }
   return slots;
 }
 
-function getMembros() { return getCongConfig().membros || []; }
+const FUNCOES_MEMBRO = ['Pioneiro Regular', 'Pioneiro Auxiliar', 'Publicador'];
+
+function normalizarMembro(membro) {
+  if (!membro) return null;
+  if (typeof membro === 'string') return { nome: membro, funcao: 'Publicador', podeRepetir: false };
+  return {
+    nome: String(membro.nome || '').trim(),
+    funcao: FUNCOES_MEMBRO.includes(membro.funcao) ? membro.funcao : 'Publicador',
+    podeRepetir: !!membro.podeRepetir,
+  };
+}
+
+function normalizarPessoaEscala(pessoa) {
+  if (!pessoa) return null;
+  if (typeof pessoa === 'string') return { nome: pessoa, origem: 'local' };
+  return {
+    nome: String(pessoa.nome || '').trim(),
+    origem: pessoa.origem || 'local',
+    ajudanteCongId: pessoa.ajudanteCongId || null,
+    ajudanteCongNome: pessoa.ajudanteCongNome || '',
+    helperRequestId: pessoa.helperRequestId || null,
+  };
+}
+
+function getMembros() {
+  return (getCongConfig().membros || [])
+    .map(normalizarMembro)
+    .filter(membro => membro && membro.nome);
+}
 function getTurnos()  { return getCongConfig().turnos  || {}; }
+function getAgendaConfigMap() { return getCongConfig().agendaConfig || {}; }
+function getPedidosAjudaEscala() { return DB.get(HELP_REQUEST_KEY, []); }
+
+function salvarPedidosAjudaEscala(lista) {
+  DB.set(HELP_REQUEST_KEY, lista);
+}
+
+function getAgendaConfig(desigId) {
+  const cfg = getAgendaConfigMap()[desigId] || {};
+  return {
+    duracaoTurno: cfg.duracaoTurno === 3 ? 3 : 2,
+    maxPorTurno: 3,
+  };
+}
+
+function getNomeMembro(membro) {
+  return typeof membro === 'string' ? membro : membro?.nome || '';
+}
+
+function getLabelMembro(membro) {
+  const dado = normalizarMembro(membro);
+  return dado ? `${dado.nome} (${dado.funcao})` : '';
+}
+
+function getInfoMembro(nome) {
+  return getMembros().find(m => m.nome === nome) || null;
+}
+
+function getChaveAjuda(desigId, slotKey) {
+  return `${desigId}__${slotKey}`;
+}
+
+function getDomIdSeguro(valor) {
+  return String(valor).replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function getPessoasDoSlot(turnos, desigId, slotKey) {
+  return (turnos?.[desigId]?.[slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
+}
+
+function getNomePessoaEscala(pessoa) {
+  return normalizarPessoaEscala(pessoa)?.nome || '';
+}
+
+function membroJaEscaladoNoDia(nome, data, ignorar = {}) {
+  if (!nome || !data) return false;
+  const turnos = getTurnos();
+  return desigs.some(desig => {
+    if (desig.data !== data) return false;
+    return Object.entries(turnos[desig.id] || {}).some(([slot, pessoas]) => {
+      if (desig.id === ignorar.desigId && slot === ignorar.slotKey) return false;
+      return (pessoas || []).some(pessoa => getNomePessoaEscala(pessoa) === nome);
+    });
+  });
+}
+
+function membroDisponivelNoHorario(membro, desig, slotKey, assigned) {
+  const nome = getNomeMembro(membro);
+  if (!nome) return false;
+  if ((assigned || []).some(pessoa => getNomePessoaEscala(pessoa) === nome)) return false;
+  if (desig.data && !membro.podeRepetir && membroJaEscaladoNoDia(nome, desig.data, { desigId: desig.id, slotKey })) return false;
+  return true;
+}
+
+function getPedidoAjudaAberto(desigId, slotKey) {
+  return getPedidosAjudaEscala().find(p => p.congId === CONG_ID && p.designacaoId === desigId && p.slotKey === slotKey && p.status === 'aberto') || null;
+}
+
+function getPedidosDaCongregacao() {
+  return getPedidosAjudaEscala().filter(p => p.congId === CONG_ID && p.status !== 'cancelado');
+}
+
+function getSubAdminsElegiveis(categoriaId) {
+  return DB.get('sub_admins', []).filter(sa => Array.isArray(sa.categorias) && sa.categorias.includes(categoriaId));
+}
+
+function cancelarPedidosAbertosDoHorario(desigId, slotKey, motivo) {
+  const lista = getPedidosAjudaEscala();
+  let changed = false;
+  lista.forEach(pedido => {
+    if (pedido.congId === CONG_ID && pedido.designacaoId === desigId && pedido.slotKey === slotKey && pedido.status === 'aberto') {
+      pedido.status = 'cancelado';
+      pedido.canceladoEm = new Date().toLocaleString('pt-BR');
+      pedido.motivoCancelamento = motivo || 'Pedido cancelado pela congregação.';
+      changed = true;
+    }
+  });
+  if (changed) salvarPedidosAjudaEscala(lista);
+}
+
+function getResumoEscala() {
+  const turnos = getTurnos();
+  let totalSlots = 0;
+  let totalPessoas = 0;
+  let faltando = 0;
+
+  desigs.forEach(desig => {
+    const duracao = getAgendaConfig(desig.id).duracaoTurno;
+    gerarSlots(desig.inicio, desig.fim, duracao).forEach(slot => {
+      totalSlots += 1;
+      const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+      totalPessoas += pessoas.length;
+      faltando += Math.max(0, 3 - pessoas.length);
+    });
+  });
+
+  return {
+    totalSlots,
+    totalPessoas,
+    faltando,
+    todosFechados: totalSlots > 0 && faltando === 0,
+  };
+}
+
+function renderAvisosAjuda() {
+  const el = document.getElementById('escala-avisos-ajuda');
+  const pedidos = getPedidosDaCongregacao().sort((a, b) => {
+    const statusWeight = { aberto: 0, fechado: 1 };
+    return (statusWeight[a.status] || 2) - (statusWeight[b.status] || 2);
+  });
+  if (!pedidos.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = pedidos.map(pedido => {
+    const classe = pedido.status === 'fechado' ? 'help-alert closed' : 'help-alert pending';
+    const status = pedido.status === 'fechado'
+      ? `✅ ${pedido.resolvidoPor || 'Sub-admin'} fechou o arranjo${pedido.ajudanteCongNome ? ` com apoio de ${pedido.ajudanteCongNome}` : ''}.`
+      : `🆘 Ajuda solicitada para ${pedido.slotLabel} com ${pedido.subAdminNome || 'sub-admin'} .`;
+    const detalhe = pedido.status === 'fechado'
+      ? `Responsável avisado: ${pedido.responsavelCong || cong?.contato || cong?.nome || 'Congregação'}.`
+      : `Faltam ${pedido.faltaQtd} pessoa(s) neste horário.`;
+    return `<div class="${classe}"><strong>${pedido.postoNome}</strong> · ${pedido.dataFmt || pedido.data || '—'}<br>${status}<br><span style="opacity:.85;">${detalhe}</span></div>`;
+  }).join('');
+}
+
+function renderResumoEscala() {
+  const resumo = getResumoEscala();
+  const el = document.getElementById('escala-status-resumo');
+  const exportBtn = document.getElementById('btn-export-pdf');
+  if (!resumo.totalSlots) {
+    el.className = 'escala-status-box warning';
+    el.innerHTML = 'Nenhum horário gerado ainda para esta congregação.';
+    exportBtn.disabled = true;
+    exportBtn.style.opacity = '.55';
+    exportBtn.style.cursor = 'not-allowed';
+    return;
+  }
+  el.className = resumo.todosFechados ? 'escala-status-box' : 'escala-status-box warning';
+  el.innerHTML = resumo.todosFechados
+    ? `✅ Escala fechada: ${resumo.totalSlots} horário(s) completos, ${resumo.totalPessoas} escala(s) registradas. PDF liberado.`
+    : `⏳ Faltam ${resumo.faltando} pessoa(s) para fechar a escala. Complete os horários ou peça ajuda antes de baixar o PDF.`;
+  exportBtn.disabled = !resumo.todosFechados;
+  exportBtn.style.opacity = resumo.todosFechados ? '1' : '.55';
+  exportBtn.style.cursor = resumo.todosFechados ? 'pointer' : 'not-allowed';
+}
+
+function escaparJs(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
 
 function renderMembros() {
   const membros = getMembros();
   const el = document.getElementById('membros-chips');
   el.innerHTML = membros.length
-    ? membros.map(m => `<span class="membro-chip">👤 ${m}<button onclick="removerMembro('${m.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">✕</button></span>`).join('')
+    ? membros.map(m => `<span class="membro-chip">👤 ${m.nome}<span class="membro-role">${m.funcao}${m.podeRepetir ? ' · repete' : ''}</span><button onclick="removerMembro('${escaparJs(m.nome)}')">✕</button></span>`).join('')
     : '<span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>';
-  const b = document.getElementById('badge-escala');
-  b.textContent = membros.length || '';
-  b.style.display = membros.length ? 'inline' : 'none';
+  ['badge-escala-tab', 'badge-escala-card'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = membros.length || '';
+    badge.style.display = membros.length ? 'inline' : 'none';
+  });
 }
+
+window.configurarAgenda = function(desigId) {
+  window._agendaAbertaId = window._agendaAbertaId === desigId ? null : desigId;
+  renderPostosTurnos();
+};
+
+window.definirAgenda = function(desigId, duracaoTurno) {
+  const cfg = getCongConfig();
+  cfg.agendaConfig = cfg.agendaConfig || {};
+  cfg.agendaConfig[desigId] = { duracaoTurno, maxPorTurno: 3 };
+  saveCongConfig(cfg);
+  window._agendaAbertaId = null;
+  renderPostosTurnos();
+  showToast(`Agenda configurada para turnos de ${duracaoTurno}h.`, 'success');
+};
 
 function renderPostosTurnos() {
   const el     = document.getElementById('postos-turnos');
@@ -858,10 +1268,12 @@ function renderPostosTurnos() {
   el.innerHTML = desigs.map(desig => {
     const posto   = todosPos.find(p => p.id === desig.postoId);
     if (!posto) return '';
-    const duracao  = desig.duracaoTurno || 2;
-    const maxSlot  = desig.maxPorTurno  || 3;
+    const agendaCfg = getAgendaConfig(desig.id);
+    const duracao  = agendaCfg.duracaoTurno;
+    const maxSlot  = agendaCfg.maxPorTurno;
     const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
     const assigned = turnos[desig.id] || {};
+    const agendaAberta = window._agendaAbertaId === desig.id;
     const dataFmt  = desig.data
       ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', {weekday:'short',day:'numeric',month:'short'})
       : '—';
@@ -870,47 +1282,118 @@ function renderPostosTurnos() {
 
     const slotsHtml = slots.map(slot => {
       const key     = slot.inicio;
-      const people  = assigned[key] || [];
+      const people  = getPessoasDoSlot(turnos, desig.id, key);
       const vagas   = maxSlot - people.length;
+      const pedidoAjuda = getPedidoAjudaAberto(desig.id, key);
+      const safeId = getDomIdSeguro(getChaveAjuda(desig.id, key));
+      const subAdmins = getSubAdminsElegiveis(posto.categoriaId);
 
-      const peopleHtml = people.map(nome => `
+      const peopleHtml = people.map(pessoa => `
         <div class="turno-pessoa">
-          👤 ${nome}
-          <button onclick="removeFromSlot(${desig.id},'${key}','${nome.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="Remover">✕</button>
+          👤 ${pessoa.nome}${pessoa.origem === 'ajuda' ? `<span class="helper-badge">ajuda${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}
+          <button onclick="removeFromSlot('${escaparJs(desig.id)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">✕</button>
         </div>`).join('');
 
       const vagasHtml = Array.from({length: Math.max(0,vagas)}, (_,i) => {
-        const disponíveis = membros.filter(m => !(assigned[key]||[]).includes(m));
+        const disponíveis = membros.filter(m => membroDisponivelNoHorario(m, desig, key, people));
         if (!disponíveis.length) return `<div style="font-size:.72rem;color:var(--gray);text-align:center;padding:.2rem;">— sem membros —</div>`;
-        return `<select class="turno-vaga-select" onchange="addToSlotFromSelect(${desig.id},'${key}',${maxSlot},this)">
+        return `<select class="turno-vaga-select" onchange="addToSlotFromSelect('${escaparJs(desig.id)}','${escaparJs(key)}',${maxSlot},this)">
           <option value="">+ Vaga ${people.length+i+1}</option>
-          ${disponíveis.map(m => `<option value="${m.replace(/"/g,'&quot;')}">${m}</option>`).join('')}
+          ${disponíveis.map(m => `<option value="${getNomeMembro(m).replace(/"/g,'&quot;')}">${getLabelMembro(m)}</option>`).join('')}
         </select>`;
       }).join('');
+
+      const helpHtml = vagas > 0
+        ? pedidoAjuda
+          ? `<div class="slot-help-box"><strong>🆘 Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}–${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button></div></div>`
+          : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horário.</span>${subAdmins.length ? `<div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(desig.id)}','${escaparJs(key)}')">🆘 Pedir ajuda</button></div>${window._ajudaAbertaKey === getChaveAjuda(desig.id, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmãos para completar este horário."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(desig.id)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}` : '<span>Nenhum sub-admin cadastrado para esta categoria.</span>'}</div>`
+        : '';
 
       return `
         <div class="turno-slot">
           <div class="turno-slot-header">${slot.inicio}–${slot.fim}</div>
-          <div class="turno-slot-body">${peopleHtml}${vagasHtml}</div>
+          <div class="turno-slot-body">${peopleHtml}${vagasHtml}${helpHtml}</div>
         </div>`;
     }).join('');
 
     return `
       <div class="carrinho-card">
         <div class="carrinho-header">
-          <span class="ch-km">Km ${posto.km}</span>
+          <span class="ch-km">${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}</span>
           <div style="flex:1;">
             <strong>🪧 ${posto.nome}</strong>
             <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">📍 ${posto.local}</div>
           </div>
           <div style="font-size:.78rem;opacity:.85;text-align:right;">
-            📅 ${dataFmt}<br>⏱️ ${desig.inicio}–${desig.fim}<br>${duracao}h/turno · máx. ${maxSlot}/turno
+            <button class="agenda-trigger" onclick="configurarAgenda('${escaparJs(desig.id)}')">📅 Agenda: ${dataFmt} · ${duracao}h/turno</button>
+            ${agendaAberta ? `<div class="agenda-chooser"><button class="agenda-choice-btn ${duracao === 2 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(desig.id)}', 2)">2h</button><button class="agenda-choice-btn ${duracao === 3 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(desig.id)}', 3)">3h</button></div>` : ''}<br>
+            ⏱️ ${desig.inicio}–${desig.fim}<br>máx. ${maxSlot} por horário
           </div>
         </div>
         <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
       </div>`;
   }).join('');
+  renderResumoEscala();
+  renderAvisosAjuda();
 }
+
+window.toggleAjudaHorario = function(desigId, slotKey) {
+  const chave = getChaveAjuda(desigId, slotKey);
+  window._ajudaAbertaKey = window._ajudaAbertaKey === chave ? null : chave;
+  renderPostosTurnos();
+};
+
+window.enviarPedidoAjuda = function(desigId, slotKey, faltaQtd, postoId) {
+  const safeId = getDomIdSeguro(getChaveAjuda(desigId, slotKey));
+  const subAdminId = document.getElementById(`ajuda-sa-${safeId}`)?.value;
+  if (!subAdminId) { showToast('Escolha o sub-admin que vai receber o pedido.', 'warning'); return; }
+  const lista = getPedidosAjudaEscala();
+  if (lista.some(p => p.congId === CONG_ID && p.designacaoId === desigId && p.slotKey === slotKey && p.status === 'aberto')) {
+    showToast('Já existe um pedido aberto para este horário.', 'warning');
+    return;
+  }
+  const posto = todosPos.find(p => String(p.id) === String(postoId));
+  const desig = desigs.find(d => String(d.id) === String(desigId));
+  const subAdmin = DB.get('sub_admins', []).find(sa => sa.id === subAdminId);
+  const obs = document.getElementById(`ajuda-obs-${safeId}`)?.value.trim() || '';
+  lista.unshift({
+    id: `help_${Date.now()}`,
+    congId: CONG_ID,
+    congNome: cong?.nome || '',
+    responsavelCong: cong?.contato || cong?.nome || '',
+    postoId: posto?.id || null,
+    postoNome: posto?.nome || '',
+    categoriaId: posto?.categoriaId || null,
+    categoriaNome: getCategoriaById(posto?.categoriaId)?.nome || '',
+    designacaoId: desigId,
+    data: desig?.data || '',
+    dataFmt: desig?.data ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—',
+    slotKey,
+    slotLabel: `${slotKey}–${gerarSlots(desig?.inicio || '00:00', desig?.fim || '00:00', getAgendaConfig(desigId).duracaoTurno).find(s => s.inicio === slotKey)?.fim || ''}`,
+    faltaQtd,
+    subAdminId,
+    subAdminNome: subAdmin?.nome || '',
+    observacao: obs,
+    status: 'aberto',
+    criadoEm: new Date().toLocaleString('pt-BR'),
+  });
+  salvarPedidosAjudaEscala(lista);
+  window._ajudaAbertaKey = null;
+  renderPostosTurnos();
+  showToast('Pedido de ajuda enviado ao sub-admin.', 'success');
+};
+
+window.cancelarPedidoAjuda = function(id) {
+  const lista = getPedidosAjudaEscala();
+  const pedido = lista.find(p => p.id === id && p.congId === CONG_ID);
+  if (!pedido) return;
+  pedido.status = 'cancelado';
+  pedido.canceladoEm = new Date().toLocaleString('pt-BR');
+  pedido.motivoCancelamento = 'Pedido cancelado pela congregação.';
+  salvarPedidosAjudaEscala(lista);
+  renderPostosTurnos();
+  showToast('Pedido de ajuda cancelado.', 'info');
+};
 
 window.addToSlotFromSelect = function(desigId, slotKey, maxSlot, selectEl) {
   const nome = selectEl.value;
@@ -919,12 +1402,20 @@ window.addToSlotFromSelect = function(desigId, slotKey, maxSlot, selectEl) {
   const turnos = cfg.turnos || {};
   if (!turnos[desigId]) turnos[desigId] = {};
   if (!turnos[desigId][slotKey]) turnos[desigId][slotKey] = [];
-  const current = turnos[desigId][slotKey];
+  const current = getPessoasDoSlot(turnos, desigId, slotKey);
   if (current.length >= maxSlot) { showToast('Turno cheio!', 'error'); selectEl.value = ''; return; }
-  if (current.includes(nome))    { showToast('Já está neste turno!', 'warning'); selectEl.value = ''; return; }
-  current.push(nome);
+  const desig = desigs.find(d => String(d.id) === String(desigId));
+  const membro = getInfoMembro(nome);
+  if (current.some(pessoa => pessoa.nome === nome)) { showToast('Já está neste turno!', 'warning'); selectEl.value = ''; return; }
+  if (desig?.data && membro && !membro.podeRepetir && membroJaEscaladoNoDia(nome, desig.data, { desigId, slotKey })) {
+    showToast('Este nome não foi marcado para repetir outro horário neste dia.', 'warning');
+    selectEl.value = '';
+    return;
+  }
+  turnos[desigId][slotKey] = current.concat([{ nome, origem: 'local' }]);
   cfg.turnos = turnos;
   saveCongConfig(cfg);
+  if (turnos[desigId][slotKey].length >= maxSlot) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'Horário fechado pela congregação.');
   renderPostosTurnos();
   showToast(`${nome} adicionado(a) ao turno ${slotKey} ✅`, 'success');
 };
@@ -933,7 +1424,7 @@ window.removeFromSlot = function(desigId, slotKey, nome) {
   const cfg = getCongConfig();
   const t   = cfg.turnos || {};
   if (t[desigId] && t[desigId][slotKey]) {
-    t[desigId][slotKey] = t[desigId][slotKey].filter(n => n !== nome);
+    t[desigId][slotKey] = t[desigId][slotKey].filter(p => getNomePessoaEscala(p) !== nome);
     cfg.turnos = t;
     saveCongConfig(cfg);
     renderPostosTurnos();
@@ -942,25 +1433,31 @@ window.removeFromSlot = function(desigId, slotKey, nome) {
 
 document.getElementById('btn-add-membro').addEventListener('click', () => {
   const nome = document.getElementById('input-membro').value.trim();
+  const funcao = document.getElementById('select-funcao-membro').value;
+  const podeRepetir = document.getElementById('membro-pode-repetir').checked;
   if (!nome) { showToast('Informe o nome!', 'error'); return; }
   const cfg = getCongConfig();
   cfg.membros = cfg.membros || [];
-  if (cfg.membros.includes(nome)) { showToast('Publicador já adicionado!', 'warning'); return; }
-  cfg.membros.push(nome);
+  const membros = (cfg.membros || []).map(normalizarMembro).filter(Boolean);
+  if (membros.some(m => m.nome.toLowerCase() === nome.toLowerCase())) { showToast('Nome já adicionado!', 'warning'); return; }
+  membros.push({ nome, funcao, podeRepetir });
+  cfg.membros = membros;
   saveCongConfig(cfg);
   document.getElementById('input-membro').value = '';
+  document.getElementById('select-funcao-membro').value = 'Publicador';
+  document.getElementById('membro-pode-repetir').checked = false;
   renderMembros();
   renderPostosTurnos();
-  showToast(`${nome} adicionado(a)! ✅`, 'success');
+  showToast(`${nome} adicionado(a) como ${funcao}.`, 'success');
 });
 
 window.removerMembro = function(nome) {
   const cfg = getCongConfig();
-  cfg.membros = (cfg.membros || []).filter(m => m !== nome);
+  cfg.membros = (cfg.membros || []).map(normalizarMembro).filter(m => m && m.nome !== nome);
   if (cfg.turnos) {
     Object.keys(cfg.turnos).forEach(did => {
       Object.keys(cfg.turnos[did]).forEach(slot => {
-        cfg.turnos[did][slot] = cfg.turnos[did][slot].filter(n => n !== nome);
+        cfg.turnos[did][slot] = cfg.turnos[did][slot].filter(p => getNomePessoaEscala(p) !== nome);
       });
     });
   }
@@ -979,16 +1476,23 @@ document.getElementById('btn-salvar-escala').addEventListener('click', () => {
 document.getElementById('btn-export-pdf').addEventListener('click', exportarEscalaPDF);
 
 function exportarEscalaPDF() {
+  const resumoEscala = getResumoEscala();
+  if (!resumoEscala.todosFechados) {
+    showToast('Feche todos os horários antes de baixar o PDF.', 'warning');
+    return;
+  }
   const evento  = DB.get('evento_config', {nome:'Corrida Internacional de Praia Grande'});
   const cfg     = getCongConfig();
   const turnos  = cfg.turnos  || {};
   const membros = cfg.membros || [];
+  const mapHtml = document.getElementById('mini-map')?.innerHTML || '';
 
   const desigHtml = desigs.map(desig => {
     const posto   = todosPos.find(p => p.id === desig.postoId);
     if (!posto) return '';
-    const duracao  = desig.duracaoTurno || 2;
-    const maxSlot  = desig.maxPorTurno  || 3;
+    const agendaCfg = getAgendaConfig(desig.id);
+    const duracao  = agendaCfg.duracaoTurno;
+    const maxSlot  = agendaCfg.maxPorTurno;
     const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
     const assigned = turnos[desig.id] || {};
     const dataFmt  = desig.data
@@ -996,10 +1500,10 @@ function exportarEscalaPDF() {
       : '—';
 
     const rows = slots.map(slot => {
-      const people = assigned[slot.inicio] || [];
+      const people = getPessoasDoSlot(turnos, desig.id, slot.inicio);
       return `<tr>
         <td style="font-weight:600;text-align:center;white-space:nowrap;">${slot.inicio}–${slot.fim}</td>
-        <td>${people.length ? people.join(', ') : '<em style="color:#999;">vaga</em>'}</td>
+        <td>${people.length ? people.map(p => p.nome + (p.origem === 'ajuda' && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ') : '<em style="color:#999;">vaga</em>'}</td>
         <td style="text-align:center;">${people.length}/${maxSlot}</td>
       </tr>`;
     }).join('');
@@ -1007,7 +1511,7 @@ function exportarEscalaPDF() {
     return `
       <div style="margin-bottom:1.5rem;">
         <h3 style="background:#003D7A;color:white;padding:.6rem 1rem;border-radius:4px 4px 0 0;margin:0;">
-          🪧 ${posto.nome} &nbsp;|&nbsp; Km ${posto.km}
+          🪧 ${posto.nome} &nbsp;|&nbsp; ${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}
         </h3>
         <p style="background:#eef4fb;padding:.5rem 1rem;margin:0;font-size:.88rem;border:1px solid #cde0f5;border-top:none;">
           📍 ${posto.local} &nbsp;|&nbsp; 📅 ${dataFmt} &nbsp;|&nbsp; ⏱️ ${desig.inicio}–${desig.fim} &nbsp;|&nbsp; ${duracao}h/turno
@@ -1020,7 +1524,8 @@ function exportarEscalaPDF() {
     <h1 style="color:#003D7A;">🏃 ${evento.nome}</h1>
     <h2 style="color:#0057A8;">📋 Escala de Turnos — ${cong?.nome || ''}</h2>
     <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
-    ${membros.length ? `<p><strong>Publicadores:</strong> ${membros.join(' · ')}</p>` : ''}
+    ${membros.length ? `<p><strong>Publicadores:</strong> ${membros.map(getLabelMembro).join(' · ')}</p>` : ''}
+    ${mapHtml ? `<div style="margin:1rem 0 1.2rem;"><h3 style="color:#003D7A;">🗺️ Mapa do posto</h3><div style="height:260px;border:1px solid #d6e5f7;border-radius:10px;overflow:hidden;">${mapHtml}</div></div>` : ''}
     <hr/>
     ${desigHtml || '<p>Nenhuma designação.</p>'}
     <p style="margin-top:2rem;color:#999;font-size:.82rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;

@@ -78,6 +78,26 @@
       padding: 0.7rem 0; border-bottom: 1px solid var(--gray-light); font-size: 0.83rem;
     }
     .activity-ts { color: var(--gray); font-size: 0.75rem; white-space: nowrap; }
+    .help-card {
+      border: 1px solid var(--gray-light);
+      border-radius: 12px;
+      padding: 1rem;
+      background: #fff;
+      margin-bottom: .9rem;
+    }
+    .help-card.pending { border-left: 5px solid #e07b00; }
+    .help-card.closed { border-left: 5px solid #28A745; background: #f4fbf5; }
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: .8rem;
+      margin-top: .8rem;
+    }
+    .mini-note {
+      font-size: .76rem;
+      color: var(--gray);
+      margin-top: .25rem;
+    }
     @media (max-width: 768px) {
       .subadmin-layout { grid-template-columns: 1fr; }
       .sidebar { height: auto; position: relative; top: 0; }
@@ -110,6 +130,7 @@
     <div class="sidebar-title">Meu Painel</div>
     <a href="#sec-postos" id="nav-postos"><span>📍</span> Postos</a>
     <a href="#sec-designar" id="nav-designar"><span>⛪</span> Designar Cong.</a>
+    <a href="#sec-ajuda" id="nav-ajuda"><span>🆘</span> Pedidos de Ajuda</a>
     <a href="#sec-atividades" id="nav-atividades"><span>📋</span> Minhas Atividades</a>
   </nav>
 
@@ -141,6 +162,16 @@
       </div>
     </section>
 
+    <!-- PEDIDOS DE AJUDA -->
+    <section id="sec-ajuda">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>🆘 Pedidos de Ajuda de Escala</h2>
+        </div>
+        <div class="section-card-body" id="body-ajuda"></div>
+      </div>
+    </section>
+
     <!-- ATIVIDADES -->
     <section id="sec-atividades">
       <div class="section-card">
@@ -164,6 +195,38 @@
   if (session?.type !== 'subadmin') window.location.href = 'login.html';
 
   const perm = session?.permissoes || {};
+  const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';
+
+  function getPedidosAjuda() {
+    return DB.get(HELP_REQUEST_KEY, []);
+  }
+
+  function savePedidosAjuda(lista) {
+    DB.set(HELP_REQUEST_KEY, lista);
+  }
+
+  function getCongConfigById(congId) {
+    const all = DB.get('cong_config', {});
+    return all[congId] ? JSON.parse(JSON.stringify(all[congId])) : {};
+  }
+
+  function saveCongConfigById(congId, cfg) {
+    const all = DB.get('cong_config', {});
+    all[congId] = cfg;
+    DB.set('cong_config', all);
+  }
+
+  function normalizarPessoaEscala(pessoa) {
+    if (!pessoa) return null;
+    if (typeof pessoa === 'string') return { nome: pessoa, origem: 'local' };
+    return {
+      nome: String(pessoa.nome || '').trim(),
+      origem: pessoa.origem || 'local',
+      ajudanteCongId: pessoa.ajudanteCongId || null,
+      ajudanteCongNome: pessoa.ajudanteCongNome || '',
+      helperRequestId: pessoa.helperRequestId || null,
+    };
+  }
 
   // ── POSTOS ──
   function renderPostos() {
@@ -269,10 +332,122 @@
     showToast('Designação salva! ✅', 'success');
   };
 
+  // ── PEDIDOS DE AJUDA ──
+  function renderPedidosAjuda() {
+    const el = document.getElementById('body-ajuda');
+    const pedidos = getPedidosAjuda().filter(p => p.subAdminId === session.subAdminId);
+    if (!pedidos.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum pedido de ajuda atribuído a você.</div>';
+      return;
+    }
+
+    const congs = DB.get('congregacoes', []).filter(c => c.confirmada);
+
+    el.innerHTML = pedidos.map(pedido => {
+      const classe = pedido.status === 'fechado' ? 'help-card closed' : 'help-card pending';
+      const helperOptions = congs
+        .filter(c => c.id !== pedido.congId)
+        .map(c => `<option value="${c.id}" ${pedido.ajudanteCongId === c.id ? 'selected' : ''}>${c.nome}</option>`)
+        .join('');
+
+      const nomesResolvidos = (pedido.nomesResolvidos || []).join(', ');
+      return `
+        <div class="${classe}">
+          <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+            <div>
+              <strong>${pedido.congNome}</strong>
+              <div class="mini-note">📍 ${pedido.postoNome || 'Posto'} · ${pedido.categoriaNome || 'Categoria'} · ${pedido.dataFmt || pedido.data || '—'} · ${pedido.slotLabel}</div>
+            </div>
+            <span class="badge ${pedido.status === 'fechado' ? 'badge-ativo' : 'badge-standby'}">${pedido.status === 'fechado' ? 'Fechado' : 'Pendente'}</span>
+          </div>
+          <div class="mini-note">Responsável da congregação: ${pedido.responsavelCong || pedido.congNome}. ${pedido.observacao ? `Obs.: ${pedido.observacao}` : ''}</div>
+          ${pedido.status === 'fechado' ? `
+            <div style="margin-top:.8rem;font-size:.82rem;color:var(--success);">
+              ✅ Arranjo fechado por ${pedido.resolvidoPor || session.nome}${pedido.ajudanteCongNome ? ` com apoio de ${pedido.ajudanteCongNome}` : ''}.<br>
+              ${nomesResolvidos ? `Nomes encaixados: <strong>${nomesResolvidos}</strong>.` : ''}
+            </div>
+          ` : `
+            <div class="help-grid">
+              <div>
+                <label>Congregação ajudante</label>
+                <select class="form-control" id="ajuda-cong-${pedido.id}">
+                  <option value="">Escolha a congregação ajudante</option>
+                  ${helperOptions}
+                </select>
+              </div>
+              <div>
+                <label>Nomes para completar (${pedido.faltaQtd})</label>
+                <input class="form-control" id="ajuda-nomes-${pedido.id}" placeholder="Separe por vírgula"/>
+                <div class="mini-note">Ex.: Maria, João, Ana.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
+              <button class="btn btn-primary btn-sm" onclick="fecharPedidoAjuda('${pedido.id}')">✅ Fechar arranjo</button>
+              <button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjudaSubAdmin('${pedido.id}')">Cancelar</button>
+            </div>
+          `}
+        </div>`;
+    }).join('');
+  }
+
+  window.fecharPedidoAjuda = function(id) {
+    const lista = getPedidosAjuda();
+    const pedido = lista.find(p => p.id === id && p.subAdminId === session.subAdminId);
+    if (!pedido || pedido.status !== 'aberto') return;
+
+    const ajudanteCongId = parseInt(document.getElementById(`ajuda-cong-${id}`)?.value);
+    const nomesRaw = document.getElementById(`ajuda-nomes-${id}`)?.value || '';
+    const nomes = nomesRaw.split(',').map(n => n.trim()).filter(Boolean);
+    if (!ajudanteCongId) { showToast('Escolha a congregação ajudante.', 'warning'); return; }
+    if (nomes.length !== pedido.faltaQtd) { showToast(`Informe exatamente ${pedido.faltaQtd} nome(s).`, 'warning'); return; }
+
+    const ajudanteCong = DB.get('congregacoes', []).find(c => c.id === ajudanteCongId);
+    const cfg = getCongConfigById(pedido.congId);
+    cfg.turnos = cfg.turnos || {};
+    if (!cfg.turnos[pedido.designacaoId]) cfg.turnos[pedido.designacaoId] = {};
+    const atuais = (cfg.turnos[pedido.designacaoId][pedido.slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
+    const faltamAgora = Math.max(0, 3 - atuais.length);
+    if (faltamAgora !== pedido.faltaQtd) { showToast('Esse horário mudou. Reabra a tela e confira a necessidade atual.', 'warning'); return; }
+
+    cfg.turnos[pedido.designacaoId][pedido.slotKey] = atuais.concat(nomes.map(nome => ({
+      nome,
+      origem: 'ajuda',
+      ajudanteCongId,
+      ajudanteCongNome: ajudanteCong?.nome || '',
+      helperRequestId: pedido.id,
+    })));
+    saveCongConfigById(pedido.congId, cfg);
+
+    pedido.status = 'fechado';
+    pedido.ajudanteCongId = ajudanteCongId;
+    pedido.ajudanteCongNome = ajudanteCong?.nome || '';
+    pedido.nomesResolvidos = nomes;
+    pedido.resolvidoPor = session.nome;
+    pedido.resolvidoEm = new Date().toLocaleString('pt-BR');
+    savePedidosAjuda(lista);
+
+    Auth.registrarAtividade('Fechou pedido de ajuda', `${pedido.congNome} · ${pedido.slotLabel}`);
+    renderPedidosAjuda();
+    renderAtividades();
+    showToast('Arranjo fechado e responsável avisado na tela da congregação.', 'success');
+  };
+
+  window.cancelarPedidoAjudaSubAdmin = function(id) {
+    const lista = getPedidosAjuda();
+    const pedido = lista.find(p => p.id === id && p.subAdminId === session.subAdminId);
+    if (!pedido || pedido.status !== 'aberto') return;
+    pedido.status = 'cancelado';
+    pedido.canceladoEm = new Date().toLocaleString('pt-BR');
+    pedido.motivoCancelamento = 'Cancelado pelo sub-admin.';
+    savePedidosAjuda(lista);
+    renderPedidosAjuda();
+    showToast('Pedido cancelado.', 'info');
+  };
+
   // ── ATIVIDADES ──
   function renderAtividades() {
     const lista  = DB.get('sub_admins', []);
-    const sa     = lista.find(x => x.id === session.subAdminId);
+    const sa     = lista.find(x => x.id === session?.subAdminId);
     const ativs  = sa?.atividades || [];
     const el     = document.getElementById('body-atividades');
     if (!ativs.length) {
@@ -301,10 +476,11 @@
   });
 
   // Sincroniza em tempo real
-  window.addEventListener('db-sync', () => { renderPostos(); renderDesignar(); renderAtividades(); });
+  window.addEventListener('db-sync', () => { renderPostos(); renderDesignar(); renderPedidosAjuda(); renderAtividades(); });
 
   renderPostos();
   renderDesignar();
+  renderPedidosAjuda();
   renderAtividades();
 </script>
 </body>

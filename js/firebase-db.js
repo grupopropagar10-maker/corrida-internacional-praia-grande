@@ -17,7 +17,106 @@ firebase.initializeApp(firebaseConfig);
 const rtdb = firebase.database();
 
 // Chaves que devem ser sincronizadas com o Firebase
-const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias'];
+const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config'];
+const CRITICAL_KEYS = ['congregacoes', 'postos', 'designacoes', 'cong_config'];
+const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
+const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';
+const BACKUP_LIMIT = 8;
+let restoreInFlight = false;
+
+function safeJsonParse(raw, fallback = null) {
+  if (raw === null || raw === undefined) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function getBackupPayload() {
+  return SYNC_KEYS.reduce((acc, key) => {
+    acc[key] = safeJsonParse(localStorage.getItem(key), null);
+    return acc;
+  }, {});
+}
+
+function getCollectionSize(value) {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === 'object') return Object.keys(value).length;
+  return value == null ? 0 : 1;
+}
+
+function getLatestSafeBackup() {
+  const latest = safeJsonParse(localStorage.getItem(BACKUP_LATEST_KEY), null);
+  if (latest && (latest.source === 'pull' || latest.source === 'bootstrap')) return latest;
+  const history = safeJsonParse(localStorage.getItem(BACKUP_STORAGE_KEY), []);
+  return history.find(item => item && (item.source === 'pull' || item.source === 'bootstrap')) || null;
+}
+
+function isSuspiciousWrite(key, nextValue) {
+  if (!CRITICAL_KEYS.includes(key)) return false;
+  const latest = getLatestSafeBackup();
+  const prevValue = latest?.payload?.[key];
+  const prevSize = getCollectionSize(prevValue);
+  const nextSize = getCollectionSize(nextValue);
+
+  if (prevSize === 0) return false;
+  if (nextSize === 0 && prevSize > 0) return true;
+  if (prevSize >= 3 && nextSize <= 1) return true;
+  if (prevSize >= 5 && nextSize / prevSize <= 0.35) return true;
+  return false;
+}
+
+function restoreBackupForKey(key, reason) {
+  const latest = getLatestSafeBackup();
+  if (!latest?.payload || !(key in latest.payload)) return false;
+  const backupValue = latest.payload[key];
+  restoreInFlight = true;
+  if (backupValue === null || backupValue === undefined) {
+    localStorage.removeItem(key);
+  } else {
+    localStorage.setItem(key, JSON.stringify(backupValue));
+  }
+  rtdb.ref(key).set(backupValue).catch(err => {
+    console.warn(`[Firebase] Falha ao restaurar backup seguro de ${key}:`, err);
+  }).finally(() => {
+    restoreInFlight = false;
+  });
+  window.dispatchEvent(new CustomEvent('db-restore-blocked-write', { detail: { key, reason, backupTs: latest.ts } }));
+  return true;
+}
+
+function saveLocalBackup(source, key) {
+  const snapshot = {
+    ts: new Date().toISOString(),
+    source,
+    key,
+    payload: getBackupPayload(),
+  };
+  localStorage.setItem(BACKUP_LATEST_KEY, JSON.stringify(snapshot));
+  const history = safeJsonParse(localStorage.getItem(BACKUP_STORAGE_KEY), []);
+  history.unshift(snapshot);
+  localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(history.slice(0, BACKUP_LIMIT)));
+}
+
+window.FirebaseBackup = {
+  latest() {
+    return safeJsonParse(localStorage.getItem(BACKUP_LATEST_KEY), null);
+  },
+  history() {
+    return safeJsonParse(localStorage.getItem(BACKUP_STORAGE_KEY), []);
+  },
+  restoreLatestToLocal() {
+    const latest = this.latest();
+    if (!latest?.payload) return false;
+    Object.entries(latest.payload).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+    });
+    return true;
+  }
+};
 
 // Escuta mudanças em tempo real e atualiza localStorage automaticamente
 function startSync() {
@@ -26,6 +125,7 @@ function startSync() {
       const val = snapshot.val();
       if (val !== null) {
         localStorage.setItem(key, JSON.stringify(val));
+        saveLocalBackup('pull', key);
         // Dispara evento para páginas atualizarem a UI sem recarregar
         window.dispatchEvent(new CustomEvent('db-sync', { detail: { key } }));
       }
@@ -35,9 +135,14 @@ function startSync() {
 
 // Envia dado ao Firebase (chamado pelo DB.set)
 function pushToFirebase(key, value) {
-  if (SYNC_KEYS.includes(key)) {
-    rtdb.ref(key).set(value).catch(err => console.warn('[Firebase] Erro ao salvar:', err));
+  if (!SYNC_KEYS.includes(key)) return;
+  if (restoreInFlight) return;
+  if (isSuspiciousWrite(key, value)) {
+    const restored = restoreBackupForKey(key, 'suspicious-write');
+    console.warn(`[Firebase] Escrita suspeita bloqueada em ${key}. Backup seguro ${restored ? 'restaurado' : 'indisponivel'}.`);
+    return;
   }
+  rtdb.ref(key).set(value).catch(err => console.warn('[Firebase] Erro ao salvar:', err));
 }
 
 // Carrega dados do Firebase uma vez ao iniciar (garante dados frescos)
@@ -49,8 +154,14 @@ function pullFromFirebase() {
         if (val !== null) localStorage.setItem(key, JSON.stringify(val));
       })
     )
-  );
+  ).then(() => {
+    saveLocalBackup('bootstrap', 'all');
+  });
 }
+
+window.DB_SYNC_READY = pullFromFirebase().catch(err => {
+  console.warn('[Firebase] Erro ao carregar dados iniciais:', err);
+});
 
 // Inicia sincronização assim que o Firebase estiver pronto
 startSync();

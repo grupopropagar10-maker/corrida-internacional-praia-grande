@@ -16,6 +16,12 @@ const DB = {
 
 // Dados iniciais de postos
 function initData() {
+  const existingPostos = DB.get('postos', []);
+  const existingDistribuicoes = DB.get('distribuicoes', []);
+  if (existingPostos.length || existingDistribuicoes.length) {
+    localStorage.setItem('postos_init', true);
+    return;
+  }
   if (!localStorage.getItem('postos_init')) {
     DB.set('postos', [
       { id: 1, nome: 'Posto 1 - Largada',      km: '0',    local: 'Av. Pres. Kennedy, s/n – frente ao mar',       status: 'ativo',   responsavel: 'Irmão Carlos',   publicacoes: 50, contatos: 0 },
@@ -57,7 +63,8 @@ function now() {
 }
 
 // Hamburger menu
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await (window.DB_SYNC_READY || Promise.resolve());
   initData();
   const hamburger = document.querySelector('.hamburger');
   const nav = document.querySelector('.navbar-nav');

@@ -308,7 +308,7 @@
   <div>
     <div class="map-card">
       <div class="map-toolbar">
-        <span>🗺️ <strong>Percurso — Praia Grande</strong> &nbsp;|&nbsp; Clique num <strong>posto</strong> para designar uma congregação</span>
+        <span>🗺️ <strong>Percurso — Praia Grande</strong> &nbsp;|&nbsp; Clique num <strong>posto</strong> para designar ou num <strong>ponto do mapa</strong> para criar novo posto</span>
         <div class="legend" id="map-legend">
           <div class="leg-item"><div class="leg-dot" style="background:#28A745;"></div>Livre</div>
           <div class="leg-item"><div class="leg-dot" style="background:#FFC107;"></div>Parcialmente coberto</div>
@@ -316,7 +316,7 @@
         </div>
       </div>
       <div class="map-hint">
-        💡 Postos com <strong>borda pontilhada</strong> ainda não têm congregação designada. Postos coloridos mostram a congregação responsável.
+        💡 Postos com <strong>borda pontilhada</strong> ainda não têm congregação designada. Postos coloridos mostram a congregação responsável. Clique em uma área vazia do mapa para cadastrar um posto exatamente naquele local.
         &nbsp;|&nbsp;
         <label style="font-size:.8rem;font-weight:600;">📅 Categoria:
           <select id="filtro-categoria-mapa" style="margin-left:.3rem;font-size:.8rem;padding:.2rem .5rem;border-radius:4px;border:1px solid #c8ddf5;">
@@ -348,6 +348,73 @@
           <strong>Clique em um posto no mapa</strong> para designar
         </div>
       </div>
+      <form id="form-novo-posto-mapa" style="display:none;">
+        <input type="hidden" id="novo-posto-id"/>
+        <input type="hidden" id="novo-posto-lat"/>
+        <input type="hidden" id="novo-posto-lng"/>
+
+        <div class="form-group">
+          <label>Ponto selecionado</label>
+          <div id="novo-posto-coords" class="form-control" style="background:#f8fafc;color:var(--gray);"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Congregação</label>
+          <select class="form-control" id="novo-posto-cong" required>
+            <option value="">-- Selecione a congregação --</option>
+          </select>
+        </div>
+
+        <div id="novo-posto-cota-box" style="display:none; background:#eef4fb; border-radius:8px; padding:.7rem 1rem; margin-bottom:.8rem; font-size:.83rem;">
+          <div style="display:flex; gap:1.2rem; flex-wrap:wrap;">
+            <span>🛒 <strong id="novo-posto-cota-carrinhos">0</strong> carrinho(s) disponíveis</span>
+            <span>🪧 <strong id="novo-posto-cota-displays">0</strong> display(s) disponíveis</span>
+            <span style="color:var(--primary-dark); font-weight:700;">= <strong id="novo-posto-cota-total">0</strong> postos restantes</span>
+          </div>
+          <div style="margin-top:.4rem; color:var(--gray); font-size:.75rem;" id="novo-posto-cota-status"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo do posto</label>
+          <select class="form-control" id="novo-posto-tipo" required>
+            <option value="">-- Selecione o tipo --</option>
+            <option value="carrinho">🛒 Carrinho</option>
+            <option value="display">🪧 Display</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Categoria do evento</label>
+          <select class="form-control" id="novo-posto-categoria" required>
+            <option value="">— Sem categoria —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Responsável / Contato</label>
+          <input class="form-control" id="novo-posto-responsavel" placeholder="Puxado da congregação selecionada" readonly/>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-control" id="novo-posto-status">
+            <option value="ativo">✅ Ativo</option>
+            <option value="standby">⏳ Standby</option>
+            <option value="inativo">❌ Inativo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Observações</label>
+          <textarea class="form-control" id="novo-posto-obs" rows="2" placeholder="Informações adicionais..."></textarea>
+        </div>
+
+        <div class="flex gap-1" style="justify-content:flex-end; margin-top:0.5rem;">
+          <button type="button" class="btn btn-outline" id="btn-cancelar-novo-posto-mapa">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-novo-posto">💾 Salvar Posto</button>
+        </div>
+      </form>
+      <div id="posto-resumo-designado" style="display:none;"></div>
       <div id="form-designar" style="display:none;">
         <input type="hidden" id="d-posto-id"/>
 
@@ -362,7 +429,7 @@
 
         <!-- CONGREGAÇÃO -->
         <div class="form-group">
-          <label>Congregação <small style="color:var(--gray);">⏳ = aguardando informar carrinhos/displays</small></label>
+          <label>Congregação <small style="color:var(--gray);">(apenas quem respondeu participação)</small></label>
           <select class="form-control" id="d-cong">
             <option value="">-- Selecione --</option>
           </select>
@@ -466,6 +533,7 @@
 //  DADOS INICIAIS
 // ================================================================
 function initCongData() {
+  if (location.protocol === 'file:') return;
   // NUNCA sobrescreve se já houver congregações no Firebase/localStorage
   const existing = DB.get('congregacoes', []);
   if (existing.length > 0) {
@@ -516,17 +584,140 @@ L.polyline(ROTA, { color: '#0057A8', weight: 4, opacity: 0.55, dashArray: '10,7'
 
 const markersMap = {};
 let postoSelecionado = null;
+let latLngNovoPosto = null;
+let previewNovoPostoMarker = null;
+
+function painelInicialHtml() {
+  return `
+    <div style="text-align:center; padding:1.5rem; color:var(--gray);">
+      <span style="font-size:2.5rem; display:block; margin-bottom:0.5rem;">📍</span>
+      <strong>Clique em um posto no mapa</strong><br>
+      <small>para iniciar a designação</small>
+    </div>`;
+}
+
+function ativarTabDesignar() {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="designar"]').classList.add('active');
+  document.getElementById('tab-designar').classList.add('active');
+}
+
+function limparPreviewNovoPosto() {
+  if (previewNovoPostoMarker) {
+    map.removeLayer(previewNovoPostoMarker);
+    previewNovoPostoMarker = null;
+  }
+  latLngNovoPosto = null;
+}
+
+function mostrarPreviewNovoPosto(latlng) {
+  limparPreviewNovoPosto();
+  previewNovoPostoMarker = L.marker(latlng, {
+    interactive: false,
+    icon: L.divIcon({
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      html: `
+        <div style="
+          width:28px;height:28px;border-radius:50% 50% 50% 0;
+          background:#DC3545;transform:rotate(-45deg);
+          box-shadow:0 3px 10px rgba(0,0,0,0.25);border:2px solid white;
+          display:flex;align-items:center;justify-content:center;
+        ">
+          <span style="transform:rotate(45deg);color:white;font-size:0.8rem;line-height:1;">+</span>
+        </div>`
+    })
+  }).addTo(map);
+}
+
+function resetPainelDesignar() {
+  document.getElementById('posto-resumo-designado').style.display = 'none';
+  document.getElementById('form-designar').style.display = 'none';
+  document.getElementById('form-novo-posto-mapa').style.display = 'none';
+  document.getElementById('posto-badge').innerHTML = painelInicialHtml();
+  postoSelecionado = null;
+}
 
 function getCongColor(postoId) {
-  const desig = DB.get('designacoes').filter(d => d.postoId === postoId);
+  const desig = getDesignacoesEfetivas().filter(d => d.postoId === postoId);
   if (!desig.length) return '#28A745';
   if (desig.length === 1) return DB.get('congregacoes').find(c => c.id === desig[0].congId)?.cor || '#0057A8';
   return '#FFC107'; // múltiplas datas/congregações
 }
 
+function getConGsComParticipacao() {
+  return DB.get('congregacoes', []).filter(c => c.confirmada && c.participacao?.respondeu);
+}
+
+function getUsoRecursosCongregacao(congId, excludePostoId = null) {
+  const postos = DB.get('postos', []).filter(p => p.congId === congId && p.id !== excludePostoId);
+  const usadosCarrinhos = postos.filter(p => p.recursoTipo === 'carrinho').length;
+  const usadosDisplays = postos.filter(p => p.recursoTipo === 'display').length;
+  return { usadosCarrinhos, usadosDisplays };
+}
+
+function getCategoriaById(categoriaId) {
+  return DB.get('categorias', []).find(c => c.id === categoriaId) || null;
+}
+
+function getCategoriaDatas(categoria) {
+  return Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+}
+
+function getCategoriaResumo(categoria) {
+  if (!categoria) return { datasLabel: 'Sem datas', horarioLabel: 'Sem horario' };
+  const datas = getCategoriaDatas(categoria);
+  return {
+    datasLabel: datas.length ? datas.map(d => formatarData(d, true)).join(', ') : 'Sem datas',
+    horarioLabel: categoria.horario && categoria.horarioFim ? `${categoria.horario}-${categoria.horarioFim}` : 'Sem horario'
+  };
+}
+
+function buildAutoDesignacoesForPosto(posto) {
+  const categoria = getCategoriaById(posto.categoriaId);
+  const datas = getCategoriaDatas(categoria);
+  if (!categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+
+  return datas.map((data, idx) => ({
+    id: Date.now() + idx,
+    postoId: posto.id,
+    congId: posto.congId,
+    data,
+    inicio: categoria.horario,
+    fim: categoria.horarioFim,
+    slots: [{ inicio: categoria.horario, fim: categoria.horarioFim }],
+    irmaos: 0,
+    obs: posto.obs || '',
+    responsavel: posto.responsavel || '',
+    autoGerada: true,
+    autoPostoId: posto.id,
+    recursoTipo: posto.recursoTipo || ''
+  }));
+}
+
+function syncAutoDesignacoesForPosto(posto) {
+  const atuais = DB.get('designacoes', []).filter(d => d.autoPostoId !== posto.id);
+  DB.set('designacoes', atuais.concat(buildAutoDesignacoesForPosto(posto)));
+}
+
+function removeAutoDesignacoesForPosto(postoId) {
+  DB.set('designacoes', DB.get('designacoes', []).filter(d => d.autoPostoId !== postoId));
+}
+
+function getDesignacoesEfetivas() {
+  const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada);
+  const autoAtuais = DB.get('postos', [])
+    .filter(p => p.congId && p.categoriaId)
+    .flatMap(p => buildAutoDesignacoesForPosto(p));
+  return manuais.concat(autoAtuais);
+}
+
 function makeMarker(posto, idx) {
   const cor = getCongColor(posto.id);
   const isEndpoint = posto.km === '0' || posto.km === '21';
+  const markerLabel = posto.km ? `${posto.km}km` : '📍';
   const icon = L.divIcon({
     html: `
       <div style="
@@ -542,7 +733,7 @@ function makeMarker(posto, idx) {
         transition:transform 0.15s;
       ">
         <div style="text-align:center; line-height:1.1;">
-          <div>${posto.km}km</div>
+          <div>${markerLabel}</div>
         </div>
       </div>`,
     iconSize: [40, 40],
@@ -555,9 +746,11 @@ function makeMarker(posto, idx) {
 }
 
 function buildPopup(posto) {
-  const desig    = DB.get('designacoes').filter(d => d.postoId === posto.id);
+  const desig    = getDesignacoesEfetivas().filter(d => d.postoId === posto.id);
   const congsAll = DB.get('congregacoes');
   const cat      = DB.get('categorias', []).find(c => c.id === posto.categoriaId);
+  const congSel  = congsAll.find(c => c.id === posto.congId);
+  const catResumo = getCategoriaResumo(cat);
 
   const catBadge = cat
     ? `<span style="display:inline-block;background:${cat.cor}22;color:${cat.cor};border:1px solid ${cat.cor};
@@ -566,8 +759,20 @@ function buildPopup(posto) {
   const capBadge = (posto.capCarrinhos || posto.capDisplays)
     ? `<span style="font-size:.72rem;color:var(--gray);">🛒${posto.capCarrinhos||0} 🪧${posto.capDisplays||0}</span>`
     : '';
+  const detalhesPosto = [
+    posto.km ? `📏 Km ${posto.km}` : '',
+    posto.responsavel ? `👤 ${posto.responsavel}` : '',
+    capBadge
+  ].filter(Boolean).join(' &nbsp;|&nbsp; ');
 
-  const desigHtml = desig.length
+  const desigHtml = posto.congId
+    ? `<div class="popup-desg" style="border-left:3px solid ${congSel?.cor||'#0057A8'};">
+        <strong>${congSel?.nome || posto.nome}</strong><br>
+        ${posto.recursoTipo === 'carrinho' ? '🛒 Carrinho' : '🪧 Display'}<br>
+        📅 ${catResumo.datasLabel}<br>
+        ⏱️ ${catResumo.horarioLabel}
+      </div>`
+    : desig.length
     ? desig.map(d => {
         const cong = congsAll.find(c => c.id === d.congId);
         const horariosHtml = d.slots?.length > 1
@@ -585,10 +790,161 @@ function buildPopup(posto) {
   return `
     <div class="popup-inner">
       <h4>📍 ${posto.nome} ${catBadge}</h4>
-      <small style="color:#6C757D;">📏 Km ${posto.km} &nbsp;|&nbsp; 👤 ${posto.responsavel} &nbsp;|&nbsp; ${capBadge}</small>
+      <small style="color:#6C757D;">${detalhesPosto}</small>
       <div style="margin-top:0.6rem;">${desigHtml}</div>
-      <button class="popup-btn" onclick="selecionarPostoPopup(${posto.id})">📌 Designar congregação</button>
+      ${posto.congId
+        ? `<div style="display:flex;gap:.4rem;margin-top:.6rem;">
+            <button class="popup-btn" style="flex:1;" onclick="selecionarPostoPopup(${posto.id})">👁️ Ver responsável</button>
+            <button class="popup-btn" style="background:#fff3cd;color:#856404;border:1px solid #f5d97b;" onclick="editarPostoMapa(${posto.id})">✏️ Editar</button>
+            <button class="popup-btn" style="background:#fde;color:#b42318;border:1px solid #f5c2c7;" onclick="deletarPostoMapa(${posto.id})">🗑️</button>
+          </div>`
+        : `<button class="popup-btn" onclick="selecionarPostoPopup(${posto.id})">📌 Designar congregação</button>`}
     </div>`;
+}
+
+function popularCategoriasNovoPosto(valorAtual = '') {
+  const cats = DB.get('categorias', []);
+  const sel = document.getElementById('novo-posto-categoria');
+  sel.innerHTML = '<option value="">— Sem categoria —</option>' +
+    cats.map(c => `<option value="${c.id}" ${c.id == valorAtual ? 'selected' : ''}>${c.nome}</option>`).join('');
+}
+
+function popularCongregacoesNovoPosto(valorAtual = '') {
+  const congs = getConGsComParticipacao();
+  const sel = document.getElementById('novo-posto-cong');
+  const editingId = parseInt(document.getElementById('novo-posto-id')?.value) || null;
+  sel.innerHTML = '<option value="">-- Selecione a congregação --</option>' +
+    congs.map(c => {
+      const p = c.participacao || {};
+      const total = (p.carrinhos || 0) + (p.displays || 0);
+      const { usadosCarrinhos, usadosDisplays } = getUsoRecursosCongregacao(c.id, editingId);
+      const restantes = Math.max(total - usadosCarrinhos - usadosDisplays, 0);
+      const disabled = restantes <= 0 && c.id != valorAtual ? 'disabled' : '';
+      return `<option value="${c.id}" ${c.id == valorAtual ? 'selected' : ''} ${disabled}>${c.nome} — ${restantes} posto(s) restante(s)</option>`;
+    }).join('');
+}
+
+function atualizarResumoNovoPosto() {
+  const cid = parseInt(document.getElementById('novo-posto-cong').value);
+  const editingId = parseInt(document.getElementById('novo-posto-id').value) || null;
+  const cong = DB.get('congregacoes', []).find(c => c.id === cid);
+  const box = document.getElementById('novo-posto-cota-box');
+  const tipoSel = document.getElementById('novo-posto-tipo');
+
+  if (!cong) {
+    document.getElementById('novo-posto-responsavel').value = '';
+    box.style.display = 'none';
+    tipoSel.value = '';
+    Array.from(tipoSel.options).forEach(opt => opt.disabled = false);
+    return;
+  }
+
+  const participacao = cong.participacao || {};
+  const carrinhosBase = participacao.carrinhos || 0;
+  const displaysBase = participacao.displays || 0;
+  const { usadosCarrinhos, usadosDisplays } = getUsoRecursosCongregacao(cid, editingId);
+  const carrinhosDisp = Math.max(carrinhosBase - usadosCarrinhos, 0);
+  const displaysDisp = Math.max(displaysBase - usadosDisplays, 0);
+  const totalDisp = carrinhosDisp + displaysDisp;
+
+  document.getElementById('novo-posto-cota-carrinhos').textContent = carrinhosDisp;
+  document.getElementById('novo-posto-cota-displays').textContent = displaysDisp;
+  document.getElementById('novo-posto-cota-total').textContent = totalDisp;
+  document.getElementById('novo-posto-cota-status').textContent = `${usadosCarrinhos} carrinho(s) usado(s) • ${usadosDisplays} display(s) usado(s)`;
+  document.getElementById('novo-posto-responsavel').value =
+    cong.contato ? `${cong.contato}${cong.telefone ? ' — ' + cong.telefone : ''}` : '';
+
+  Array.from(tipoSel.options).forEach(opt => {
+    if (!opt.value) return;
+    opt.disabled = (opt.value === 'carrinho' && carrinhosDisp <= 0) || (opt.value === 'display' && displaysDisp <= 0);
+  });
+  if (tipoSel.value === 'carrinho' && carrinhosDisp <= 0) tipoSel.value = '';
+  if (tipoSel.value === 'display' && displaysDisp <= 0) tipoSel.value = '';
+
+  box.style.display = 'block';
+}
+
+function fecharFormNovoPosto() {
+  document.getElementById('form-novo-posto-mapa').style.display = 'none';
+  limparPreviewNovoPosto();
+  resetPainelDesignar();
+}
+
+function abrirFormNovoPosto(latlng, postoEdicao = null) {
+  latLngNovoPosto = latlng;
+
+  mostrarPreviewNovoPosto(latlng);
+  ativarTabDesignar();
+  document.getElementById('posto-resumo-designado').style.display = 'none';
+  document.getElementById('form-designar').style.display = 'none';
+  document.getElementById('form-novo-posto-mapa').reset();
+  document.getElementById('novo-posto-id').value = postoEdicao?.id || '';
+  document.getElementById('novo-posto-lat').value = latlng.lat;
+  document.getElementById('novo-posto-lng').value = latlng.lng;
+  document.getElementById('novo-posto-coords').textContent = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+  document.getElementById('novo-posto-status').value = postoEdicao?.status || 'ativo';
+  document.getElementById('novo-posto-tipo').value = postoEdicao?.recursoTipo || '';
+  document.getElementById('novo-posto-cota-box').style.display = 'none';
+  document.getElementById('novo-posto-responsavel').value = '';
+  document.getElementById('posto-badge').innerHTML = `
+    <div class="posto-selected-badge" style="background:linear-gradient(135deg, #0B7285, #15AABF);">
+      <span>🆕</span>
+      <div>
+        <strong>${postoEdicao ? 'Editar posto designado' : 'Novo posto no ponto clicado'}</strong>
+        <div style="opacity:0.85; font-size:0.78rem;">📍 ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}</div>
+      </div>
+    </div>`;
+  popularCategoriasNovoPosto(postoEdicao?.categoriaId || '');
+  popularCongregacoesNovoPosto(postoEdicao?.congId || '');
+  document.getElementById('novo-posto-obs').value = postoEdicao?.obs || '';
+  document.getElementById('btn-salvar-novo-posto').textContent = postoEdicao ? '💾 Atualizar Posto' : '💾 Salvar Posto';
+  if (postoEdicao) atualizarResumoNovoPosto();
+  document.getElementById('form-novo-posto-mapa').style.display = 'block';
+  document.getElementById('tab-designar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function abrirResumoPostoDesignado(postoId) {
+  const posto = DB.get('postos').find(p => p.id === postoId);
+  if (!posto) return;
+
+  const cong = DB.get('congregacoes').find(c => c.id === posto.congId);
+  const categoria = getCategoriaById(posto.categoriaId);
+  const catResumo = getCategoriaResumo(categoria);
+  const recurso = posto.recursoTipo === 'carrinho' ? '🛒 Carrinho' : '🪧 Display';
+
+  limparPreviewNovoPosto();
+  ativarTabDesignar();
+  document.getElementById('form-novo-posto-mapa').style.display = 'none';
+  document.getElementById('form-designar').style.display = 'none';
+  document.getElementById('posto-badge').innerHTML = `
+    <div class="posto-selected-badge">
+      <span>📍</span>
+      <div>
+        <strong>${posto.nome}</strong>
+        <div style="opacity:0.8; font-size:0.78rem;">${posto.local || 'Ponto personalizado no mapa'}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('posto-resumo-designado').innerHTML = `
+    <div style="background:#f8fafc;border:1px solid #d8e7f7;border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.8rem;">
+      <div>
+        <div style="font-size:.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;">Responsavel designado</div>
+        <div style="font-weight:800;color:var(--primary-dark);font-size:1rem;">${cong?.nome || posto.nome}</div>
+        <div style="font-size:.82rem;color:var(--gray);margin-top:.2rem;">${posto.responsavel || 'Sem contato'}</div>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        <span style="background:#eef4fb;color:var(--primary-dark);border-radius:999px;padding:.2rem .6rem;font-size:.78rem;">${recurso}</span>
+        <span style="background:#eef8ef;color:#2b6e3f;border-radius:999px;padding:.2rem .6rem;font-size:.78rem;">${categoria?.nome || 'Sem categoria'}</span>
+        <span style="background:#fff7e6;color:#9a6700;border-radius:999px;padding:.2rem .6rem;font-size:.78rem;">${catResumo.horarioLabel}</span>
+      </div>
+      <div style="font-size:.84rem;color:var(--text);"><strong>Datas:</strong> ${catResumo.datasLabel}</div>
+      ${posto.obs ? `<div style="font-size:.84rem;color:var(--gray);"><strong>Obs.:</strong> ${posto.obs}</div>` : ''}
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="editarPostoMapa(${posto.id})">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deletarPostoMapa(${posto.id})">🗑️ Deletar</button>
+      </div>
+    </div>`;
+  document.getElementById('posto-resumo-designado').style.display = 'block';
 }
 
 function renderMarcadores() {
@@ -613,8 +969,10 @@ function renderMarcadores() {
     m.bindPopup(buildPopup(p), { maxWidth: 280 });
     m.on('click', e => {
       L.DomEvent.stopPropagation(e);
+      limparPreviewNovoPosto();
       postoSelecionado = p.id;
-      abrirFormDesignar(p.id);
+      if (p.congId) abrirResumoPostoDesignado(p.id);
+      else abrirFormDesignar(p.id);
     });
     markersMap[p.id] = m;
   });
@@ -625,13 +983,35 @@ function renderMarcadores() {
 // ================================================================
 window.selecionarPostoPopup = function(postoId) {
   map.closePopup();
+  limparPreviewNovoPosto();
   postoSelecionado = postoId;
-  abrirFormDesignar(postoId);
-  // Ativa tab "Designar"
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-tab="designar"]').classList.add('active');
-  document.getElementById('tab-designar').classList.add('active');
+  const posto = DB.get('postos').find(p => p.id === postoId);
+  if (posto?.congId) abrirResumoPostoDesignado(postoId);
+  else abrirFormDesignar(postoId);
+  ativarTabDesignar();
+};
+
+window.editarPostoMapa = function(postoId) {
+  const posto = DB.get('postos').find(p => p.id === postoId);
+  if (!posto) return;
+  map.closePopup();
+  abrirFormNovoPosto({ lat: posto.lat, lng: posto.lng }, posto);
+};
+
+window.deletarPostoMapa = function(postoId) {
+  const posto = DB.get('postos').find(p => p.id === postoId);
+  if (!posto) return;
+  if (!confirm(`Remover o posto ${posto.nome}?`)) return;
+
+  removeAutoDesignacoesForPosto(postoId);
+  DB.set('postos', DB.get('postos').filter(p => p.id !== postoId));
+  resetPainelDesignar();
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+  map.closePopup();
+  showToast('Posto removido com sucesso.', 'success');
 };
 
 // ================================================================
@@ -641,21 +1021,20 @@ function abrirFormDesignar(postoId) {
   const posto = DB.get('postos').find(p => p.id === postoId);
   if (!posto) return;
 
-  // Ativa a aba Designar
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-tab="designar"]').classList.add('active');
-  document.getElementById('tab-designar').classList.add('active');
+  limparPreviewNovoPosto();
+  ativarTabDesignar();
+  document.getElementById('form-novo-posto-mapa').style.display = 'none';
 
+  const resumoPosto = [posto.km ? `📏 Km ${posto.km}` : '', posto.local].filter(Boolean).join(' &nbsp;|&nbsp; ') || '📍 Ponto personalizado no mapa';
   document.getElementById('d-posto-id').value = postoId;
   document.getElementById('posto-badge').innerHTML = `
     <div class="posto-selected-badge">
       <span>📍</span>
       <div>
         <strong>${posto.nome}</strong>
-        <div style="opacity:0.8; font-size:0.78rem;">📏 Km ${posto.km} &nbsp;|&nbsp; ${posto.local}</div>
+        <div style="opacity:0.8; font-size:0.78rem;">${resumoPosto}</div>
       </div>
-      <span class="badge-km">${posto.km} km</span>
+      ${posto.km ? `<span class="badge-km">${posto.km} km</span>` : ''}
     </div>`;
 
   // Capacidade do posto (automática)
@@ -670,20 +1049,20 @@ function abrirFormDesignar(postoId) {
     capBox.style.display = 'none';
   }
 
-  // Popula select — todas as congregações confirmadas
-  const congs = DB.get('congregacoes').filter(c => c.confirmada);
+  // Popula select — apenas congregações confirmadas QUE responderam a participação
+  const congs = DB.get('congregacoes').filter(c => c.confirmada && c.participacao?.respondeu);
   const sel = document.getElementById('d-cong');
   sel.innerHTML = '<option value="">-- Selecione a congregação --</option>' +
     congs.map(c => {
-      const p = c.participacao || {};
+      const p = c.participacao;
       const carrinhos = p.carrinhos || 0;
-      const displays  = p.displays  || 0;
-      const pendente  = !p.respondeu ? ' ⏳' : '';
-      return `<option value="${c.id}">${c.nome}${pendente} — 🛒${carrinhos} + 🪧${displays}</option>`;
+      const displays = p.displays || 0;
+      const total = carrinhos + displays;
+      return `<option value="${c.id}">${c.nome} — 🛒${carrinhos} + 🪧${displays} = ${total} pts</option>`;
     }).join('');
 
   if (!congs.length) {
-    sel.innerHTML = '<option value="">⚠️ Nenhuma congregação confirmada ainda</option>';
+    sel.innerHTML = '<option value="">⚠️ Nenhuma congregação respondeu a participação ainda</option>';
   }
 
   // Cota: mostrar ao selecionar congregação
@@ -731,14 +1110,101 @@ function abrirFormDesignar(postoId) {
 }
 
 document.getElementById('btn-cancelar-desig').addEventListener('click', () => {
-  document.getElementById('form-designar').style.display = 'none';
-  document.getElementById('posto-badge').innerHTML = `
-    <div style="text-align:center; padding:1.5rem; color:var(--gray);">
-      <span style="font-size:2.5rem; display:block; margin-bottom:0.5rem;">📍</span>
-      <strong>Clique em um posto no mapa</strong><br>
-      <small>para iniciar a designação</small>
-    </div>`;
-  postoSelecionado = null;
+  resetPainelDesignar();
+});
+
+document.getElementById('btn-cancelar-novo-posto-mapa').addEventListener('click', fecharFormNovoPosto);
+document.getElementById('novo-posto-cong').addEventListener('change', atualizarResumoNovoPosto);
+
+document.getElementById('form-novo-posto-mapa').addEventListener('submit', e => {
+  e.preventDefault();
+
+  const lat = parseFloat(document.getElementById('novo-posto-lat').value);
+  const lng = parseFloat(document.getElementById('novo-posto-lng').value);
+  const postoIdEdicao = parseInt(document.getElementById('novo-posto-id').value) || null;
+  if (isNaN(lat) || isNaN(lng)) {
+    showToast('Selecione um ponto válido no mapa.', 'error');
+    return;
+  }
+
+  const congId = parseInt(document.getElementById('novo-posto-cong').value);
+  const cong = DB.get('congregacoes', []).find(c => c.id === congId);
+  if (!cong) {
+    showToast('Selecione a congregação do posto.', 'error');
+    return;
+  }
+
+  const recursoTipo = document.getElementById('novo-posto-tipo').value;
+  if (!recursoTipo) {
+    showToast('Selecione se este posto usa carrinho ou display.', 'error');
+    return;
+  }
+
+  const categoriaId = parseInt(document.getElementById('novo-posto-categoria').value) || null;
+  if (!categoriaId) {
+    showToast('Selecione a categoria do posto.', 'error');
+    return;
+  }
+
+  const postos = DB.get('postos', []);
+  const participacao = cong.participacao || {};
+  const { usadosCarrinhos, usadosDisplays } = getUsoRecursosCongregacao(congId, postoIdEdicao);
+  const carrinhosDisp = Math.max((participacao.carrinhos || 0) - usadosCarrinhos, 0);
+  const displaysDisp = Math.max((participacao.displays || 0) - usadosDisplays, 0);
+  if (recursoTipo === 'carrinho' && carrinhosDisp <= 0) {
+    showToast('Essa congregação não tem mais carrinhos disponíveis.', 'error');
+    return;
+  }
+  if (recursoTipo === 'display' && displaysDisp <= 0) {
+    showToast('Essa congregação não tem mais displays disponíveis.', 'error');
+    return;
+  }
+
+  const capCarrinhos = recursoTipo === 'carrinho' ? 1 : 0;
+  const capDisplays = recursoTipo === 'display' ? 1 : 0;
+
+  const novoPosto = {
+    id: postoIdEdicao || Date.now(),
+    congId,
+    nome: cong.nome,
+    km: '',
+    local: 'Ponto personalizado no mapa',
+    responsavel: document.getElementById('novo-posto-responsavel').value.trim(),
+    publicacoes: 0,
+    capCarrinhos,
+    capDisplays,
+    recursoTipo,
+    categoriaId,
+    status: document.getElementById('novo-posto-status').value,
+    obs: document.getElementById('novo-posto-obs').value.trim(),
+    contatos: 0,
+    lat,
+    lng,
+  };
+
+  if (postoIdEdicao) {
+    const idx = postos.findIndex(p => p.id === postoIdEdicao);
+    if (idx >= 0) postos[idx] = { ...postos[idx], ...novoPosto };
+  } else {
+    postos.push(novoPosto);
+  }
+
+  DB.set('postos', postos);
+  syncAutoDesignacoesForPosto(novoPosto);
+  resetPainelDesignar();
+  limparPreviewNovoPosto();
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+  showToast(postoIdEdicao ? 'Posto atualizado com sucesso.' : 'Posto criado no ponto clicado.', 'success');
+
+  setTimeout(() => {
+    if (markersMap[novoPosto.id]) {
+      markersMap[novoPosto.id].openPopup();
+      abrirResumoPostoDesignado(novoPosto.id);
+    }
+  }, 100);
 });
 
 // ── Gerenciar slots de horário ──
@@ -868,7 +1334,7 @@ document.getElementById('btn-cancelar-desig').click();
 //  AGENDA
 // ================================================================
 function renderAgenda() {
-  const desigs  = DB.get('designacoes');
+  const desigs  = getDesignacoesEfetivas();
   const congs   = DB.get('congregacoes');
   const postos  = DB.get('postos');
   const filtro  = document.getElementById('filtro-cong-agenda').value;
@@ -893,11 +1359,11 @@ function renderAgenda() {
         </div>
         <div class="agenda-info">
           <strong>${cong?.nome || '?'}</strong>
-          <small>📍 ${posto?.nome || '?'} (Km ${posto?.km || '?'})</small>
+          <small>📍 ${posto?.nome || '?'}${posto?.km ? ` (Km ${posto.km})` : ''}</small>
           <small>🕐 ${d.inicio}–${d.fim} &nbsp;|&nbsp; 👥 ${d.irmaos} irmão(s)</small>
           ${d.obs ? `<small style="color:var(--accent);">💬 ${d.obs}</small>` : ''}
         </div>
-        <button class="agenda-del" onclick="deletarDesignacao(${d.id})" title="Remover">🗑️</button>
+        <button class="agenda-del" onclick="${d.autoPostoId ? `deletarPostoMapa(${d.postoId})` : `deletarDesignacao(${d.id})`}" title="Remover">🗑️</button>
       </div>`;
   }).join('');
 }
@@ -908,7 +1374,7 @@ document.getElementById('filtro-cong-agenda').addEventListener('change', renderA
 //  KPI
 // ================================================================
 function renderKPI() {
-  const desigs  = DB.get('designacoes');
+  const desigs  = getDesignacoesEfetivas();
   const congsD  = [...new Set(desigs.map(d => d.congId))].length;
   const postosC = [...new Set(desigs.map(d => d.postoId))].length;
   const totalP  = DB.get('postos').length;
@@ -939,7 +1405,7 @@ function renderKPI() {
 //  CRONOGRAMA COMPLETO
 // ================================================================
 function renderCronograma() {
-  const desigs = DB.get('designacoes');
+  const desigs = getDesignacoesEfetivas();
   const congs  = DB.get('congregacoes');
   const postos = DB.get('postos');
   const el     = document.getElementById('cronograma-full');
@@ -964,7 +1430,7 @@ function renderCronograma() {
       const posto = postos.find(p => p.id === d.postoId);
       return `
         <tr>
-          <td><strong>${posto?.km ?? '?'} km</strong></td>
+          <td><strong>${posto?.km ? `${posto.km} km` : '—'}</strong></td>
           <td>${posto?.nome || '?'}</td>
           <td>
             <span style="display:inline-flex;align-items:center;gap:0.4rem;">
@@ -975,7 +1441,7 @@ function renderCronograma() {
           <td>🕐 ${d.inicio} – ${d.fim}</td>
           <td>👥 ${d.irmaos}</td>
           <td>${d.obs || '<span style="color:#aaa;">—</span>'}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="deletarDesignacao(${d.id})">🗑️</button></td>
+          <td><button class="btn btn-danger btn-sm" onclick="${d.autoPostoId ? `deletarPostoMapa(${d.postoId})` : `deletarDesignacao(${d.id})`}">🗑️</button></td>
         </tr>`;
     }).join('');
 
@@ -1006,7 +1472,7 @@ function renderCronograma() {
 //  EXPORTAR CRONOGRAMA
 // ================================================================
 document.getElementById('btn-export-cronograma').addEventListener('click', () => {
-  const desigs = DB.get('designacoes');
+  const desigs = getDesignacoesEfetivas();
   const congs  = DB.get('congregacoes');
   const postos = DB.get('postos');
   let csv = '\uFEFFData,Km,Posto,Congregação,Hora Início,Hora Fim,Irmãos,Observação\n';
@@ -1054,7 +1520,12 @@ function formatarData(iso, curto = false) {
 //  INIT
 // ================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  initCongData();
+  const startInit = () => initCongData();
+  if (typeof pullFromFirebase === 'function') {
+    pullFromFirebase().then(startInit).catch(startInit);
+  } else {
+    startInit();
+  }
 
   // Popula filtro de categoria
   function popularFiltroCat() {
@@ -1068,6 +1539,11 @@ document.addEventListener('DOMContentLoaded', () => {
   popularFiltroCat();
   document.getElementById('filtro-categoria-mapa').addEventListener('change', () => renderMarcadores());
 
+  map.on('click', e => {
+    map.closePopup();
+    abrirFormNovoPosto(e.latlng);
+  });
+
   renderMarcadores();
   renderKPI();
   renderCongList();
@@ -1076,7 +1552,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Atualiza filtro ao sincronizar categorias
   window.addEventListener('db-sync', e => {
-    if (e.detail?.key === 'categorias') popularFiltroCat();
+    if (e.detail?.key === 'categorias') {
+      popularFiltroCat();
+      popularCategoriasNovoPosto(document.getElementById('novo-posto-categoria')?.value || '');
+    }
+    if (e.detail?.key === 'congregacoes') {
+      popularCongregacoesNovoPosto(document.getElementById('novo-posto-cong')?.value || '');
+      atualizarResumoNovoPosto();
+    }
+    if (e.detail?.key === 'postos') renderMarcadores();
   });
 });
 </script>

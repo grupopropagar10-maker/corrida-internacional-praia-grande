@@ -140,14 +140,16 @@ const Auth = {
   // Migra congregações existentes adicionando campos novos se ausentes
   migrateCongs() {
     const congs = DB.get('congregacoes', []);
-    let changed = false;
-    congs.forEach(c => {
-      if (!c.senha)       { c.senha       = ''; changed = true; }
-      if (!c.contato)     { c.contato     = ''; changed = true; }
-      if (!c.telefone)    { c.telefone    = ''; changed = true; }
-      if (c.confirmada === undefined) { c.confirmada = false; changed = true; }
-    });
-    if (changed) DB.set('congregacoes', congs);
+    const normalized = congs.map(c => ({
+      ...c,
+      senha: c.senha || '',
+      contato: c.contato || '',
+      telefone: c.telefone || '',
+      confirmada: c.confirmada === undefined ? false : c.confirmada,
+    }));
+    if (normalized.length) {
+      localStorage.setItem('congregacoes', JSON.stringify(normalized));
+    }
   }
 };
 

@@ -555,7 +555,7 @@ function showStatus(icon, titulo, msg, hint, hintType) {
 if (!cong) {
   document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">❌ Não encontrada</span>';
   showStatus('❌','Congregação não encontrada','Não foi possível localizar sua congregação. Contate o administrador.');
-  throw new Error('no cong');
+  return;
 }
 
 if (!cong.confirmada) {
@@ -563,7 +563,7 @@ if (!cong.confirmada) {
   showStatus('⏳','Aguardando confirmação',
     `Sua congregação <strong>${cong.nome}</strong> está cadastrada, mas a participação ainda <strong>não foi confirmada</strong> pelo administrador.<br><br>Assim que for confirmada, você terá acesso completo ao seu posto.`,
     '💡 Já acertou com o coordenador? Peça para ele confirmar no <strong>Painel Admin</strong>.', 'yellow');
-  throw new Error('not confirmed');
+  return;
 }
 
 // ══ FORMULÁRIO DE PARTICIPAÇÃO (carrinhos + displays) ══
@@ -627,11 +627,18 @@ if (!cong.participacao?.respondeu) {
 
 if (desigs.length === 0) {
   document.getElementById('banner-chips').innerHTML =
-    '<span class="chip green">✅ Confirmada</span><span class="chip yellow">📍 Sem posto ainda</span>';
+    '<span class="chip green">✅ Confirmada</span>' +
+    '<span class="chip yellow">📍 Sem posto ainda</span>' +
+    (cong.participacao?.respondeu
+      ? `<span class="chip blue" style="cursor:pointer;" onclick="abrirModalParticipacao()">🛒${cong.participacao.carrinhos} 🪧${cong.participacao.displays} ✏️</span>`
+      : '<span class="chip" style="cursor:pointer;background:#e8f4fd;color:#0057A8;" onclick="abrirModalParticipacao()">📋 Informar participação</span>');
   showStatus('🎉','Participação confirmada!',
-    `<strong>${cong.nome}</strong> está confirmada para o evento! O administrador ainda não designou seu <strong>posto no percurso</strong>. Assim que for definido você verá aqui todas as informações.`,
+    `<strong>${cong.nome}</strong> está confirmada para o evento! O administrador ainda não designou seu <strong>posto no percurso</strong>. Assim que for definido você verá aqui todas as informações.<br><br>
+    <button onclick="abrirModalParticipacao()" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-size:.9rem;">
+      📋 Informar carrinhos e displays
+    </button>`,
     '✅ Fique tranquilo — você será avisado assim que o posto for designado.', 'green');
-  throw new Error('no desig');
+  return;
 }
 
 // ✅ ACESSO TOTAL

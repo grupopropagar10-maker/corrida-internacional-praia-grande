@@ -340,51 +340,59 @@
       </div>
       <div id="form-designar" style="display:none;">
         <input type="hidden" id="d-posto-id"/>
+
+        <!-- CONGREGAÇÃO -->
         <div class="form-group">
-          <label>Congregação</label>
+          <label>Congregação <small style="color:var(--gray);">(apenas quem respondeu participação)</small></label>
           <select class="form-control" id="d-cong">
             <option value="">-- Selecione --</option>
           </select>
         </div>
+
+        <!-- COTA DA CONGREGAÇÃO -->
+        <div id="d-cota-box" style="display:none; background:#eef4fb; border-radius:8px; padding:.7rem 1rem; margin-bottom:.8rem; font-size:.83rem;">
+          <div style="display:flex; gap:1.2rem; flex-wrap:wrap;">
+            <span>🛒 <strong id="d-cota-carrinhos">0</strong> carrinho(s)</span>
+            <span>🪧 <strong id="d-cota-displays">0</strong> display(s)</span>
+            <span style="color:var(--primary-dark); font-weight:700;">= <strong id="d-cota-total">0</strong> pontos</span>
+          </div>
+          <div style="margin-top:.4rem; color:var(--gray); font-size:.75rem;" id="d-cota-usados"></div>
+        </div>
+
+        <!-- DATA -->
         <div class="form-group">
-          <label>Data</label>
+          <label>Data do evento</label>
           <input type="date" class="form-control" id="d-data"/>
         </div>
-        <div class="time-row">
-          <div class="form-group">
-            <label>Hora início</label>
-            <input type="time" class="form-control" id="d-inicio" value="07:00"/>
-          </div>
-          <div class="form-group">
-            <label>Hora fim</label>
-            <input type="time" class="form-control" id="d-fim" value="12:00"/>
-          </div>
+
+        <!-- HORÁRIOS DISPONÍVEIS -->
+        <div class="form-group">
+          <label>Horários disponíveis
+            <button type="button" id="btn-add-slot"
+              style="margin-left:.5rem;background:var(--primary);color:white;border:none;border-radius:4px;
+                     padding:.1rem .5rem;font-size:.72rem;cursor:pointer;">+ Turno</button>
+          </label>
+          <div id="slots-list" style="display:flex;flex-direction:column;gap:.4rem;"></div>
         </div>
+
+        <!-- IRMÃOS -->
         <div class="form-group">
           <label>Irmãos presentes</label>
           <input type="number" class="form-control" id="d-irmaos" min="1" value="4" placeholder="Qtd. de voluntários"/>
         </div>
-        <div class="time-row">
-          <div class="form-group">
-            <label>Duração do turno</label>
-            <select class="form-control" id="d-duracao">
-              <option value="2">2 horas</option>
-              <option value="3">3 horas</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Máx. por turno</label>
-            <input type="number" class="form-control" id="d-max-turno" min="1" max="5" value="3"/>
-          </div>
-        </div>
+
+        <!-- RESPONSÁVEL -->
         <div class="form-group">
           <label>Responsável / Contato</label>
           <input class="form-control" id="d-responsavel" placeholder="Preenchido ao selecionar congregação"/>
         </div>
+
+        <!-- OBS -->
         <div class="form-group">
           <label>Observação</label>
-          <textarea class="form-control" id="d-obs" rows="2" placeholder="Ex: levar carrinho tipo 2, chegar 30min antes..."></textarea>
+          <textarea class="form-control" id="d-obs" rows="2" placeholder="Ex: carrinho tipo 2, chegar 30min antes..."></textarea>
         </div>
+
         <div class="flex gap-1" style="justify-content:flex-end;">
           <button class="btn btn-outline btn-sm" id="btn-cancelar-desig">Cancelar</button>
           <button class="btn btn-primary" id="btn-salvar-desig">📌 Designar</button>
@@ -395,32 +403,11 @@
     <!-- TAB: CONGREGAÇÕES -->
     <div class="card tab-content" id="tab-congregacoes" style="padding:1rem;">
       <div class="flex-between mb-2">
-        <strong style="color:var(--primary-dark); font-size:0.95rem;">Congregações cadastradas</strong>
-        <button class="btn btn-primary btn-sm" id="btn-nova-cong">➕ Nova</button>
+        <strong style="color:var(--primary-dark); font-size:0.95rem;">Congregações confirmadas</strong>
+        <a href="admin.html" class="btn btn-outline btn-sm" style="font-size:.75rem;">⚙️ Gerenciar</a>
       </div>
+      <div style="font-size:.75rem;color:var(--gray);margin-bottom:.6rem;">🛒 = carrinhos &nbsp;|&nbsp; 🪧 = displays</div>
       <div id="cong-list" style="display:flex; flex-direction:column; gap:0.6rem;"></div>
-
-      <!-- Mini-form nova congregação -->
-      <div id="form-cong" style="display:none; margin-top:1rem; border-top:2px solid var(--gray-light); padding-top:1rem;">
-        <strong style="font-size:0.88rem; color:var(--primary-dark);" id="form-cong-title">➕ Nova Congregação</strong>
-        <input type="hidden" id="cong-edit-id"/>
-        <div class="form-group mt-2">
-          <label>Nome da Congregação</label>
-          <input class="form-control" id="cong-nome" placeholder="Ex: Centro de Praia Grande"/>
-        </div>
-        <div class="form-group">
-          <label>Cidade</label>
-          <input class="form-control" id="cong-cidade" placeholder="Ex: Praia Grande"/>
-        </div>
-        <div class="form-group">
-          <label>Cor de identificação</label>
-          <input type="color" class="form-control" id="cong-cor" value="#0057A8" style="height:42px; padding:4px;"/>
-        </div>
-        <div class="flex gap-1" style="justify-content:flex-end;">
-          <button class="btn btn-outline btn-sm" id="btn-cancelar-cong">Cancelar</button>
-          <button class="btn btn-primary btn-sm" id="btn-salvar-cong">💾 Salvar</button>
-        </div>
-      </div>
     </div>
 
     <!-- TAB: AGENDA -->
@@ -547,9 +534,12 @@ function buildPopup(posto) {
   const desigHtml = desig.length
     ? desig.map(d => {
         const cong = congsAll.find(c => c.id === d.congId);
+        const horariosHtml = d.slots?.length > 1
+          ? d.slots.map(s => `⏱️ ${s.inicio}–${s.fim}`).join(' &nbsp; ')
+          : `⏱️ ${d.inicio}–${d.fim}`;
         return `<div class="popup-desg" style="border-left:3px solid ${cong?.cor||'#0057A8'};">
           <strong>${cong?.nome || '?'}</strong><br>
-          📅 ${formatarData(d.data)} &nbsp; 🕐 ${d.inicio}–${d.fim}<br>
+          📅 ${formatarData(d.data)} &nbsp; ${horariosHtml}<br>
           👥 ${d.irmaos} irmão(s)${d.obs ? '<br>💬 ' + d.obs : ''}
           <button onclick="deletarDesignacao(${d.id})" style="float:right;background:none;border:none;cursor:pointer;color:#DC3545;font-size:0.85rem;">🗑️</button>
         </div>`;
@@ -618,30 +608,57 @@ function abrirFormDesignar(postoId) {
       <span class="badge-km">${posto.km} km</span>
     </div>`;
 
-  // Popula select — apenas congregações confirmadas
-  const congs = DB.get('congregacoes').filter(c => c.confirmada);
+  // Popula select — apenas congregações confirmadas QUE responderam a participação
+  const congs = DB.get('congregacoes').filter(c => c.confirmada && c.participacao?.respondeu);
   const sel = document.getElementById('d-cong');
   sel.innerHTML = '<option value="">-- Selecione a congregação --</option>' +
-    congs.map(c => `<option value="${c.id}" style="color:${c.cor}">${c.nome} (${c.cidade})</option>`).join('');
+    congs.map(c => {
+      const p = c.participacao;
+      const total = (p.carrinhos || 0) + (p.displays || 0);
+      return `<option value="${c.id}">${c.nome} — 🛒${p.carrinhos} + 🪧${p.displays} = ${total} pts</option>`;
+    }).join('');
 
-  // Auto-preenche responsável ao selecionar congregação
+  if (!congs.length) {
+    sel.innerHTML = '<option value="">⚠️ Nenhuma congregação respondeu a participação ainda</option>';
+  }
+
+  // Cota: mostrar ao selecionar congregação
   sel.onchange = function() {
     const cid  = parseInt(this.value);
     const cong = DB.get('congregacoes').find(c => c.id === cid);
-    if (!cong) { document.getElementById('d-responsavel').value = ''; return; }
+    const cotaBox = document.getElementById('d-cota-box');
+    if (!cong) { cotaBox.style.display = 'none'; document.getElementById('d-responsavel').value = ''; return; }
+
+    // Cota
+    const p     = cong.participacao || {};
+    const total = (p.carrinhos || 0) + (p.displays || 0);
+    const jaTem = DB.get('designacoes').filter(d => d.congId === cid).length;
+    document.getElementById('d-cota-carrinhos').textContent = p.carrinhos || 0;
+    document.getElementById('d-cota-displays').textContent  = p.displays  || 0;
+    document.getElementById('d-cota-total').textContent     = total;
+    document.getElementById('d-cota-usados').textContent    = jaTem > 0
+      ? `⚠️ Esta congregação já tem ${jaTem} designação(ões) neste ciclo.`
+      : '✅ Sem designações ainda neste ciclo.';
+    cotaBox.style.display = 'block';
+
+    // Responsável
     document.getElementById('d-responsavel').value =
       cong.contato ? `${cong.contato}${cong.telefone ? ' — ' + cong.telefone : ''}` : '';
-    if (cong.publicacoes && typeof cong.publicacoes === 'number')
-      document.getElementById('d-irmaos').value = cong.publicacoes;
   };
+  document.getElementById('d-cota-box').style.display = 'none';
 
   // Data padrão: data do evento se configurada, senão hoje
   const evento = DB.get('evento_config', {});
   document.getElementById('d-data').value =
     evento.data || new Date().toISOString().split('T')[0];
 
-  // Limpa responsavel
+  // Limpa e inicializa slots de horário
+  document.getElementById('slots-list').innerHTML = '';
+  adicionarSlot('07:00', '09:00');
+
   document.getElementById('d-responsavel').value = '';
+  document.getElementById('d-cong').value = '';
+  document.getElementById('d-cota-box').style.display = 'none';
 
   document.getElementById('form-designar').style.display = 'block';
 
@@ -660,25 +677,60 @@ document.getElementById('btn-cancelar-desig').addEventListener('click', () => {
   postoSelecionado = null;
 });
 
-document.getElementById('btn-salvar-desig').addEventListener('click', () => {
-  const postoId = parseInt(document.getElementById('d-posto-id').value);
-  const congId  = parseInt(document.getElementById('d-cong').value);
-  const data    = document.getElementById('d-data').value;
-  const inicio  = document.getElementById('d-inicio').value;
-  const fim     = document.getElementById('d-fim').value;
-  const irmaos       = parseInt(document.getElementById('d-irmaos').value) || 2;
-  const obs          = document.getElementById('d-obs').value.trim();
-  const responsavel  = document.getElementById('d-responsavel').value.trim();
-  const duracaoTurno = parseInt(document.getElementById('d-duracao').value) || 2;
-  const maxPorTurno  = parseInt(document.getElementById('d-max-turno').value) || 3;
+// ── Gerenciar slots de horário ──
+function adicionarSlot(inicio = '07:00', fim = '09:00') {
+  const list  = document.getElementById('slots-list');
+  const idx   = list.children.length;
+  const div   = document.createElement('div');
+  div.style.cssText = 'display:flex;align-items:center;gap:.4rem;';
+  div.innerHTML = `
+    <input type="time" value="${inicio}" class="form-control slot-inicio"
+      style="flex:1;padding:.35rem .5rem;font-size:.82rem;"/>
+    <span style="font-size:.8rem;color:var(--gray);">até</span>
+    <input type="time" value="${fim}" class="form-control slot-fim"
+      style="flex:1;padding:.35rem .5rem;font-size:.82rem;"/>
+    <button type="button" onclick="this.parentElement.remove()"
+      style="background:#fde;border:none;border-radius:4px;padding:.2rem .5rem;cursor:pointer;color:var(--danger);font-size:.85rem;">✕</button>`;
+  list.appendChild(div);
+}
 
-  if (!congId)  { showToast('Selecione uma congregação!', 'error'); return; }
-  if (!data)    { showToast('Informe a data!', 'error'); return; }
-  if (!inicio || !fim) { showToast('Informe os horários!', 'error'); return; }
-  if (inicio >= fim)   { showToast('Hora de início deve ser antes do fim!', 'error'); return; }
+document.getElementById('btn-add-slot').addEventListener('click', () => {
+  const slots = document.querySelectorAll('#slots-list > div');
+  if (!slots.length) { adicionarSlot(); return; }
+  const last = slots[slots.length - 1];
+  const fimAnterior = last.querySelector('.slot-fim').value;
+  // Sugere próximo turno a partir do fim anterior
+  const [h, m] = fimAnterior.split(':').map(Number);
+  const novoInicio = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  const novoFim   = `${String(h + 2).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  adicionarSlot(novoInicio, novoFim);
+});
+
+document.getElementById('btn-salvar-desig').addEventListener('click', () => {
+  const postoId    = parseInt(document.getElementById('d-posto-id').value);
+  const congId     = parseInt(document.getElementById('d-cong').value);
+  const data       = document.getElementById('d-data').value;
+  const irmaos     = parseInt(document.getElementById('d-irmaos').value) || 2;
+  const obs        = document.getElementById('d-obs').value.trim();
+  const responsavel = document.getElementById('d-responsavel').value.trim();
+
+  // Coleta slots de horário
+  const slotEls = document.querySelectorAll('#slots-list > div');
+  const slots   = Array.from(slotEls).map(s => ({
+    inicio: s.querySelector('.slot-inicio').value,
+    fim:    s.querySelector('.slot-fim').value,
+  })).filter(s => s.inicio && s.fim && s.inicio < s.fim);
+
+  if (!congId)       { showToast('Selecione uma congregação!', 'error'); return; }
+  if (!data)         { showToast('Informe a data!', 'error'); return; }
+  if (!slots.length) { showToast('Adicione pelo menos um horário válido!', 'error'); return; }
+
+  // Usa o primeiro slot como horário principal (compatibilidade)
+  const inicio = slots[0].inicio;
+  const fim    = slots[slots.length - 1].fim;
 
   const desig = DB.get('designacoes');
-  desig.push({ id: Date.now(), postoId, congId, data, inicio, fim, irmaos, obs, responsavel, duracaoTurno, maxPorTurno });
+  desig.push({ id: Date.now(), postoId, congId, data, inicio, fim, slots, irmaos, obs, responsavel });
   DB.set('designacoes', desig);
 
   // Fecha form
@@ -717,7 +769,7 @@ window.deletarDesignacao = function(id) {
 //  CONGREGAÇÕES – CRUD
 // ================================================================
 function renderCongList() {
-  const congs = DB.get('congregacoes');
+  const congs = DB.get('congregacoes').filter(c => c.confirmada);
   const list  = document.getElementById('cong-list');
 
   // Atualiza filtro agenda
@@ -726,87 +778,27 @@ function renderCongList() {
     congs.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
 
   if (!congs.length) {
-    list.innerHTML = '<div class="empty-sm"><span class="e-icon">⛪</span>Nenhuma congregação.</div>';
+    list.innerHTML = '<div class="empty-sm"><span class="e-icon">⛪</span>Nenhuma congregação confirmada.</div>';
     return;
   }
-  list.innerHTML = congs.map(c => `
+  list.innerHTML = congs.map(c => {
+    const p     = c.participacao;
+    const total = p?.respondeu ? ((p.carrinhos || 0) + (p.displays || 0)) : null;
+    const badge = p?.respondeu
+      ? `<span style="font-size:.72rem;background:#eef4fb;border-radius:4px;padding:.15rem .4rem;color:var(--primary-dark);">🛒${p.carrinhos} 🪧${p.displays}</span>`
+      : `<span style="font-size:.72rem;background:#fff3cd;border-radius:4px;padding:.15rem .4rem;color:#856404;">⏳ pendente</span>`;
+    return `
     <div class="cong-item">
       <div class="cong-color" style="background:${c.cor};"></div>
-      <div class="cong-info">
+      <div class="cong-info" style="flex:1;">
         <strong>${c.nome}</strong>
-        <small>📍 ${c.cidade}</small>
+        <small>📍 ${c.cidade} &nbsp; ${badge}</small>
       </div>
-      <div class="cong-actions">
-        <button class="btn btn-outline btn-sm" onclick="editarCong(${c.id})" title="Editar">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deletarCong(${c.id})" title="Remover">🗑️</button>
-      </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-document.getElementById('btn-nova-cong').addEventListener('click', () => {
-  document.getElementById('form-cong').style.display = 'block';
-  document.getElementById('form-cong-title').textContent = '➕ Nova Congregação';
-  document.getElementById('cong-edit-id').value = '';
-  document.getElementById('cong-nome').value    = '';
-  document.getElementById('cong-cidade').value  = '';
-  document.getElementById('cong-cor').value     = '#0057A8';
-});
-
-document.getElementById('btn-cancelar-cong').addEventListener('click', () => {
-  document.getElementById('form-cong').style.display = 'none';
-});
-
-window.editarCong = function(id) {
-  const c = DB.get('congregacoes').find(x => x.id === id);
-  if (!c) return;
-  document.getElementById('form-cong').style.display = 'block';
-  document.getElementById('form-cong-title').textContent = '✏️ Editar Congregação';
-  document.getElementById('cong-edit-id').value = c.id;
-  document.getElementById('cong-nome').value    = c.nome;
-  document.getElementById('cong-cidade').value  = c.cidade;
-  document.getElementById('cong-cor').value     = c.cor;
-};
-
-window.deletarCong = function(id) {
-  if (!confirm('Remover esta congregação e todas as suas designações?')) return;
-  const congs = DB.get('congregacoes').filter(c => c.id !== id);
-  const desig = DB.get('designacoes').filter(d => d.congId !== id);
-  DB.set('congregacoes', congs);
-  DB.set('designacoes', desig);
-  renderCongList();
-  renderMarcadores();
-  renderKPI();
-  renderAgenda();
-  renderCronograma();
-  showToast('Congregação removida.', 'info');
-};
-
-document.getElementById('btn-salvar-cong').addEventListener('click', () => {
-  const nome   = document.getElementById('cong-nome').value.trim();
-  const cidade = document.getElementById('cong-cidade').value.trim();
-  const cor    = document.getElementById('cong-cor').value;
-  const editId = parseInt(document.getElementById('cong-edit-id').value);
-
-  if (!nome || !cidade) { showToast('Preencha nome e cidade!', 'error'); return; }
-
-  const congs = DB.get('congregacoes');
-  if (editId) {
-    const idx = congs.findIndex(c => c.id === editId);
-    if (idx >= 0) congs[idx] = { ...congs[idx], nome, cidade, cor };
-    showToast('Congregação atualizada!', 'success');
-  } else {
-    congs.push({ id: Date.now(), nome, cidade, cor });
-    showToast('Congregação adicionada!', 'success');
-  }
-  DB.set('congregacoes', congs);
-  document.getElementById('form-cong').style.display = 'none';
-  renderCongList();
-  renderMarcadores();
-  renderKPI();
-  renderAgenda();
-  renderCronograma();
-});
+document.getElementById('btn-cancelar-desig').click();
 
 // ================================================================
 //  AGENDA

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quantidades — Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .page-header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white; padding: 1.5rem 1.8rem;
+    }
+    .page-header h1 { font-size: 1.4rem; display: flex; align-items: center; gap: .6rem; }
+    .page-header p  { opacity: .8; font-size: .85rem; margin-top: .3rem; }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem; padding: 1.5rem 1.8rem;
+    }
+    .kpi-card {
+      background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 1.2rem; text-align: center;
+    }
+    .kpi-card .kpi-num { font-size: 2.2rem; font-weight: 800; color: var(--primary-dark); }
+    .kpi-card .kpi-label { font-size: .78rem; color: var(--gray); margin-top: .2rem; }
+
+    .main-card {
+      margin: 0 1.8rem 2rem;
+      background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+    }
+    .main-card-header {
+      padding: 1rem 1.5rem; background: var(--light);
+      border-bottom: 2px solid var(--gray-light);
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .main-card-header h2 { font-size: .95rem; color: var(--primary-dark); }
+
+    .qty-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .qty-table th {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white; padding: .8rem 1rem; text-align: left; font-size: .78rem; font-weight: 700;
+    }
+    .qty-table td { padding: .75rem 1rem; border-bottom: 1px solid var(--gray-light); vertical-align: middle; }
+    .qty-table tr:last-child td { border-bottom: none; }
+    .qty-table tr:nth-child(even) td { background: #f8fbff; }
+    .qty-table tr:hover td { background: #eef4fb; }
+
+    .cor-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+    .inline-qty {
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .iq-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1.5px solid var(--primary); background: white; color: var(--primary);
+      font-size: 1rem; font-weight: 800; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; transition: var(--transition);
+    }
+    .iq-btn:hover { background: var(--primary); color: white; }
+    .iq-val {
+      min-width: 36px; text-align: center; font-size: 1rem; font-weight: 700;
+      color: var(--primary-dark); cursor: pointer;
+    }
+    .iq-val[contenteditable=true] {
+      border-bottom: 2px dashed var(--primary); outline: none; min-width: 36px;
+    }
+
+    .badge-sim { background: #d4edda; color: #155724; border-radius: 4px; padding: .15rem .5rem; font-size: .72rem; font-weight: 700; }
+    .badge-nao { background: #fff3cd; color: #856404; border-radius: 4px; padding: .15rem .5rem; font-size: .72rem; font-weight: 700; }
+
+    .total-row td { background: #eef4fb !important; font-weight: 700; color: var(--primary-dark); border-top: 2px solid var(--primary); }
+
+    @media (max-width: 640px) {
+      .main-card { margin: 0 .8rem 1.5rem; }
+      .kpi-row   { padding: 1rem .8rem; }
+      .qty-table th, .qty-table td { padding: .6rem .6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <span class="logo-icon">🏃</span>
+    <span>Corrida Internacional PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- CABEÇALHO -->
+<div class="page-header">
+  <h1>🛒 Quantidades por Congregação</h1>
+  <p>Resumo de carrinhos e displays confirmados pelas congregações. Edite diretamente na tabela.</p>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-row" id="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-num" id="kpi-confirmadas">0</div>
+    <div class="kpi-label">Confirmadas</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-num" id="kpi-responderam">0</div>
+    <div class="kpi-label">Responderam</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-num" id="kpi-pendentes">0</div>
+    <div class="kpi-label">Pendentes</div>
+  </div>
+  <div class="kpi-card" style="border-top: 4px solid #0057A8;">
+    <div class="kpi-num" id="kpi-carrinhos" style="color:#0057A8;">0</div>
+    <div class="kpi-label">🛒 Total Carrinhos</div>
+  </div>
+  <div class="kpi-card" style="border-top: 4px solid #28A745;">
+    <div class="kpi-num" id="kpi-displays" style="color:#28A745;">0</div>
+    <div class="kpi-label">🪧 Total Displays</div>
+  </div>
+</div>
+
+<!-- TABELA -->
+<div class="main-card">
+  <div class="main-card-header">
+    <h2>📋 Detalhamento por congregação</h2>
+    <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+      <input class="form-control" id="filtro-busca" placeholder="🔍 Buscar congregação..."
+        style="width:220px;padding:.4rem .8rem;font-size:.82rem;"/>
+      <button class="btn btn-sm" id="btn-exportar"
+        style="background:var(--primary);color:white;">📥 Exportar CSV</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="qty-table" id="qty-table">
+      <thead>
+        <tr>
+          <th>Congregação</th>
+          <th>Cidade</th>
+          <th>Respondeu?</th>
+          <th>🛒 Carrinhos</th>
+          <th>🪧 Displays</th>
+          <th>Última atualiz.</th>
+        </tr>
+      </thead>
+      <tbody id="qty-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="js/firebase-db.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  Auth.check('admin-only');
+
+  function salvarQtd(congId, campo, valor) {
+    const congs = DB.get('congregacoes', []);
+    const idx   = congs.findIndex(c => c.id === congId);
+    if (idx < 0) return;
+    if (!congs[idx].participacao) congs[idx].participacao = { respondeu: false };
+    congs[idx].participacao[campo]    = Math.max(0, parseInt(valor) || 0);
+    congs[idx].participacao.respondeu = true;
+    congs[idx].participacao.ts        = new Date().toLocaleString('pt-BR');
+    DB.set('congregacoes', congs);
+    renderTabela();
+    renderKPIs();
+    showToast('Salvo! ✅', 'success');
+  }
+
+  let _busca = '';
+
+  function renderKPIs() {
+    const congs      = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const responderam = congs.filter(c => c.participacao?.respondeu);
+    const totC = responderam.reduce((s, c) => s + (c.participacao.carrinhos || 0), 0);
+    const totD = responderam.reduce((s, c) => s + (c.participacao.displays  || 0), 0);
+    document.getElementById('kpi-confirmadas').textContent = congs.length;
+    document.getElementById('kpi-responderam').textContent = responderam.length;
+    document.getElementById('kpi-pendentes').textContent   = congs.length - responderam.length;
+    document.getElementById('kpi-carrinhos').textContent   = totC;
+    document.getElementById('kpi-displays').textContent    = totD;
+  }
+
+  function renderTabela() {
+    const congs = DB.get('congregacoes', [])
+      .filter(c => c.confirmada)
+      .filter(c => !_busca || c.nome.toLowerCase().includes(_busca) || c.cidade.toLowerCase().includes(_busca));
+
+    const tbody = document.getElementById('qty-tbody');
+
+    if (!congs.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray);">
+        Nenhuma congregação confirmada encontrada.</td></tr>`;
+      return;
+    }
+
+    let totC = 0, totD = 0;
+
+    tbody.innerHTML = congs.map(c => {
+      const p  = c.participacao;
+      const carr = p?.respondeu ? (p.carrinhos ?? 0) : '—';
+      const disp = p?.respondeu ? (p.displays  ?? 0) : '—';
+      if (p?.respondeu) { totC += p.carrinhos || 0; totD += p.displays || 0; }
+      const cor = c.cor || '#0057A8';
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <span class="cor-dot" style="background:${cor};"></span>
+              <strong>${c.nome}</strong>
+            </div>
+          </td>
+          <td style="color:var(--gray);">${c.cidade}</td>
+          <td>${p?.respondeu
+            ? '<span class="badge-sim">✅ Sim</span>'
+            : '<span class="badge-nao">⏳ Pendente</span>'}</td>
+          <td>
+            <div class="inline-qty">
+              <button class="iq-btn" onclick="ajustar(${c.id},'carrinhos',-1)">−</button>
+              <span class="iq-val" id="carr-${c.id}">${p?.respondeu ? (p.carrinhos ?? 0) : 0}</span>
+              <button class="iq-btn" onclick="ajustar(${c.id},'carrinhos',+1)">+</button>
+            </div>
+          </td>
+          <td>
+            <div class="inline-qty">
+              <button class="iq-btn" onclick="ajustar(${c.id},'displays',-1)">−</button>
+              <span class="iq-val" id="disp-${c.id}">${p?.respondeu ? (p.displays ?? 0) : 0}</span>
+              <button class="iq-btn" onclick="ajustar(${c.id},'displays',+1)">+</button>
+            </div>
+          </td>
+          <td style="font-size:.75rem;color:var(--gray);">${p?.ts || '—'}</td>
+        </tr>`;
+    }).join('') + `
+      <tr class="total-row">
+        <td colspan="3">TOTAL</td>
+        <td>🛒 ${totC}</td>
+        <td>🪧 ${totD}</td>
+        <td></td>
+      </tr>`;
+  }
+
+  window.ajustar = function(congId, campo, delta) {
+    const elId = campo === 'carrinhos' ? `carr-${congId}` : `disp-${congId}`;
+    const atual = parseInt(document.getElementById(elId).textContent) || 0;
+    const novo  = Math.max(0, atual + delta);
+    document.getElementById(elId).textContent = novo;
+    salvarQtd(congId, campo, novo);
+  };
+
+  document.getElementById('filtro-busca').addEventListener('input', e => {
+    _busca = e.target.value.toLowerCase();
+    renderTabela();
+  });
+
+  // Exportar CSV
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    const congs = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const linhas = [['Congregação','Cidade','Respondeu','Carrinhos','Displays','Última atualização']];
+    congs.forEach(c => {
+      const p = c.participacao;
+      linhas.push([c.nome, c.cidade, p?.respondeu ? 'Sim' : 'Não',
+        p?.carrinhos ?? 0, p?.displays ?? 0, p?.ts || '']);
+    });
+    const csv = linhas.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const a   = document.createElement('a');
+    a.href    = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csv);
+    a.download = 'quantidades.csv';
+    a.click();
+  });
+
+  // Atualiza em tempo real
+  window.addEventListener('db-sync', () => { renderKPIs(); renderTabela(); });
+
+  renderKPIs();
+  renderTabela();
+</script>
+</body>
+</html>

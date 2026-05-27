@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mapa de Congregações — Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    /* ── LAYOUT PRINCIPAL ── */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 900px) {
+      .main-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── MAPA ── */
+    #map {
+      height: 580px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      z-index: 1;
+    }
+
+    .map-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .map-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.2rem;
+      background: var(--primary-dark);
+      color: white;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .map-toolbar .legend {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .map-toolbar .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      opacity: 0.9;
+    }
+
+    .leg-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+
+    .map-hint {
+      padding: 0.6rem 1.2rem;
+      background: #EEF4FB;
+      color: var(--primary-dark);
+      font-size: 0.82rem;
+      border-bottom: 1px solid #D0E4F7;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ── PAINEL LATERAL ── */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      background: var(--gray-light);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.55rem 0.5rem;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray);
+      transition: var(--transition);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,87,168,0.3);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── FORM DESIGNAÇÃO ── */
+    .posto-selected-badge {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      border-radius: var(--radius-sm);
+      padding: 0.8rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .posto-selected-badge .badge-km {
+      background: rgba(255,255,255,0.25);
+      border-radius: 50px;
+      padding: 0.15rem 0.6rem;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+
+    .time-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    /* ── LISTA CONGREGAÇÕES ── */
+    .cong-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.7rem 0.9rem;
+      background: var(--light);
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .cong-item:hover { background: #E2EDFB; }
+
+    .cong-color {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .cong-info { flex: 1; }
+    .cong-info strong { font-size: 0.88rem; color: var(--primary-dark); }
+    .cong-info small  { display: block; font-size: 0.75rem; color: var(--gray); }
+
+    .cong-actions { display: flex; gap: 0.3rem; }
+
+    /* ── AGENDA ── */
+    .agenda-item {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 0.9rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      border-left: 4px solid var(--primary);
+      transition: var(--transition);
+    }
+
+    .agenda-item:hover { transform: translateX(3px); }
+
+    .agenda-time {
+      background: var(--primary);
+      color: white;
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.6rem;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+
+    .agenda-time .hora { font-size: 0.85rem; display: block; }
+    .agenda-time .date { opacity: 0.8; font-size: 0.68rem; }
+
+    .agenda-info strong { font-size: 0.88rem; color: var(--primary-dark); }
+    .agenda-info small  { display: block; font-size: 0.75rem; color: var(--gray); margin-top: 0.15rem; }
+
+    .agenda-del {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--gray);
+      font-size: 1rem;
+      padding: 0.2rem;
+      flex-shrink: 0;
+    }
+    .agenda-del:hover { color: var(--danger); }
+
+    /* ── CRONOGRAMA FULL (tabela por data) ── */
+    .cronograma-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .date-group { margin-bottom: 1.5rem; }
+
+    .date-header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      padding: 0.7rem 1.2rem;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ── POPUP MAPA ── */
+    .popup-inner { min-width: 200px; font-family: 'Segoe UI', sans-serif; }
+    .popup-inner h4 { color: #003D7A; margin-bottom: 0.4rem; font-size: 0.95rem; }
+    .popup-inner .popup-desg { font-size: 0.82rem; margin: 0.2rem 0; padding: 0.3rem 0.5rem; background: #EEF4FB; border-radius: 4px; }
+    .popup-inner .popup-btn {
+      margin-top: 0.6rem;
+      display: inline-block;
+      background: #0057A8;
+      color: white;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      width: 100%;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-sm { text-align: center; padding: 1.5rem; color: var(--gray); font-size: 0.85rem; }
+    .empty-sm .e-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+
+    /* ── KPI STRIP ── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <span class="logo-icon">🏃</span>
+    <span>Corrida Internacional PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- HEADER -->
+<div class="page-header">
+  <h1>⛪ Mapa de Designação de Congregações</h1>
+  <p>Clique em um posto no mapa para designar uma congregação, horário e data</p>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip" id="kpi-strip"></div>
+
+<!-- LAYOUT PRINCIPAL -->
+<div class="main-layout">
+
+  <!-- ═══ MAPA ═══ -->
+  <div>
+    <div class="map-card">
+      <div class="map-toolbar">
+        <span>🗺️ <strong>Percurso — Praia Grande</strong> &nbsp;|&nbsp; Clique num posto para designar</span>
+        <div class="legend" id="map-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#28A745;"></div>Livre</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#FFC107;"></div>Parcialmente coberto</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#0057A8;"></div>Designado</div>
+        </div>
+      </div>
+      <div class="map-hint">
+        💡 Postos com <strong>borda pontilhada</strong> ainda não têm congregação designada. Postos coloridos mostram a congregação responsável.
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAINEL LATERAL ═══ -->
+  <div class="side-panel">
+
+    <!-- TABS -->
+    <div class="card" style="padding:1rem;">
+      <div class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="designar">📌 Designar</button>
+        <button class="tab-btn" data-tab="congregacoes">⛪ Congregações</button>
+        <button class="tab-btn" data-tab="agenda">🗓️ Agenda</button>
+      </div>
+    </div>
+
+    <!-- TAB: DESIGNAR -->
+    <div class="card tab-content active" id="tab-designar">
+      <div id="posto-badge">
+        <div style="text-align:center; padding:1.5rem; color:var(--gray);">
+          <span style="font-size:2.5rem; display:block; margin-bottom:0.5rem;">📍</span>
+          <strong>Clique em um posto no mapa</strong><br>
+          <small>para iniciar a designação</small>
+        </div>
+      </div>
+      <div id="form-designar" style="display:none;">
+        <input type="hidden" id="d-posto-id"/>
+        <div class="form-group">
+          <label>Congregação</label>
+          <select class="form-control" id="d-cong">
+            <option value="">-- Selecione --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" class="form-control" id="d-data"/>
+        </div>
+        <div class="time-row">
+          <div class="form-group">
+            <label>Hora início</label>
+            <input type="time" class="form-control" id="d-inicio" value="07:00"/>
+          </div>
+          <div class="form-group">
+            <label>Hora fim</label>
+            <input type="time" class="form-control" id="d-fim" value="12:00"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Irmãos presentes</label>
+          <input type="number" class="form-control" id="d-irmaos" min="1" value="4" placeholder="Qtd. de voluntários"/>
+        </div>
+        <div class="time-row">
+          <div class="form-group">
+            <label>Duração do turno</label>
+            <select class="form-control" id="d-duracao">
+              <option value="2">2 horas</option>
+              <option value="3">3 horas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Máx. por turno</label>
+            <input type="number" class="form-control" id="d-max-turno" min="1" max="5" value="3"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Responsável / Contato</label>
+          <input class="form-control" id="d-responsavel" placeholder="Preenchido ao selecionar congregação"/>
+        </div>
+        <div class="form-group">
+          <label>Observação</label>
+          <textarea class="form-control" id="d-obs" rows="2" placeholder="Ex: levar carrinho tipo 2, chegar 30min antes..."></textarea>
+        </div>
+        <div class="flex gap-1" style="justify-content:flex-end;">
+          <button class="btn btn-outline btn-sm" id="btn-cancelar-desig">Cancelar</button>
+          <button class="btn btn-primary" id="btn-salvar-desig">📌 Designar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CONGREGAÇÕES -->
+    <div class="card tab-content" id="tab-congregacoes" style="padding:1rem;">
+      <div class="flex-between mb-2">
+        <strong style="color:var(--primary-dark); font-size:0.95rem;">Congregações cadastradas</strong>
+        <button class="btn btn-primary btn-sm" id="btn-nova-cong">➕ Nova</button>
+      </div>
+      <div id="cong-list" style="display:flex; flex-direction:column; gap:0.6rem;"></div>
+
+      <!-- Mini-form nova congregação -->
+      <div id="form-cong" style="display:none; margin-top:1rem; border-top:2px solid var(--gray-light); padding-top:1rem;">
+        <strong style="font-size:0.88rem; color:var(--primary-dark);" id="form-cong-title">➕ Nova Congregação</strong>
+        <input type="hidden" id="cong-edit-id"/>
+        <div class="form-group mt-2">
+          <label>Nome da Congregação</label>
+          <input class="form-control" id="cong-nome" placeholder="Ex: Centro de Praia Grande"/>
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input class="form-control" id="cong-cidade" placeholder="Ex: Praia Grande"/>
+        </div>
+        <div class="form-group">
+          <label>Cor de identificação</label>
+          <input type="color" class="form-control" id="cong-cor" value="#0057A8" style="height:42px; padding:4px;"/>
+        </div>
+        <div class="flex gap-1" style="justify-content:flex-end;">
+          <button class="btn btn-outline btn-sm" id="btn-cancelar-cong">Cancelar</button>
+          <button class="btn btn-primary btn-sm" id="btn-salvar-cong">💾 Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AGENDA -->
+    <div class="card tab-content" id="tab-agenda" style="padding:1rem;">
+      <div class="flex-between mb-2">
+        <strong style="color:var(--primary-dark); font-size:0.95rem;">Próximas designações</strong>
+        <select class="form-control" id="filtro-cong-agenda" style="max-width:150px; font-size:0.8rem; padding:0.35rem 0.7rem;">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div id="agenda-list" style="display:flex; flex-direction:column; gap:0.6rem; max-height:460px; overflow-y:auto;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ CRONOGRAMA COMPLETO ═══ -->
+<div class="cronograma-section">
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:1.1rem 1.5rem; background:var(--primary-dark); color:white; display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0; font-size:1rem;">📅 Cronograma Completo por Data</h3>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:white;" id="btn-export-cronograma">📥 Exportar</button>
+    </div>
+    <div id="cronograma-full" style="padding:1.2rem;"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  Auth.check(true);
+// ================================================================
+//  DADOS INICIAIS
+// ================================================================
+function initCongData() {
+  if (!localStorage.getItem('cong_init')) {
+    DB.set('congregacoes', [
+      { id: 1, nome: 'Praia Grande – Centro',    cidade: 'Praia Grande', cor: '#0057A8' },
+      { id: 2, nome: 'Praia Grande – Guilherm.', cidade: 'Praia Grande', cor: '#E74C3C' },
+      { id: 3, nome: 'Mongaguá Central',         cidade: 'Mongaguá',     cor: '#27AE60' },
+      { id: 4, nome: 'São Vicente – Norte',      cidade: 'São Vicente',  cor: '#9B59B6' },
+      { id: 5, nome: 'Santos – Centro',          cidade: 'Santos',       cor: '#F39C12' },
+    ]);
+    DB.set('designacoes', []);
+    localStorage.setItem('cong_init', true);
+  }
+}
+
+// ================================================================
+//  COORDENADAS DOS POSTOS (orla de PG)
+// ================================================================
+const COORDS = [
+  [-23.980, -46.400],
+  [-23.994, -46.407],
+  [-24.003, -46.415],
+  [-24.010, -46.421],
+  [-24.018, -46.433],
+  [-24.012, -46.425],
+  [-24.005, -46.418],
+  [-23.980, -46.400],
+];
+
+const ROTA = [
+  [-23.980, -46.400], [-23.986, -46.402], [-23.994, -46.407],
+  [-24.003, -46.415], [-24.010, -46.421], [-24.018, -46.433],
+  [-24.012, -46.425], [-24.005, -46.418], [-23.980, -46.400],
+];
+
+// ================================================================
+//  MAPA
+// ================================================================
+const map = L.map('map').setView([-24.000, -46.416], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap', maxZoom: 18
+}).addTo(map);
+L.polyline(ROTA, { color: '#0057A8', weight: 4, opacity: 0.55, dashArray: '10,7' }).addTo(map);
+
+const markersMap = {};
+let postoSelecionado = null;
+
+function getCongColor(postoId) {
+  const desig = DB.get('designacoes').filter(d => d.postoId === postoId);
+  if (!desig.length) return '#28A745';
+  if (desig.length === 1) return DB.get('congregacoes').find(c => c.id === desig[0].congId)?.cor || '#0057A8';
+  return '#FFC107'; // múltiplas datas/congregações
+}
+
+function makeMarker(posto, idx) {
+  const cor = getCongColor(posto.id);
+  const isEndpoint = posto.km === '0' || posto.km === '21';
+  const icon = L.divIcon({
+    html: `
+      <div style="
+        background:${isEndpoint ? '#003D7A' : cor};
+        color:white;
+        border-radius:50%;
+        width:40px; height:40px;
+        display:flex; align-items:center; justify-content:center;
+        font-size:0.65rem; font-weight:800;
+        border:3px solid white;
+        box-shadow:0 3px 10px rgba(0,0,0,0.35);
+        cursor:pointer;
+        transition:transform 0.15s;
+      ">
+        <div style="text-align:center; line-height:1.1;">
+          <div>${posto.km}km</div>
+        </div>
+      </div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    className: ''
+  });
+  return L.marker(COORDS[idx], { icon });
+}
+
+function buildPopup(posto) {
+  const desig    = DB.get('designacoes').filter(d => d.postoId === posto.id);
+  const congsAll = DB.get('congregacoes');
+
+  const desigHtml = desig.length
+    ? desig.map(d => {
+        const cong = congsAll.find(c => c.id === d.congId);
+        return `<div class="popup-desg" style="border-left:3px solid ${cong?.cor||'#0057A8'};">
+          <strong>${cong?.nome || '?'}</strong><br>
+          📅 ${formatarData(d.data)} &nbsp; 🕐 ${d.inicio}–${d.fim}<br>
+          👥 ${d.irmaos} irmão(s)${d.obs ? '<br>💬 ' + d.obs : ''}
+          <button onclick="deletarDesignacao(${d.id})" style="float:right;background:none;border:none;cursor:pointer;color:#DC3545;font-size:0.85rem;">🗑️</button>
+        </div>`;
+      }).join('')
+    : '<p style="color:#6C757D;font-size:0.82rem;margin:0.3rem 0;">Nenhuma congregação designada ainda.</p>';
+
+  return `
+    <div class="popup-inner">
+      <h4>📍 ${posto.nome}</h4>
+      <small style="color:#6C757D;">📏 Km ${posto.km} &nbsp;|&nbsp; 👤 ${posto.responsavel}</small>
+      <div style="margin-top:0.6rem;">${desigHtml}</div>
+      <button class="popup-btn" onclick="selecionarPostoPopup(${posto.id})">📌 Designar congregação</button>
+    </div>`;
+}
+
+function renderMarcadores() {
+  const postos = DB.get('postos');
+  postos.forEach((p, i) => {
+    if (markersMap[p.id]) markersMap[p.id].remove();
+    const m = makeMarker(p, i);
+    m.addTo(map);
+    m.bindPopup(buildPopup(p), { maxWidth: 280 });
+    m.on('click', () => {
+      postoSelecionado = p.id;
+      abrirFormDesignar(p.id);
+    });
+    markersMap[p.id] = m;
+  });
+}
+
+// ================================================================
+//  SELECIONAR POSTO PELO BOTÃO DO POPUP
+// ================================================================
+window.selecionarPostoPopup = function(postoId) {
+  map.closePopup();
+  postoSelecionado = postoId;
+  abrirFormDesignar(postoId);
+  // Ativa tab "Designar"
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="designar"]').classList.add('active');
+  document.getElementById('tab-designar').classList.add('active');
+};
+
+// ================================================================
+//  FORM DESIGNAR
+// ================================================================
+function abrirFormDesignar(postoId) {
+  const posto = DB.get('postos').find(p => p.id === postoId);
+  if (!posto) return;
+
+  // Ativa a aba Designar
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="designar"]').classList.add('active');
+  document.getElementById('tab-designar').classList.add('active');
+
+  document.getElementById('d-posto-id').value = postoId;
+  document.getElementById('posto-badge').innerHTML = `
+    <div class="posto-selected-badge">
+      <span>📍</span>
+      <div>
+        <strong>${posto.nome}</strong>
+        <div style="opacity:0.8; font-size:0.78rem;">📏 Km ${posto.km} &nbsp;|&nbsp; ${posto.local}</div>
+      </div>
+      <span class="badge-km">${posto.km} km</span>
+    </div>`;
+
+  // Popula select — apenas congregações confirmadas
+  const congs = DB.get('congregacoes').filter(c => c.confirmada);
+  const sel = document.getElementById('d-cong');
+  sel.innerHTML = '<option value="">-- Selecione a congregação --</option>' +
+    congs.map(c => `<option value="${c.id}" style="color:${c.cor}">${c.nome} (${c.cidade})</option>`).join('');
+
+  // Auto-preenche responsável ao selecionar congregação
+  sel.onchange = function() {
+    const cid  = parseInt(this.value);
+    const cong = DB.get('congregacoes').find(c => c.id === cid);
+    if (!cong) { document.getElementById('d-responsavel').value = ''; return; }
+    document.getElementById('d-responsavel').value =
+      cong.contato ? `${cong.contato}${cong.telefone ? ' — ' + cong.telefone : ''}` : '';
+    if (cong.publicacoes && typeof cong.publicacoes === 'number')
+      document.getElementById('d-irmaos').value = cong.publicacoes;
+  };
+
+  // Data padrão: data do evento se configurada, senão hoje
+  const evento = DB.get('evento_config', {});
+  document.getElementById('d-data').value =
+    evento.data || new Date().toISOString().split('T')[0];
+
+  // Limpa responsavel
+  document.getElementById('d-responsavel').value = '';
+
+  document.getElementById('form-designar').style.display = 'block';
+
+  // Scrolla painel
+  document.getElementById('tab-designar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('btn-cancelar-desig').addEventListener('click', () => {
+  document.getElementById('form-designar').style.display = 'none';
+  document.getElementById('posto-badge').innerHTML = `
+    <div style="text-align:center; padding:1.5rem; color:var(--gray);">
+      <span style="font-size:2.5rem; display:block; margin-bottom:0.5rem;">📍</span>
+      <strong>Clique em um posto no mapa</strong><br>
+      <small>para iniciar a designação</small>
+    </div>`;
+  postoSelecionado = null;
+});
+
+document.getElementById('btn-salvar-desig').addEventListener('click', () => {
+  const postoId = parseInt(document.getElementById('d-posto-id').value);
+  const congId  = parseInt(document.getElementById('d-cong').value);
+  const data    = document.getElementById('d-data').value;
+  const inicio  = document.getElementById('d-inicio').value;
+  const fim     = document.getElementById('d-fim').value;
+  const irmaos       = parseInt(document.getElementById('d-irmaos').value) || 2;
+  const obs          = document.getElementById('d-obs').value.trim();
+  const responsavel  = document.getElementById('d-responsavel').value.trim();
+  const duracaoTurno = parseInt(document.getElementById('d-duracao').value) || 2;
+  const maxPorTurno  = parseInt(document.getElementById('d-max-turno').value) || 3;
+
+  if (!congId)  { showToast('Selecione uma congregação!', 'error'); return; }
+  if (!data)    { showToast('Informe a data!', 'error'); return; }
+  if (!inicio || !fim) { showToast('Informe os horários!', 'error'); return; }
+  if (inicio >= fim)   { showToast('Hora de início deve ser antes do fim!', 'error'); return; }
+
+  const desig = DB.get('designacoes');
+  desig.push({ id: Date.now(), postoId, congId, data, inicio, fim, irmaos, obs, responsavel, duracaoTurno, maxPorTurno });
+  DB.set('designacoes', desig);
+
+  // Fecha form
+  document.getElementById('btn-cancelar-desig').click();
+
+  showToast('Designação salva com sucesso! ✅', 'success');
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+
+  // Reabre popup do posto
+  setTimeout(() => {
+    if (markersMap[postoId]) {
+      markersMap[postoId].setPopupContent(buildPopup(DB.get('postos').find(p => p.id === postoId)));
+      markersMap[postoId].openPopup();
+    }
+  }, 200);
+});
+
+// ================================================================
+//  DELETAR DESIGNAÇÃO (acessível pelo popup)
+// ================================================================
+window.deletarDesignacao = function(id) {
+  const desig = DB.get('designacoes').filter(d => d.id !== id);
+  DB.set('designacoes', desig);
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+  map.closePopup();
+  showToast('Designação removida.', 'info');
+};
+
+// ================================================================
+//  CONGREGAÇÕES – CRUD
+// ================================================================
+function renderCongList() {
+  const congs = DB.get('congregacoes');
+  const list  = document.getElementById('cong-list');
+
+  // Atualiza filtro agenda
+  const filtro = document.getElementById('filtro-cong-agenda');
+  filtro.innerHTML = '<option value="">Todas</option>' +
+    congs.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+  if (!congs.length) {
+    list.innerHTML = '<div class="empty-sm"><span class="e-icon">⛪</span>Nenhuma congregação.</div>';
+    return;
+  }
+  list.innerHTML = congs.map(c => `
+    <div class="cong-item">
+      <div class="cong-color" style="background:${c.cor};"></div>
+      <div class="cong-info">
+        <strong>${c.nome}</strong>
+        <small>📍 ${c.cidade}</small>
+      </div>
+      <div class="cong-actions">
+        <button class="btn btn-outline btn-sm" onclick="editarCong(${c.id})" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deletarCong(${c.id})" title="Remover">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('btn-nova-cong').addEventListener('click', () => {
+  document.getElementById('form-cong').style.display = 'block';
+  document.getElementById('form-cong-title').textContent = '➕ Nova Congregação';
+  document.getElementById('cong-edit-id').value = '';
+  document.getElementById('cong-nome').value    = '';
+  document.getElementById('cong-cidade').value  = '';
+  document.getElementById('cong-cor').value     = '#0057A8';
+});
+
+document.getElementById('btn-cancelar-cong').addEventListener('click', () => {
+  document.getElementById('form-cong').style.display = 'none';
+});
+
+window.editarCong = function(id) {
+  const c = DB.get('congregacoes').find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('form-cong').style.display = 'block';
+  document.getElementById('form-cong-title').textContent = '✏️ Editar Congregação';
+  document.getElementById('cong-edit-id').value = c.id;
+  document.getElementById('cong-nome').value    = c.nome;
+  document.getElementById('cong-cidade').value  = c.cidade;
+  document.getElementById('cong-cor').value     = c.cor;
+};
+
+window.deletarCong = function(id) {
+  if (!confirm('Remover esta congregação e todas as suas designações?')) return;
+  const congs = DB.get('congregacoes').filter(c => c.id !== id);
+  const desig = DB.get('designacoes').filter(d => d.congId !== id);
+  DB.set('congregacoes', congs);
+  DB.set('designacoes', desig);
+  renderCongList();
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+  showToast('Congregação removida.', 'info');
+};
+
+document.getElementById('btn-salvar-cong').addEventListener('click', () => {
+  const nome   = document.getElementById('cong-nome').value.trim();
+  const cidade = document.getElementById('cong-cidade').value.trim();
+  const cor    = document.getElementById('cong-cor').value;
+  const editId = parseInt(document.getElementById('cong-edit-id').value);
+
+  if (!nome || !cidade) { showToast('Preencha nome e cidade!', 'error'); return; }
+
+  const congs = DB.get('congregacoes');
+  if (editId) {
+    const idx = congs.findIndex(c => c.id === editId);
+    if (idx >= 0) congs[idx] = { ...congs[idx], nome, cidade, cor };
+    showToast('Congregação atualizada!', 'success');
+  } else {
+    congs.push({ id: Date.now(), nome, cidade, cor });
+    showToast('Congregação adicionada!', 'success');
+  }
+  DB.set('congregacoes', congs);
+  document.getElementById('form-cong').style.display = 'none';
+  renderCongList();
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+});
+
+// ================================================================
+//  AGENDA
+// ================================================================
+function renderAgenda() {
+  const desigs  = DB.get('designacoes');
+  const congs   = DB.get('congregacoes');
+  const postos  = DB.get('postos');
+  const filtro  = document.getElementById('filtro-cong-agenda').value;
+
+  let lista = [...desigs].sort((a, b) => (a.data + a.inicio).localeCompare(b.data + b.inicio));
+  if (filtro) lista = lista.filter(d => d.congId == filtro);
+
+  const el = document.getElementById('agenda-list');
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-sm"><span class="e-icon">🗓️</span>Sem designações ainda.</div>';
+    return;
+  }
+
+  el.innerHTML = lista.map(d => {
+    const cong  = congs.find(c => c.id === d.congId);
+    const posto = postos.find(p => p.id === d.postoId);
+    return `
+      <div class="agenda-item" style="border-left-color:${cong?.cor || '#0057A8'};">
+        <div class="agenda-time" style="background:${cong?.cor || '#0057A8'};">
+          <span class="hora">${d.inicio}</span>
+          <span class="date">${formatarData(d.data, true)}</span>
+        </div>
+        <div class="agenda-info">
+          <strong>${cong?.nome || '?'}</strong>
+          <small>📍 ${posto?.nome || '?'} (Km ${posto?.km || '?'})</small>
+          <small>🕐 ${d.inicio}–${d.fim} &nbsp;|&nbsp; 👥 ${d.irmaos} irmão(s)</small>
+          ${d.obs ? `<small style="color:var(--accent);">💬 ${d.obs}</small>` : ''}
+        </div>
+        <button class="agenda-del" onclick="deletarDesignacao(${d.id})" title="Remover">🗑️</button>
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('filtro-cong-agenda').addEventListener('change', renderAgenda);
+
+// ================================================================
+//  KPI
+// ================================================================
+function renderKPI() {
+  const desigs  = DB.get('designacoes');
+  const congsD  = [...new Set(desigs.map(d => d.congId))].length;
+  const postosC = [...new Set(desigs.map(d => d.postoId))].length;
+  const totalP  = DB.get('postos').length;
+  const irmaos  = desigs.reduce((s, d) => s + (d.irmaos || 0), 0);
+  const datas   = [...new Set(desigs.map(d => d.data))].length;
+
+  document.getElementById('kpi-strip').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon blue">⛪</div>
+      <div class="stat-info"><h3>${congsD}</h3><p>Congregações designadas</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">📍</div>
+      <div class="stat-info"><h3>${postosC}/${totalP}</h3><p>Postos cobertos</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">👥</div>
+      <div class="stat-info"><h3>${irmaos}</h3><p>Irmãos escalados</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">📅</div>
+      <div class="stat-info"><h3>${datas}</h3><p>Datas com cobertura</p></div>
+    </div>
+  `;
+}
+
+// ================================================================
+//  CRONOGRAMA COMPLETO
+// ================================================================
+function renderCronograma() {
+  const desigs = DB.get('designacoes');
+  const congs  = DB.get('congregacoes');
+  const postos = DB.get('postos');
+  const el     = document.getElementById('cronograma-full');
+
+  if (!desigs.length) {
+    el.innerHTML = '<div class="empty-sm"><span class="e-icon">📅</span>Nenhuma designação registrada ainda. Use o mapa para designar congregações.</div>';
+    return;
+  }
+
+  // Agrupa por data
+  const porData = {};
+  desigs.forEach(d => {
+    if (!porData[d.data]) porData[d.data] = [];
+    porData[d.data].push(d);
+  });
+
+  const datas = Object.keys(porData).sort();
+  el.innerHTML = datas.map(data => {
+    const lista = porData[data].sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const rows  = lista.map(d => {
+      const cong  = congs.find(c => c.id === d.congId);
+      const posto = postos.find(p => p.id === d.postoId);
+      return `
+        <tr>
+          <td><strong>${posto?.km ?? '?'} km</strong></td>
+          <td>${posto?.nome || '?'}</td>
+          <td>
+            <span style="display:inline-flex;align-items:center;gap:0.4rem;">
+              <span style="width:10px;height:10px;border-radius:50%;background:${cong?.cor||'#0057A8'};display:inline-block;"></span>
+              ${cong?.nome || '?'}
+            </span>
+          </td>
+          <td>🕐 ${d.inicio} – ${d.fim}</td>
+          <td>👥 ${d.irmaos}</td>
+          <td>${d.obs || '<span style="color:#aaa;">—</span>'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deletarDesignacao(${d.id})">🗑️</button></td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <div class="date-group">
+        <div class="date-header">📅 ${formatarData(data)}</div>
+        <div class="table-wrap" style="border-radius:0 0 var(--radius-sm) var(--radius-sm); box-shadow:none;">
+          <table>
+            <thead>
+              <tr>
+                <th>Km</th>
+                <th>Posto</th>
+                <th>Congregação</th>
+                <th>Horário</th>
+                <th>Irmãos</th>
+                <th>Observação</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ================================================================
+//  EXPORTAR CRONOGRAMA
+// ================================================================
+document.getElementById('btn-export-cronograma').addEventListener('click', () => {
+  const desigs = DB.get('designacoes');
+  const congs  = DB.get('congregacoes');
+  const postos = DB.get('postos');
+  let csv = '\uFEFFData,Km,Posto,Congregação,Hora Início,Hora Fim,Irmãos,Observação\n';
+  desigs.sort((a,b) => (a.data+a.inicio).localeCompare(b.data+b.inicio)).forEach(d => {
+    const cong  = congs.find(c => c.id === d.congId);
+    const posto = postos.find(p => p.id === d.postoId);
+    csv += `"${formatarData(d.data)}","${posto?.km||''}","${posto?.nome||''}","${cong?.nome||''}","${d.inicio}","${d.fim}","${d.irmaos}","${d.obs||''}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `cronograma_congregacoes_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Cronograma exportado!', 'success');
+});
+
+// ================================================================
+//  TABS
+// ================================================================
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+});
+
+// ================================================================
+//  UTILITÁRIO DATA
+// ================================================================
+function formatarData(iso, curto = false) {
+  if (!iso) return '?';
+  const [y, m, d] = iso.split('-');
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  if (curto) return `${d}/${m}`;
+  const semana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const dt = new Date(iso + 'T12:00:00');
+  return `${semana[dt.getDay()]}, ${d} de ${meses[parseInt(m)-1]} de ${y}`;
+}
+
+// ================================================================
+//  INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initCongData();
+  renderMarcadores();
+  renderKPI();
+  renderCongList();
+  renderAgenda();
+  renderCronograma();
+});
+</script>
+</body>
+</html>

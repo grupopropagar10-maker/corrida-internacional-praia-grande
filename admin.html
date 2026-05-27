@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Admin — Corrida Internacional PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <!-- jsPDF + autoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    /* ── ADMIN SIDEBAR LAYOUT ── */
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: calc(100vh - 56px);
+    }
+
+    .sidebar {
+      background: var(--primary-dark);
+      padding: 1.5rem 0;
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+    }
+
+    .sidebar-title {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0.5rem 1.2rem;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.75rem 1.2rem;
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: var(--transition);
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar a:hover, .sidebar a.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border-left-color: var(--accent);
+    }
+
+    .sidebar a .s-icon { font-size: 1.1rem; }
+
+    .sidebar-sep {
+      margin: 0.8rem 1.2rem;
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .admin-main {
+      padding: 1.8rem;
+      background: var(--light);
+      overflow-y: auto;
+    }
+
+    /* ── SECTION CARD ── */
+    .section-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 1.5rem;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .section-card-header h2 {
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-card-body { padding: 1.5rem; }
+
+    /* ── CONGREGAÇÕES TABLE ── */
+    .cong-table-wrap { overflow-x: auto; }
+
+    .cong-row {
+      display: grid;
+      grid-template-columns: 18px 1fr 1fr 1fr 120px 90px auto;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--gray-light);
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+
+    .cong-row:hover { background: #f8faff; }
+
+    .cong-row.header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      font-weight: 700;
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    .cong-row.header:hover { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); }
+
+    .conf-toggle {
+      width: 44px; height: 24px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+      background: var(--gray-light);
+    }
+
+    .conf-toggle.on { background: var(--success); }
+
+    .conf-toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: var(--transition);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .conf-toggle.on::after { left: 23px; }
+
+    .senha-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .senha-cell code {
+      background: var(--light);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      filter: blur(4px);
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .senha-cell:hover code { filter: none; }
+
+    .cor-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ── MÓDULOS RÁPIDOS ── */
+    .modulo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .modulo-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1.2rem;
+      background: white;
+      border: 2px solid var(--gray-light);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--primary-dark);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .modulo-btn .m-icon { font-size: 2rem; }
+    .modulo-btn:hover {
+      border-color: var(--primary);
+      background: #EEF4FB;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    /* ── FORM CONG INLINE ── */
+    .cong-form-card {
+      background: #f8faff;
+      border: 2px solid #D0E4F7;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .cong-form-card.open { display: block; }
+
+    /* ── SETTINGS ── */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* ── RESPONSIVO ── */
+    @media (max-width: 768px) {
+      .admin-layout { grid-template-columns: 1fr; }
+      .sidebar { height: auto; position: relative; top: 0; }
+      .cong-row { grid-template-columns: 1fr; }
+      .cong-row.header { display: none; }
+    }
+
+    /* ── PDF PREVIEW ── */
+    .pdf-preview {
+      background: #fff9e6;
+      border: 2px dashed #FFC107;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="admin.html" class="navbar-brand">
+    <span class="logo-icon">🔑</span>
+    <span>Admin — Corrida PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Site</a></li>
+    <li><a href="congregacoes.html">⛪ Mapa</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- LAYOUT ADMIN -->
+<div class="admin-layout">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="sidebar">
+    <div class="sidebar-title">Painel</div>
+    <a href="#sec-overview" class="active"><span class="s-icon">📊</span> Visão Geral</a>
+    <a href="#sec-congs"><span class="s-icon">⛪</span> Congregações</a>
+    <a href="#sec-pub-prev"><span class="s-icon">📚</span> Pub. Previstas</a>
+    <a href="#sec-pdf"><span class="s-icon">📄</span> Gerar PDF</a>
+    <a href="#sec-settings"><span class="s-icon">⚙️</span> Configurações</a>
+    <hr class="sidebar-sep"/>
+    <div class="sidebar-title">Módulos</div>
+    <a href="congregacoes.html"><span class="s-icon">🗺️</span> Mapa</a>
+    <a href="postos.html"><span class="s-icon">📍</span> Postos</a>
+    <a href="distribuicao.html"><span class="s-icon">📖</span> Distribuição</a>
+    <a href="dashboard.html"><span class="s-icon">📈</span> Dashboard</a>
+  </nav>
+
+  <!-- ═══ CONTEÚDO ═══ -->
+  <main class="admin-main">
+
+    <!-- OVERVIEW -->
+    <section id="sec-overview">
+      <h2 style="color:var(--primary-dark); margin-bottom:1.2rem; font-size:1.3rem;">📊 Visão Geral</h2>
+      <div class="grid grid-4 mb-2" id="kpi-admin" style="margin-bottom:1.5rem;"></div>
+
+      <div class="modulo-grid" style="margin-bottom:2rem;">
+        <a href="congregacoes.html" class="modulo-btn"><span class="m-icon">🗺️</span>Mapa de Designações</a>
+        <a href="postos.html"       class="modulo-btn"><span class="m-icon">📍</span>Postos & Carrinhos</a>
+        <a href="distribuicao.html" class="modulo-btn"><span class="m-icon">📖</span>Distribuição</a>
+        <a href="dashboard.html"    class="modulo-btn"><span class="m-icon">📊</span>Dashboard</a>
+        <a href="index.html"        class="modulo-btn"><span class="m-icon">🏃</span>Página do Evento</a>
+      </div>
+    </section>
+
+    <!-- CONGREGAÇÕES -->
+    <section id="sec-congs">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>⛪ Gerenciar Congregações</h2>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;" id="btn-abrir-form-cong">➕ Nova Congregação</button>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;" id="btn-marcar-todas">✅ Confirmar Todas</button>
+          </div>
+        </div>
+
+        <div class="section-card-body">
+
+          <!-- FORM NOVA/EDITAR CONGREGAÇÃO -->
+          <div class="cong-form-card" id="cong-form-card">
+            <h3 style="color:var(--primary-dark);font-size:1rem;margin-bottom:1.2rem;" id="cong-form-title">➕ Nova Congregação</h3>
+            <input type="hidden" id="cf-id"/>
+            <div class="grid grid-3">
+              <div class="form-group">
+                <label>Nome da Congregação</label>
+                <input class="form-control" id="cf-nome" placeholder="Ex: Praia Grande Centro"/>
+              </div>
+              <div class="form-group">
+                <label>Cidade</label>
+                <input class="form-control" id="cf-cidade" placeholder="Ex: Praia Grande"/>
+              </div>
+              <div class="form-group">
+                <label>Cor no mapa</label>
+                <input type="color" class="form-control" id="cf-cor" value="#0057A8" style="height:42px;padding:4px;"/>
+              </div>
+              <div class="form-group">
+                <label>Responsável / Contato</label>
+                <input class="form-control" id="cf-contato" placeholder="Nome do responsável"/>
+              </div>
+              <div class="form-group">
+                <label>Telefone / WhatsApp</label>
+                <input class="form-control" id="cf-telefone" placeholder="(13) 9 ...."/>
+              </div>
+              <div class="form-group">
+                <label>Senha / PIN de acesso</label>
+                <div style="position:relative;">
+                  <input class="form-control" type="text" id="cf-senha" placeholder="Ex: pg2026" style="padding-right:2.5rem;"/>
+                  <button type="button" onclick="gerarSenha()" title="Gerar senha aleatória"
+                    style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;">🎲</button>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-1" style="align-items:center;margin-top:0.5rem;">
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;">
+                <input type="checkbox" id="cf-confirmada" style="width:16px;height:16px;cursor:pointer;"/>
+                <span>Participação confirmada</span>
+              </label>
+              <div style="flex:1;"></div>
+              <button class="btn btn-outline btn-sm" id="btn-cancelar-form-cong">Cancelar</button>
+              <button class="btn btn-primary" id="btn-salvar-form-cong">💾 Salvar</button>
+            </div>
+          </div>
+
+          <!-- FILTRO + TABELA -->
+          <div style="display:flex;gap:.8rem;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;">
+            <input id="filtro-congs" class="form-control" placeholder="🔍 Filtrar por nome, cidade ou responsável..." oninput="renderCongTable()" style="max-width:400px;"/>
+            <span style="font-size:0.8rem;color:var(--gray);">💡 Passe o mouse sobre a senha para revelar.</span>
+          </div>
+
+          <div id="cong-table-body"></div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PUBLICAÇÕES PREVISTAS -->
+    <section id="sec-pub-prev">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>📚 Publicações Previstas por Congregação</h2>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:white;" onclick="renderPubPrev()">🔄 Atualizar</button>
+        </div>
+        <div class="section-card-body" style="padding:0;overflow-x:auto;">
+          <div id="pub-prev-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GERAR PDF -->
+    <section id="sec-pdf">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>📄 Relatório de Congregações Confirmadas</h2>
+        </div>
+        <div class="section-card-body">
+          <div class="pdf-preview">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">📋</div>
+            <h3 style="color:var(--primary-dark);margin-bottom:0.5rem;">Gerar PDF de confirmados</h3>
+            <p style="color:var(--gray);font-size:0.88rem;max-width:500px;margin:0 auto 1.5rem;">
+              O PDF inclui: nome da congregação, cidade, responsável, telefone, postos designados, horário e status.
+              Use para acompanhar e cobrar os confirmados.
+            </p>
+            <div id="pdf-stats" style="margin-bottom:1.5rem;"></div>
+            <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-lg" id="btn-gerar-pdf">📄 Gerar PDF — Confirmados</button>
+              <button class="btn btn-lg" style="background:#28A745;color:white;" id="btn-gerar-pdf-todos">📋 Gerar PDF — Todos</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIGURAÇÕES -->
+    <section id="sec-settings">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>⚙️ Configurações do Sistema</h2>
+        </div>
+        <div class="section-card-body">
+          <div class="settings-grid">
+
+            <!-- Trocar senha admin -->
+            <div>
+              <h3 style="font-size:1rem;color:var(--primary-dark);margin-bottom:1rem;">🔑 Senha do Administrador</h3>
+              <div class="form-group">
+                <label>Senha atual</label>
+                <input class="form-control" type="password" id="s-senha-atual" placeholder="Senha atual"/>
+              </div>
+              <div class="form-group">
+                <label>Nova senha</label>
+                <input class="form-control" type="password" id="s-senha-nova" placeholder="Nova senha (mín. 6 caracteres)"/>
+              </div>
+              <div class="form-group">
+                <label>Confirmar nova senha</label>
+                <input class="form-control" type="password" id="s-senha-conf" placeholder="Repita a nova senha"/>
+              </div>
+              <button class="btn btn-primary" id="btn-trocar-senha">🔒 Alterar Senha</button>
+            </div>
+
+            <!-- Dados do evento -->
+            <div>
+              <h3 style="font-size:1rem;color:var(--primary-dark);margin-bottom:1rem;">🏃 Dados do Evento</h3>
+              <div class="form-group">
+                <label>Nome do evento</label>
+                <input class="form-control" id="s-evento-nome" placeholder="Corrida Internacional de Praia Grande"/>
+              </div>
+              <div class="form-group">
+                <label>Data do evento</label>
+                <input class="form-control" type="date" id="s-evento-data"/>
+              </div>
+              <div class="form-group">
+                <label>Horário de largada</label>
+                <input class="form-control" type="time" id="s-evento-hora" value="07:00"/>
+              </div>
+              <button class="btn btn-primary" id="btn-salvar-evento">💾 Salvar Dados</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // ── PROTEÇÃO ADMIN ──
+  Auth.check(true);
+
+  // ================================================================
+  //  KPI
+  // ================================================================
+  function renderKPI() {
+    const congs   = DB.get('congregacoes', []);
+    const desigs  = DB.get('designacoes', []);
+    const postos  = DB.get('postos', []);
+    const conf    = congs.filter(c => c.confirmada).length;
+    const irmaos  = desigs.reduce((s,d) => s + (d.irmaos||0), 0);
+    const cobertos = [...new Set(desigs.map(d=>d.postoId))].length;
+
+    document.getElementById('kpi-admin').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon blue">⛪</div>
+        <div class="stat-info"><h3>${congs.length}</h3><p>Congregações cadastradas</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-info"><h3>${conf}</h3><p>Confirmadas</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">👥</div>
+        <div class="stat-info"><h3>${irmaos}</h3><p>Irmãos escalados</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">📍</div>
+        <div class="stat-info"><h3>${cobertos}/${postos.length}</h3><p>Postos cobertos</p></div>
+      </div>
+    `;
+
+    // PDF stats
+    document.getElementById('pdf-stats').innerHTML = `
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <span class="badge badge-ativo">✅ Confirmadas: ${conf}</span>
+        <span class="badge badge-standby">⏳ Pendentes: ${congs.length - conf}</span>
+        <span class="badge badge-primary">📊 Total: ${congs.length}</span>
+      </div>`;
+  }
+
+  // ================================================================
+  //  TABELA DE CONGREGAÇÕES
+  // ================================================================
+  function renderCongTable() {
+    const allCongs = DB.get('congregacoes', []);
+    const filtro   = (document.getElementById('filtro-congs')?.value || '').toLowerCase().trim();
+    const congs    = filtro
+      ? allCongs.filter(c =>
+          c.nome.toLowerCase().includes(filtro) ||
+          (c.cidade||'').toLowerCase().includes(filtro) ||
+          (c.contato||'').toLowerCase().includes(filtro))
+      : allCongs;
+    const desigs = DB.get('designacoes', []);
+    const postos = DB.get('postos', []);
+
+    const el = document.getElementById('cong-table-body');
+
+    if (!allCongs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação cadastrada. Clique em "Nova Congregação".</div>';
+      return;
+    }
+    if (!congs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação encontrada para este filtro.</div>';
+      return;
+    }
+
+    // Header
+    let html = `
+      <div class="cong-row header">
+        <div></div>
+        <div>Congregação</div>
+        <div>Contato / Tel.</div>
+        <div>Senha</div>
+        <div>Postos desig.</div>
+        <div>Confirmada</div>
+        <div>Ações</div>
+      </div>`;
+
+    congs.forEach(c => {
+      const postosDesig = [...new Set(desigs.filter(d=>d.congId===c.id).map(d=>d.postoId))];
+      const nomePostos  = postosDesig.map(pid => postos.find(p=>p.id===pid)?.km + 'km').join(', ') || '—';
+      html += `
+        <div class="cong-row">
+          <div class="cor-dot" style="background:${c.cor||'#0057A8'};"></div>
+          <div>
+            <strong style="color:var(--primary-dark);">${c.nome}</strong>
+            <div style="font-size:0.75rem;color:var(--gray);">📍 ${c.cidade}</div>
+          </div>
+          <div>
+            <div>${c.contato || '<span style="color:var(--gray);">—</span>'}</div>
+            <div style="font-size:0.75rem;color:var(--gray);">${c.telefone || ''}</div>
+          </div>
+          <div class="senha-cell">
+            <code>${c.senha || '(não definida)'}</code>
+          </div>
+          <div style="font-size:0.8rem;">${nomePostos}</div>
+          <div>
+            <button class="conf-toggle ${c.confirmada ? 'on' : ''}" onclick="toggleConfirm(${c.id})" title="${c.confirmada ? 'Confirmar' : 'Desconfirmar'}"></button>
+          </div>
+          <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="editarCong(${c.id})" title="Editar">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deletarCong(${c.id})" title="Remover">🗑️</button>
+            <button class="btn btn-sm" onclick="verDetalhes(${c.id})" style="background:#6f42c1;color:white;" title="Ver publicações e escala">👁️</button>
+            ${c.telefone ? `<a href="https://wa.me/55${c.telefone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:#25D366;color:white;" title="Abrir WhatsApp">📱</a>` : ''}
+          </div>
+        </div>`;
+    });
+
+    el.innerHTML = html;
+  }
+
+  // ── TOGGLE CONFIRMADA ──
+  window.toggleConfirm = function(id) {
+    const congs = DB.get('congregacoes', []);
+    const c = congs.find(x => x.id === id);
+    if (c) { c.confirmada = !c.confirmada; DB.set('congregacoes', congs); }
+    renderCongTable();
+    renderKPI();
+    showToast(c.confirmada ? `${c.nome} confirmada! ✅` : `${c.nome} desmarcada.`, c.confirmada ? 'success' : 'info');
+  };
+
+  // ── CONFIRMAR TODAS ──
+  document.getElementById('btn-marcar-todas').addEventListener('click', () => {
+    const congs = DB.get('congregacoes', []);
+    congs.forEach(c => c.confirmada = true);
+    DB.set('congregacoes', congs);
+    renderCongTable();
+    renderKPI();
+    showToast('Todas as congregações confirmadas!', 'success');
+  });
+
+  // ================================================================
+  //  FORM CONGREGAÇÃO
+  // ================================================================
+  function abrirFormCong() {
+    document.getElementById('cong-form-card').classList.add('open');
+    document.getElementById('cong-form-title').textContent = '➕ Nova Congregação';
+    document.getElementById('cf-id').value          = '';
+    document.getElementById('cf-nome').value         = '';
+    document.getElementById('cf-cidade').value       = '';
+    document.getElementById('cf-cor').value          = '#0057A8';
+    document.getElementById('cf-contato').value      = '';
+    document.getElementById('cf-telefone').value     = '';
+    document.getElementById('cf-senha').value        = '';
+    document.getElementById('cf-confirmada').checked = false;
+    document.getElementById('cf-nome').focus();
+  }
+
+  function fecharFormCong() {
+    document.getElementById('cong-form-card').classList.remove('open');
+  }
+
+  document.getElementById('btn-abrir-form-cong').addEventListener('click', abrirFormCong);
+  document.getElementById('btn-cancelar-form-cong').addEventListener('click', fecharFormCong);
+
+  window.editarCong = function(id) {
+    const c = DB.get('congregacoes', []).find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('cong-form-card').classList.add('open');
+    document.getElementById('cong-form-title').textContent = '✏️ Editar Congregação';
+    document.getElementById('cf-id').value          = c.id;
+    document.getElementById('cf-nome').value         = c.nome;
+    document.getElementById('cf-cidade').value       = c.cidade;
+    document.getElementById('cf-cor').value          = c.cor || '#0057A8';
+    document.getElementById('cf-contato').value      = c.contato || '';
+    document.getElementById('cf-telefone').value     = c.telefone || '';
+    document.getElementById('cf-senha').value        = c.senha || '';
+    document.getElementById('cf-confirmada').checked = !!c.confirmada;
+    document.getElementById('cong-form-card').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  document.getElementById('btn-salvar-form-cong').addEventListener('click', () => {
+    const nome  = document.getElementById('cf-nome').value.trim();
+    const cidade= document.getElementById('cf-cidade').value.trim();
+    const senha = document.getElementById('cf-senha').value.trim();
+    if (!nome || !cidade) { showToast('Preencha nome e cidade!', 'error'); return; }
+    if (!senha)           { showToast('Defina uma senha/PIN para a congregação!', 'error'); return; }
+
+    const congs  = DB.get('congregacoes', []);
+    const editId = parseInt(document.getElementById('cf-id').value);
+    const dados  = {
+      nome, cidade,
+      cor:        document.getElementById('cf-cor').value,
+      contato:    document.getElementById('cf-contato').value.trim(),
+      telefone:   document.getElementById('cf-telefone').value.trim(),
+      senha,
+      confirmada: document.getElementById('cf-confirmada').checked,
+    };
+
+    if (editId) {
+      const idx = congs.findIndex(c => c.id === editId);
+      if (idx >= 0) congs[idx] = { ...congs[idx], ...dados };
+      showToast('Congregação atualizada!', 'success');
+    } else {
+      congs.push({ id: Date.now(), ...dados });
+      showToast('Congregação adicionada!', 'success');
+    }
+    DB.set('congregacoes', congs);
+    fecharFormCong();
+    renderCongTable();
+    renderKPI();
+  });
+
+  // ── DELETAR ──
+  window.deletarCong = function(id) {
+    const c = DB.get('congregacoes', []).find(x => x.id === id);
+    if (!confirm(`Remover "${c?.nome}" e todas as designações desta congregação?`)) return;
+    DB.set('congregacoes', DB.get('congregacoes', []).filter(x => x.id !== id));
+    DB.set('designacoes',  DB.get('designacoes',  []).filter(d => d.congId !== id));
+    renderCongTable();
+    renderKPI();
+    showToast('Congregação removida.', 'info');
+  };
+
+  // ── GERAR SENHA ──
+  window.gerarSenha = function() {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let s = '';
+    for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById('cf-senha').value = s;
+  };
+
+  // ================================================================
+  //  GERAR PDF
+  // ================================================================
+  function gerarPDF(apenasConfirmados) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    const congs  = DB.get('congregacoes', []).filter(c => apenasConfirmados ? c.confirmada : true);
+    const desigs = DB.get('designacoes', []);
+    const postos = DB.get('postos', []);
+    const evento = DB.get('evento_config', { nome: 'Corrida Internacional de Praia Grande', data: '' });
+
+    // ── CABEÇALHO ──
+    doc.setFillColor(0, 61, 122);
+    doc.rect(0, 0, 210, 36, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('🏃 ' + evento.nome, 14, 14);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(apenasConfirmados ? 'Congregações CONFIRMADAS' : 'Todas as Congregações', 14, 22);
+    doc.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 14, 29);
+    if (evento.data) doc.text(`Data do evento: ${new Date(evento.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' })}`, 100, 22);
+
+    doc.setTextColor(0, 0, 0);
+
+    // ── CONTADORES ──
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total: ${congs.length} congregação(ões)`, 14, 44);
+
+    // ── TABELA CONGREGAÇÕES ──
+    const rows = congs.map((c, i) => {
+      const postosD = desigs.filter(d => d.congId === c.id);
+      const nomePosots = [...new Set(postosD.map(d => postos.find(p=>p.id===d.postoId)?.nome || ''))].join('\n') || '—';
+      const horarios  = postosD.map(d => `${d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '?'} | ${d.inicio}–${d.fim}`).join('\n') || '—';
+
+      return [
+        i + 1,
+        c.nome,
+        c.cidade,
+        c.contato || '—',
+        c.telefone || '—',
+        nomePosots,
+        horarios,
+        c.confirmada ? '✓ Sim' : '✗ Não'
+      ];
+    });
+
+    doc.autoTable({
+      startY: 48,
+      head: [['#', 'Congregação', 'Cidade', 'Responsável', 'Telefone', 'Posto(s)', 'Horário', 'Conf.']],
+      body: rows,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [0, 87, 168], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240, 244, 248] },
+      columnStyles: {
+        0: { cellWidth: 8 },
+        1: { cellWidth: 38 },
+        2: { cellWidth: 24 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 26 },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 28 },
+        7: { cellWidth: 14, halign: 'center' },
+      }
+    });
+
+    // ── ASSINATURAS ──
+    const yFim = doc.lastAutoTable.finalY + 18;
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text('___________________________', 14,  yFim);
+    doc.text('___________________________', 100, yFim);
+    doc.text('Coordenador do Evento',      14,  yFim + 5);
+    doc.text('Responsável Geral',          100, yFim + 5);
+
+    // ── RODAPÉ ──
+    const pgs = doc.getNumberOfPages();
+    for (let i = 1; i <= pgs; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Corrida Internacional de Praia Grande — Documento gerado em ${new Date().toLocaleDateString('pt-BR')} — Pág. ${i}/${pgs}`, 14, 290);
+    }
+
+    const nome = apenasConfirmados ? 'confirmadas' : 'todas';
+    doc.save(`congregacoes_${nome}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`);
+    showToast('PDF gerado e baixado!', 'success');
+  }
+
+  document.getElementById('btn-gerar-pdf').addEventListener('click', () => gerarPDF(true));
+  document.getElementById('btn-gerar-pdf-todos').addEventListener('click', () => gerarPDF(false));
+
+  // ================================================================
+  //  CONFIGURAÇÕES
+  // ================================================================
+  // Trocar senha admin
+  document.getElementById('btn-trocar-senha').addEventListener('click', () => {
+    const atual = document.getElementById('s-senha-atual').value;
+    const nova  = document.getElementById('s-senha-nova').value;
+    const conf  = document.getElementById('s-senha-conf').value;
+    const creds = DB.get('admin_creds', { senha: 'corrida2026' });
+    if (atual !== creds.senha) { showToast('Senha atual incorreta!', 'error'); return; }
+    if (nova.length < 6)       { showToast('Nova senha precisa ter ao menos 6 caracteres!', 'error'); return; }
+    if (nova !== conf)         { showToast('As senhas não coincidem!', 'error'); return; }
+    DB.set('admin_creds', { senha: nova });
+    document.getElementById('s-senha-atual').value = '';
+    document.getElementById('s-senha-nova').value  = '';
+    document.getElementById('s-senha-conf').value  = '';
+    showToast('Senha alterada com sucesso! 🔒', 'success');
+  });
+
+  // Salvar dados do evento
+  function carregarConfigEvento() {
+    const ev = DB.get('evento_config', { nome: 'Corrida Internacional de Praia Grande', data: '', hora: '07:00' });
+    document.getElementById('s-evento-nome').value = ev.nome;
+    document.getElementById('s-evento-data').value = ev.data;
+    document.getElementById('s-evento-hora').value = ev.hora || '07:00';
+  }
+
+  document.getElementById('btn-salvar-evento').addEventListener('click', () => {
+    DB.set('evento_config', {
+      nome: document.getElementById('s-evento-nome').value.trim() || 'Corrida Internacional de Praia Grande',
+      data: document.getElementById('s-evento-data').value,
+      hora: document.getElementById('s-evento-hora').value,
+    });
+    showToast('Dados do evento salvos!', 'success');
+  });
+
+  // ================================================================
+  //  INIT
+  // ================================================================
+  renderKPI();
+  renderCongTable();
+  carregarConfigEvento();
+
+  // ================================================================
+  //  PUBLICAÇÕES PREVISTAS
+  // ================================================================
+  window.renderPubPrev = function() {
+    const congs      = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const congConfig = DB.get('cong_config', {});
+    const el         = document.getElementById('pub-prev-body');
+    if (!el) return;
+
+    if (!congs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação confirmada. Confirme congregações na seção acima.</div>';
+      return;
+    }
+
+    const PL = [
+      {id:'atalaias',nome:'Sentinela',icon:'📰'},
+      {id:'despertar',nome:'Despertai',icon:'📗'},
+      {id:'biblia',   nome:'Bíblia',   icon:'📖'},
+      {id:'folheto',  nome:'Folheto',  icon:'📄'},
+      {id:'livro',    nome:'Livro',    icon:'📘'},
+      {id:'site',     nome:'Site/Card',icon:'🌐'},
+    ];
+
+    const totais = {};
+    PL.forEach(p => { totais[p.id] = 0; });
+    let totalGeral = 0;
+
+    const rows = congs.map(c => {
+      const cfg   = congConfig[c.id] || {};
+      const pubs  = cfg.publicacoes  || {};
+      const esc   = (cfg.escala || []).length;
+      const total = PL.reduce((s, p) => s + (pubs[p.id]||0), 0);
+      totalGeral += total;
+      PL.forEach(p => { totais[p.id] += (pubs[p.id]||0); });
+      const ts = cfg.pubs_ts ? `<div style="font-size:.7rem;color:var(--gray);">💾 ${cfg.pubs_ts}</div>` : '';
+      return `
+        <tr style="border-bottom:1px solid var(--gray-light);">
+          <td style="padding:.55rem .8rem;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.cor||'#0057A8'};margin-right:.4rem;"></span>
+            <strong>${c.nome}</strong>
+            <div style="font-size:.73rem;color:var(--gray);">${esc ? `👥 ${esc} na escala` : '⚠️ sem escala'}${ts}</div>
+          </td>
+          ${PL.map(p => `<td style="padding:.45rem .5rem;text-align:center;font-weight:${(pubs[p.id]||0)>0?700:400};color:${(pubs[p.id]||0)>0?'var(--primary-dark)':'#bbb'};">${pubs[p.id]||0}</td>`).join('')}
+          <td style="padding:.5rem .8rem;text-align:center;font-weight:800;color:var(--primary);">${total||'<span style="color:#bbb">—</span>'}</td>
+        </tr>`;
+    }).join('');
+
+    el.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
+        <thead>
+          <tr style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:white;">
+            <th style="padding:.65rem .8rem;text-align:left;min-width:170px;">Congregação</th>
+            ${PL.map(p=>`<th style="padding:.65rem .4rem;text-align:center;white-space:nowrap;font-size:.78rem;">${p.icon}<br>${p.nome}</th>`).join('')}
+            <th style="padding:.65rem .8rem;text-align:center;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+          <tr style="background:#EEF4FB;border-top:2px solid var(--primary);">
+            <td style="padding:.6rem .8rem;font-weight:700;color:var(--primary-dark);">📊 TOTAIS PREVISTOS</td>
+            ${PL.map(p=>`<td style="padding:.5rem;text-align:center;font-weight:700;color:var(--primary-dark);">${totais[p.id]}</td>`).join('')}
+            <td style="padding:.5rem .8rem;text-align:center;font-weight:800;color:var(--primary);font-size:1rem;">${totalGeral}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="padding:.7rem 1rem;font-size:.8rem;color:var(--gray);background:#f8faff;border-top:1px solid var(--gray-light);">
+        ⚠️ Os valores refletem o que as congregações informaram na aba "Publicações" do portal delas.
+      </div>`;
+  };
+
+  // ================================================================
+  //  MODAL DETALHES DA CONGREGAÇÃO
+  // ================================================================
+  const PUBS_DEF = [
+    {id:'atalaias',nome:'A Sentinela',icon:'📰'},
+    {id:'despertar',nome:'Despertai!',icon:'📗'},
+    {id:'biblia',nome:'Bíblia / NWT',icon:'📖'},
+    {id:'folheto',nome:'Folheto',icon:'📄'},
+    {id:'livro',nome:'Livro',icon:'📘'},
+    {id:'site',nome:'Site (card)',icon:'🌐'},
+  ];
+
+  window.verDetalhes = function(id) {
+    const congs   = DB.get('congregacoes', []);
+    const c       = congs.find(x => x.id === id);
+    if (!c) return;
+    const cfg     = (DB.get('cong_config', {}))[id] || { publicacoes:{}, escala:[] };
+    const pubs    = cfg.publicacoes || {};
+    const escala  = (cfg.escala || []).sort((a,b) => a.inicio.localeCompare(b.inicio));
+    const postoD  = DB.get('designacoes',[]).filter(d=>d.congId===id);
+    const desigInfo = postoD.length
+      ? postoD.map(d=>{const p=DB.get('postos',[]).find(x=>x.id===d.postoId);return p?`${p.nome} (Km ${p.km}) — ${d.data||'?'} ${d.inicio}–${d.fim}`:d.postoId;}).join('<br>')
+      : '<em style="color:var(--gray)">Nenhum posto designado</em>';
+
+    const totalPubs = Object.values(pubs).reduce((s,v)=>s+(v||0),0);
+    const pubRows = PUBS_DEF.map(p => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .8rem;border-radius:6px;background:${(pubs[p.id]||0)>0?'#EAF4FF':'var(--light)'};margin-bottom:.3rem;">
+        <span>${p.icon} ${p.nome}</span>
+        <strong style="color:${(pubs[p.id]||0)>0?'var(--primary)':'var(--gray)'}">${pubs[p.id]||0}</strong>
+      </div>`).join('');
+
+    const calcH = (ini,fim) => {
+      const [hi,mi]=ini.split(':').map(Number),[hf,mf]=fim.split(':').map(Number);
+      const d=(hf*60+mf)-(hi*60+mi);
+      if(d<=0)return '—';
+      const h=Math.floor(d/60),m=d%60;
+      return h>0?`${h}h${m?m+'min':''}`:m+'min';
+    };
+    const escalaRows = escala.length
+      ? escala.map((ir,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td><strong>${ir.nome}</strong></td>
+          <td>${ir.inicio}–${ir.fim}</td>
+          <td>${calcH(ir.inicio,ir.fim)}</td>
+          <td style="color:var(--gray);font-size:.8rem;">${ir.obs||'—'}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:1rem;">Nenhum irmão na escala ainda.</td></tr>';
+
+    const modal = document.createElement('div');
+    modal.id = 'modal-detalhes';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem;';
+    modal.innerHTML = `
+      <div style="background:white;border-radius:var(--radius);max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);">
+        <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:white;padding:1.2rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius) var(--radius) 0 0;">
+          <div>
+            <div style="font-size:1.1rem;font-weight:800;">👁️ ${c.nome}</div>
+            <div style="font-size:.82rem;opacity:.8;">📍 ${c.cidade}</div>
+          </div>
+          <button onclick="document.getElementById('modal-detalhes').remove()" style="background:rgba(255,255,255,.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="padding:1.2rem;">
+          <div style="background:var(--light);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-bottom:1rem;font-size:.85rem;">
+            <strong>📅 Designações:</strong><br>${desigInfo}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div>
+              <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">📚 Publicações (${totalPubs} total)</h3>
+              ${pubRows}
+            </div>
+            <div>
+              <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">👥 Escala (${escala.length} irmão(s))</h3>
+              <div style="overflow-x:auto;">
+                <table style="width:100%;font-size:.8rem;border-collapse:collapse;">
+                  <thead><tr style="background:var(--primary-dark);color:white;">
+                    <th style="padding:.35rem;">#</th>
+                    <th style="padding:.35rem;text-align:left;">Nome</th>
+                    <th style="padding:.35rem;">Horário</th>
+                    <th style="padding:.35rem;">Dur.</th>
+                    <th style="padding:.35rem;text-align:left;">Obs.</th>
+                  </tr></thead>
+                  <tbody style="font-size:.78rem;">${escalaRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:1rem;text-align:right;">
+            <button onclick="document.getElementById('modal-detalhes').remove()" class="btn btn-outline">Fechar</button>
+          </div>
+        </div>
+      </div>`;
+    modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+    document.body.appendChild(modal);
+  };
+
+  // Smooth scroll sidebar
+  document.querySelectorAll('.sidebar a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+      document.querySelectorAll('.sidebar a').forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

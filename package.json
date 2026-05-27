@@ -1,0 +1,12 @@
+{
+  "name": "corrida-internacional-praia-grande",
+  "version": "1.0.0",
+  "description": "Sistema de gestão da Corrida Internacional de Praia Grande",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

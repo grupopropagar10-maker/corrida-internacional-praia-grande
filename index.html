@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corrida Internacional de Praia Grande 2026</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    /* ---- HERO DA INDEX ---- */
+    .hero-index {
+      background: linear-gradient(160deg, #003D7A 0%, #0057A8 50%, #1A6FC4 100%);
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-index::after {
+      content: '🏃';
+      position: absolute;
+      font-size: 12rem;
+      right: -2rem;
+      bottom: -2rem;
+      opacity: 0.06;
+    }
+
+    .hero-index .event-date {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255,255,255,0.75);
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.8rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ---- CONTAGEM REGRESSIVA ---- */
+    .countdown {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .countdown-item {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: var(--radius);
+      padding: 0.8rem 1.2rem;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .countdown-item .num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      line-height: 1;
+      display: block;
+    }
+
+    .countdown-item .lbl {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: block;
+      margin-top: 0.2rem;
+    }
+
+    /* ---- MÓDULOS ---- */
+    .modulos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .modulo-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1.8rem;
+      box-shadow: var(--shadow);
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: var(--transition);
+      border-top: 4px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modulo-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .modulo-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modulo-card:hover::before {
+      opacity: 0.05;
+    }
+
+    .modulo-card .mod-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 1rem;
+    }
+
+    .modulo-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .modulo-card p {
+      font-size: 0.82rem;
+      color: var(--gray);
+      line-height: 1.5;
+    }
+
+    .modulo-card .mod-badge {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 50px;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    /* ---- MAPA ---- */
+    #map { height: 440px; }
+
+    .map-legend {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: var(--gray);
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+
+    /* ---- SOBRE ---- */
+    .info-strip {
+      background: var(--primary-dark);
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .info-strip .item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .info-strip .item span:first-child { font-size: 1.2rem; }
+
+    /* ---- TESTEMUNHO ---- */
+    .testemunho-section {
+      background: linear-gradient(135deg, #f8f9ff, #e8f0fe);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      border: 2px solid #d0e4f7;
+    }
+
+    .verse-box {
+      background: white;
+      border-left: 4px solid var(--primary);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 1.2rem 1.5rem;
+      margin: 1.5rem auto;
+      max-width: 600px;
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--primary-dark);
+      box-shadow: var(--shadow);
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      background: var(--dark);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.82rem;
+    }
+
+    footer a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <span class="logo-icon">🏃</span>
+    <span>Corrida Internacional PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero-index">
+  <span class="hero-badge">🏅 Evento Oficial 2026</span>
+  <h1 style="color:white; font-size: clamp(1.6rem,5vw,2.8rem); font-weight:800; margin:0.5rem 0;">
+    Corrida Internacional<br>de Praia Grande
+  </h1>
+  <p style="color:rgba(255,255,255,0.85); font-size:1rem; max-width:520px;">
+    Testemunhas de Jeová — Participação com carrinhos de literatura ao longo do percurso
+  </p>
+  <div class="event-date">
+    <span>📅</span> <strong>Data do evento:</strong> &nbsp;A definir &nbsp;|&nbsp; 🏁 21 km – Beira-mar
+  </div>
+  <div class="countdown" id="countdown">
+    <div class="countdown-item"><span class="num" id="cnt-d">--</span><span class="lbl">Dias</span></div>
+    <div class="countdown-item"><span class="num" id="cnt-h">--</span><span class="lbl">Horas</span></div>
+    <div class="countdown-item"><span class="num" id="cnt-m">--</span><span class="lbl">Min</span></div>
+    <div class="countdown-item"><span class="num" id="cnt-s">--</span><span class="lbl">Seg</span></div>
+  </div>
+  <div class="hero-buttons">
+    <a href="postos.html" class="btn btn-accent btn-lg">📍 Gerenciar Postos</a>
+    <a href="distribuicao.html" class="btn btn-lg" style="background:rgba(255,255,255,0.2);color:white;border:2px solid rgba(255,255,255,0.4);">📖 Registrar Distribuição</a>
+  </div>
+</header>
+
+<!-- INFO STRIP -->
+<div class="info-strip">
+  <div class="item"><span>📍</span><span>8 Postos ao longo do percurso</span></div>
+  <div class="item"><span>👥</span><span>Voluntários das congregações</span></div>
+  <div class="item"><span>📖</span><span>Distribuição de publicações</span></div>
+</div>
+
+<!-- MÓDULOS -->
+<section class="section">
+  <div style="text-align:center; margin-bottom:2rem;">
+    <h2 style="font-size:1.5rem; color:var(--primary-dark);">🗂️ Módulos do Sistema</h2>
+    <p style="color:var(--gray); margin-top:0.3rem;">Gerencie toda a operação em um só lugar</p>
+  </div>
+  <div class="modulos-grid">
+    <a href="postos.html" class="modulo-card">
+      <span class="mod-icon">📍</span>
+      <h3>Postos & Carrinhos</h3>
+      <p>Cadastre, edite e acompanhe o status de cada posto ao longo do percurso.</p>
+      <span class="mod-badge">Gerenciar</span>
+    </a>
+    <a href="distribuicao.html" class="modulo-card" style="border-top-color:var(--accent);">
+      <span class="mod-icon">📖</span>
+      <h3>Distribuição de Literatura</h3>
+      <p>Registre publicações entregues, contatos feitos e conversas significativas.</p>
+      <span class="mod-badge" style="background:var(--accent);">Registrar</span>
+    </a>
+    <a href="dashboard.html" class="modulo-card" style="border-top-color:#28A745;">
+      <span class="mod-icon">📊</span>
+      <h3>Dashboard & Relatórios</h3>
+      <p>Veja estatísticas em tempo real: publicações, contatos e alcance do evento.</p>
+      <span class="mod-badge" style="background:#28A745;">Ver dados</span>
+    </a>
+  </div>
+</section>
+
+<!-- MAPA -->
+<section class="section" style="padding-top:0;">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🗺️</span>
+      <h2>Mapa do Percurso — Postos de Literatura</h2>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#0057A8;"></div> Posto Ativo</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FFC107;"></div> Standby</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#DC3545;"></div> Inativo</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#28A745;"></div> Largada/Chegada</div>
+    </div>
+  </div>
+</section>
+
+<!-- VERSO BÍBLICO -->
+<section class="section" style="padding-top:0;">
+  <div class="testemunho-section">
+    <div style="font-size:2.5rem; margin-bottom:0.5rem;">✝️</div>
+    <h2 style="color:var(--primary-dark); font-size:1.2rem; margin-bottom:0.3rem;">Nossa Motivação</h2>
+    <p style="color:var(--gray); font-size:0.9rem;">O que nos move a estar presentes neste grande evento</p>
+    <div class="verse-box">
+      "Preguica a palavra, insiste nisso no momento oportuno e fora dele, repreende, repreende com severidade, encoraja com toda a longanimidade e arte de ensinar."
+      <br><br><strong>— 2 Timóteo 4:2</strong>
+    </div>
+    <p style="color:var(--gray); font-size:0.85rem; max-width:500px; margin:0 auto;">
+      Aproveitamos cada oportunidade para compartilhar as boas novas —
+      inclusive em grandes eventos públicos como esta corrida. Cada contato pode fazer a diferença.
+    </p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>🏃 Corrida Internacional de Praia Grande &nbsp;|&nbsp; Testemunhas de Jeová – Participação voluntária</p>
+  <p style="margin-top:0.5rem;">Sistema de apoio operacional interno</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  Auth.check();
+  // ---- CONTAGEM REGRESSIVA (data do evento) ----
+  const eventDate = new Date('2026-08-15T07:00:00'); // ajuste conforme a data real
+
+  function updateCountdown() {
+    const now = new Date();
+    const diff = eventDate - now;
+    if (diff <= 0) {
+      document.getElementById('countdown').innerHTML = '<div style="color:white;font-size:1.2rem;font-weight:700;">🎉 O evento está acontecendo agora!</div>';
+      return;
+    }
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000) / 60000);
+    const secs  = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cnt-d').textContent = String(days).padStart(2,'0');
+    document.getElementById('cnt-h').textContent = String(hours).padStart(2,'0');
+    document.getElementById('cnt-m').textContent = String(mins).padStart(2,'0');
+    document.getElementById('cnt-s').textContent = String(secs).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ---- MAPA LEAFLET ----
+  document.addEventListener('DOMContentLoaded', () => {
+    // Praia Grande – beira-mar (percurso aproximado)
+    const map = L.map('map').setView([-24.005, -46.412], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+
+    const postos = DB.get('postos', []);
+
+    const colors = { ativo: '#0057A8', standby: '#FFC107', inativo: '#DC3545' };
+
+    function makeIcon(status, km) {
+      const c = colors[status] || '#0057A8';
+      const isStart = km === '0' || km === '21';
+      return L.divIcon({
+        html: `<div style="
+          background:${isStart ? '#28A745' : c};
+          color:white;
+          border-radius:50%;
+          width:32px;height:32px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:0.65rem;font-weight:700;
+          border:3px solid white;
+          box-shadow:0 2px 8px rgba(0,0,0,0.35);
+        ">${km}km</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+    }
+
+    // Coordenadas aproximadas dos postos ao longo da orla de PG
+    const coords = [
+      [-23.980, -46.400], // 0km  – Largada
+      [-23.994, -46.407], // 3km  – Boqueirão
+      [-24.003, -46.415], // 6km  – Guilhermina
+      [-24.010, -46.421], // 9km  – Canto do Forte
+      [-24.018, -46.433], // 12,5km – Virada
+      [-24.012, -46.425], // 16km – Melvi
+      [-24.005, -46.418], // 19km – Tupiry
+      [-23.980, -46.400], // 21km – Chegada
+    ];
+
+    const routeCoords = [
+      [-23.980, -46.400],
+      [-23.986, -46.402],
+      [-23.994, -46.407],
+      [-24.003, -46.415],
+      [-24.010, -46.421],
+      [-24.018, -46.433],
+      [-24.012, -46.425],
+      [-24.005, -46.418],
+      [-23.980, -46.400],
+    ];
+
+    // Linha do percurso
+    L.polyline(routeCoords, { color: '#0057A8', weight: 4, opacity: 0.6, dashArray: '8,6' }).addTo(map);
+
+    postos.forEach((p, i) => {
+      if (!coords[i]) return;
+      const marker = L.marker(coords[i], { icon: makeIcon(p.status, p.km) }).addTo(map);
+      marker.bindPopup(`
+        <div style="min-width:180px;">
+          <strong style="color:#003D7A;">${p.nome}</strong><br>
+          <small style="color:#6C757D;">📍 ${p.local}</small><br><br>
+          <b>Responsável:</b> ${p.responsavel}<br>
+          <b>Status:</b> ${p.status}<br>
+          <b>Publicações:</b> ${p.publicacoes}<br>
+          <b>Contatos:</b> ${p.contatos}
+        </div>
+      `);
+    });
+  });
+</script>
+</body>
+</html>

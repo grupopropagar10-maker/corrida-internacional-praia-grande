@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minha Congregação — Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    /* ══ BANNER ══ */
+    .cong-banner {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white; padding: 1.5rem 1.8rem;
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    }
+    .cong-banner-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(255,255,255,.18); border: 3px solid rgba(255,255,255,.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .cong-banner-info { flex: 1; min-width: 180px; }
+    .cong-banner-info h1 { font-size: clamp(1.1rem,3vw,1.6rem); font-weight: 800; margin-bottom: .2rem; }
+    .cong-banner-info p  { opacity: .8; font-size: .85rem; }
+    .cong-banner-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+    .chip {
+      display: inline-flex; align-items: center; gap: .3rem;
+      background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
+      border-radius: 50px; padding: .25rem .75rem; font-size: .75rem; font-weight: 600;
+    }
+    .chip.green  { background: rgba(40,167,69,.35);  border-color: rgba(40,167,69,.6); }
+    .chip.yellow { background: rgba(255,193,7,.35);  border-color: rgba(255,193,7,.6); }
+
+    /* ══ STATUS ══ */
+    .status-screen { max-width: 520px; margin: 3rem auto; padding: 0 1.5rem; text-align: center; }
+    .status-screen .s-icon { font-size: 5rem; margin-bottom: 1rem; }
+    .status-screen h2 { color: var(--primary-dark); font-size: 1.4rem; margin-bottom: .8rem; }
+    .status-screen p  { color: var(--gray); line-height: 1.7; margin-bottom: 1.2rem; }
+    .status-hint { border-radius: var(--radius); padding: 1rem; font-size: .85rem; margin-bottom: 1.2rem; }
+
+    /* ══ TABS ══ */
+    .tab-bar {
+      display: flex; background: white; border-bottom: 3px solid var(--primary);
+      overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    }
+    .tab-btn {
+      padding: .85rem 1.3rem; border: none; background: none; cursor: pointer;
+      font-size: .85rem; font-weight: 600; color: var(--gray);
+      border-bottom: 3px solid transparent; margin-bottom: -3px;
+      white-space: nowrap; transition: var(--transition);
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .tab-btn:hover  { color: var(--primary-dark); background: #EEF4FB; }
+    .tab-btn.active { color: var(--primary-dark); border-bottom-color: var(--primary); background: #EEF4FB; }
+    .tab-badge {
+      background: var(--accent); color: white;
+      border-radius: 50px; padding: 0 .45rem; font-size: .68rem; font-weight: 800;
+    }
+    .tab-pane { display: none; padding: 1.5rem; }
+    .tab-pane.active { display: block; }
+
+    /* ══ POSTO HERO ══ */
+    .posto-hero {
+      background: linear-gradient(135deg, #1a5c1a, #28A745);
+      color: white; border-radius: var(--radius); padding: 1.5rem;
+      margin-bottom: 1.2rem; position: relative; overflow: hidden;
+    }
+    .posto-hero::after { content:'📍'; position:absolute; font-size:7rem; right:-1rem; bottom:-1.5rem; opacity:.1; }
+    .posto-hero h2 { font-size: 1.2rem; margin-bottom: .4rem; }
+    .posto-hero .km-badge {
+      display: inline-block; background: rgba(255,255,255,.25);
+      border-radius: 50px; padding: .2rem .8rem; font-size: .8rem; font-weight: 700; margin-bottom: .8rem;
+    }
+    .posto-detail { display: flex; flex-direction: column; gap: .4rem; font-size: .88rem; opacity: .92; }
+    .posto-detail span { display: flex; align-items: center; gap: .5rem; }
+    #mini-map { height: 240px; border-radius: var(--radius); }
+
+    /* ══ PUBLICAÇÕES ══ */
+    .pub-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .pub-item {
+      background: white; border: 2px solid var(--gray-light); border-radius: var(--radius);
+      padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .6rem;
+      transition: var(--transition);
+    }
+    .pub-item:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,87,168,.12); }
+    .pub-item .p-icon { font-size: 2rem; }
+    .pub-item label { font-size: .8rem; font-weight: 700; color: var(--primary-dark); text-align: center; }
+    .pub-qty-input {
+      width: 80px; text-align: center; font-size: 1.3rem; font-weight: 800;
+      border: 2px solid var(--gray-light); border-radius: var(--radius-sm); padding: .3rem;
+      color: var(--primary-dark);
+    }
+    .pub-total-bar {
+      background: var(--light); border-radius: var(--radius); padding: 1rem;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: 1.2rem; border: 1px solid var(--gray-light);
+    }
+
+    /* ══ ESCALA / TURNOS ══ */
+    .membro-chip {
+      display: inline-flex; align-items: center; gap: .3rem;
+      background: #e8f0fb; border: 1px solid #c0d8f5; border-radius: 2rem;
+      padding: .25rem .75rem; font-size: .8rem; color: var(--primary-dark);
+    }
+    .membro-chip button {
+      background: none; border: none; cursor: pointer; color: var(--danger);
+      padding: 0; font-size: .9rem; line-height: 1; margin-left: .1rem;
+    }
+    .carrinho-card {
+      background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+      margin-bottom: 1.2rem;
+    }
+    .carrinho-header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white; padding: 1rem 1.2rem;
+      display: flex; align-items: flex-start; gap: .75rem; flex-wrap: wrap;
+    }
+    .ch-km {
+      background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4);
+      border-radius: 2rem; padding: .2rem .7rem; font-size: .8rem; font-weight: 700; white-space: nowrap;
+    }
+    .turnos-row {
+      display: flex; gap: .6rem; padding: 1rem;
+      overflow-x: auto; background: #f4f8fd; flex-wrap: wrap;
+    }
+    .turno-slot {
+      min-width: 130px; flex: 1; max-width: 200px;
+      background: white; border-radius: .5rem; border: 1.5px solid #cde0f5; overflow: hidden;
+    }
+    .turno-slot-header {
+      background: var(--primary); color: white;
+      text-align: center; padding: .4rem .5rem;
+      font-size: .75rem; font-weight: 700;
+    }
+    .turno-slot-body { padding: .5rem; min-height: 80px; display: flex; flex-direction: column; gap: .3rem; }
+    .turno-pessoa {
+      display: flex; align-items: center; gap: .3rem;
+      background: #e4f0fc; border-radius: .25rem; padding: .25rem .45rem;
+      font-size: .77rem; color: var(--primary-dark);
+    }
+    .turno-pessoa button {
+      background: none; border: none; cursor: pointer; color: var(--danger);
+      font-size: .75rem; padding: 0; margin-left: auto;
+    }
+    .turno-vaga-select {
+      width: 100%; border: 1.5px dashed #90bfe5; border-radius: .25rem;
+      padding: .25rem .3rem; font-size: .72rem; cursor: pointer;
+      background: #f0f7ff; color: var(--primary); outline: none;
+    }
+    .turno-vaga-select:hover { background: #daeeff; }
+
+    /* ══ REGISTRAR ══ */
+    .reg-counter { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .rcbtn {
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      font-size: 1.3rem; cursor: pointer; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; transition: var(--transition);
+    }
+    .rcbtn:active { transform: scale(.9); }
+    .reg-num { font-size: 2rem; font-weight: 800; color: var(--primary-dark); min-width: 50px; text-align: center; }
+    .hist-item {
+      display: flex; align-items: center; gap: .7rem; font-size: .83rem;
+      padding: .55rem .8rem; background: var(--light); border-radius: 6px;
+    }
+
+    /* ══ RESULTADO ══ */
+    .resultado-card { background: linear-gradient(135deg,var(--primary-dark),var(--primary)); color:white; border-radius:var(--radius); padding:1.5rem; }
+    .resultado-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.8rem; margin-top:1rem; }
+    .resultado-item { background:rgba(255,255,255,.15); border-radius:var(--radius-sm); padding:.8rem; text-align:center; }
+    .resultado-item .r-qty   { font-size:1.8rem; font-weight:800; }
+    .resultado-item .r-label { font-size:.75rem; opacity:.85; margin-top:.2rem; }
+
+    @media (max-width:640px) {
+      .escala-row { grid-template-columns:1fr 1fr; }
+      .escala-row > *:last-child { grid-column:span 2; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="minha-congregacao.html" class="navbar-brand">
+    <span class="logo-icon">⛪</span>
+    <span id="nav-cong-nome">Minha Congregação</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="#" data-tab="tab-posto">📍 Meu Posto</a></li>
+    <li><a href="#" data-tab="tab-pubs">📚 Publicações</a></li>
+    <li><a href="#" data-tab="tab-escala">👥 Escala</a></li>
+    <li><a href="#" data-tab="tab-reg">📖 Registrar</a></li>
+  </ul>
+</nav>
+
+<!-- BANNER -->
+<div class="cong-banner" id="cong-banner">
+  <div class="cong-banner-icon">⛪</div>
+  <div class="cong-banner-info">
+    <h1 id="wb-nome">Carregando...</h1>
+    <p id="wb-cidade"></p>
+    <div class="cong-banner-chips" id="banner-chips"></div>
+  </div>
+  <div id="banner-posto-chip"></div>
+</div>
+
+<!-- TELA DE STATUS -->
+<div id="tela-status" style="display:none;">
+  <div class="status-screen">
+    <div id="s-icon" class="s-icon"></div>
+    <h2 id="s-titulo"></h2>
+    <p  id="s-msg"></p>
+    <div id="s-hint"></div>
+    <button onclick="Auth.logout()" class="btn btn-outline" style="margin-top:.5rem;">↩ Sair</button>
+  </div>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div id="conteudo-principal" style="display:none;">
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="tab-posto">📍 Meu Posto</button>
+    <button class="tab-btn" data-tab="tab-pubs">
+      📚 Publicações <span class="tab-badge" id="badge-pubs" style="display:none;"></span>
+    </button>
+    <button class="tab-btn" data-tab="tab-escala">
+      👥 Escala <span class="tab-badge" id="badge-escala" style="display:none;"></span>
+    </button>
+    <button class="tab-btn" data-tab="tab-reg">📖 Registrar</button>
+  </div>
+
+  <!-- ══ ABA 1 — MEU POSTO ══ -->
+  <div class="tab-pane active" id="tab-posto">
+    <div style="max-width:900px;margin:0 auto;">
+      <div class="grid grid-2" style="align-items:start;gap:1.5rem;">
+        <div style="display:flex;flex-direction:column;gap:1.2rem;">
+          <div class="posto-hero">
+            <span class="km-badge" id="ph-km">📏 Km ?</span>
+            <h2 id="ph-nome">Carregando...</h2>
+            <div class="posto-detail" id="ph-detail"></div>
+          </div>
+          <div class="card" id="card-desig"></div>
+          <div class="card">
+            <div class="card-header"><span class="icon">📋</span><h2>Orientações do dia</h2></div>
+            <div style="display:flex;flex-direction:column;gap:.6rem;">
+              <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
+                <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">1</div>
+                <span style="font-size:.85rem;">🕐 Chegue ao posto <strong>30 minutos antes</strong> para montar o carrinho.</span>
+              </div>
+              <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
+                <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">2</div>
+                <span style="font-size:.85rem;">🪧 Posicione o display visível para os corredores, <strong>sem obstruir a pista</strong>.</span>
+              </div>
+              <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
+                <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">3</div>
+                <span style="font-size:.85rem;">📱 Registre cada distribuição na aba <strong>"Registrar"</strong>.</span>
+              </div>
+              <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
+                <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">4</div>
+                <span style="font-size:.85rem;">🔄 Dúvida? Contate imediatamente o <strong>coordenador do evento</strong>.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:.8rem 1.2rem;background:var(--primary-dark);color:white;font-size:.88rem;font-weight:600;">🗺️ Sua localização no percurso</div>
+          <div id="mini-map"></div>
+          <div style="padding:.6rem 1rem;font-size:.78rem;color:var(--gray);">💡 Marcador colorido = seu posto.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ABA 2 — PUBLICAÇÕES ══ -->
+  <div class="tab-pane" id="tab-pubs">
+    <div style="max-width:760px;margin:0 auto;">
+      <div style="margin-bottom:1.2rem;">
+        <h2 style="color:var(--primary-dark);font-size:1.1rem;margin-bottom:.3rem;">📚 Publicações que vou levar</h2>
+        <p style="color:var(--gray);font-size:.85rem;">Informe quantas unidades de cada publicação sua congregação vai disponibilizar no posto.</p>
+      </div>
+      <div class="pub-grid" id="pub-grid"></div>
+      <div class="pub-total-bar">
+        <div>
+          <strong style="color:var(--primary-dark);">Total:</strong>
+          <span id="pub-total" style="font-size:1.4rem;font-weight:800;color:var(--primary);margin-left:.5rem;">0</span>
+          <span style="color:var(--gray);font-size:.85rem;"> publicações</span>
+        </div>
+        <button class="btn btn-primary" id="btn-salvar-pubs">💾 Salvar</button>
+      </div>
+      <div id="pubs-salvas-card" style="display:none;" class="card">
+        <div class="card-header"><span class="icon">✅</span><h2>Publicações confirmadas</h2></div>
+        <div id="pubs-salvas-lista" style="display:flex;flex-wrap:wrap;gap:.6rem;padding-top:.5rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ABA 3 — ESCALA / TURNOS ══ -->
+  <div class="tab-pane" id="tab-escala">
+    <div style="max-width:960px;margin:0 auto;">
+
+      <!-- Publicadores da congregação -->
+      <div class="card" style="margin-bottom:1.2rem;">
+        <div class="card-header">
+          <span class="icon">👥</span>
+          <h2>Publicadores que participarão</h2>
+          <span id="badge-escala" class="badge" style="display:none;">0</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.4rem 0;min-height:2.2rem;" id="membros-chips">
+          <span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;">
+          <input id="input-membro" class="form-control" placeholder="Nome do publicador (Ex: Irmão Carlos)" style="flex:1;min-width:200px;"/>
+          <button class="btn btn-primary" id="btn-add-membro" style="white-space:nowrap;">➕ Adicionar</button>
+        </div>
+      </div>
+
+      <!-- Carrinhos / Postos com turnos -->
+      <div id="postos-turnos"></div>
+
+      <!-- Botões de ação -->
+      <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
+        <button class="btn btn-outline" id="btn-salvar-escala">💾 Salvar</button>
+        <button class="btn btn-primary" id="btn-export-pdf">🖨️ Exportar PDF da Escala</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ABA 4 — REGISTRAR ══ -->
+  <div class="tab-pane" id="tab-reg">
+    <div style="max-width:780px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+
+      <!-- Formulário -->
+      <div class="card">
+        <div class="card-header"><span class="icon">📖</span><h2>Registrar distribuição</h2></div>
+        <div class="form-group">
+          <label>Posto</label>
+          <select class="form-control" id="my-posto"></select>
+        </div>
+        <div class="form-group">
+          <label>Publicação</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;" id="pub-selector"></div>
+        </div>
+        <div class="form-group">
+          <label>Tipo de contato</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;" id="tipo-selector"></div>
+        </div>
+        <div class="form-group">
+          <label>Quantidade</label>
+          <div class="reg-counter">
+            <button class="rcbtn" id="my-minus" style="background:#F8D7DA;color:var(--danger);">−</button>
+            <span class="reg-num" id="my-qty">1</span>
+            <button class="rcbtn" id="my-plus"  style="background:#D4EDDA;color:var(--success);">+</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Observação <span style="font-weight:400;color:var(--gray);">(opcional)</span></label>
+          <textarea class="form-control" id="my-obs" rows="2" placeholder="Ex: corredor muito interessado..."></textarea>
+        </div>
+        <button class="btn btn-accent w-full" id="btn-registrar" style="justify-content:center;font-size:1rem;padding:.85rem;">✅ Registrar</button>
+      </div>
+
+      <!-- Resultado + Histórico -->
+      <div style="display:flex;flex-direction:column;gap:1.2rem;">
+        <div class="resultado-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+            <strong style="font-size:.95rem;">📊 Resultado acumulado</strong>
+            <button onclick="imprimirResultado()" class="btn btn-sm"
+              style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);">
+              🖨️ Imprimir
+            </button>
+          </div>
+          <div class="resultado-grid" id="resultado-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-header" style="justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">🕓</span><h2>Histórico</h2></div>
+            <button class="btn btn-outline btn-sm" onclick="limparHistorico()">🗑️ Limpar</button>
+          </div>
+          <div id="meu-historico" style="display:flex;flex-direction:column;gap:.4rem;max-height:280px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /conteudo-principal -->
+
+<!-- PRINT -->
+<div id="print-area" style="display:none;"><div id="print-content"></div></div>
+<style>
+  @media print {
+    body > *:not(#print-area) { display:none !important; }
+    #print-area   { display:block !important; }
+    #print-content { font-family:Arial,sans-serif; padding:2rem; }
+    #print-content h1  { color:#003D7A; }
+    #print-content h2  { color:#0057A8; }
+    #print-content table { width:100%; border-collapse:collapse; margin-top:1rem; }
+    #print-content th  { background:#0057A8; color:white; padding:.5rem .8rem; text-align:left; }
+    #print-content td  { border:1px solid #ddd; padding:.5rem .8rem; }
+    #print-content tr:nth-child(even) td { background:#f0f7ff; }
+  }
+</style>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ══════════════════════════════════════════
+//  INIT + AUTH
+// ══════════════════════════════════════════
+const user = Auth.check();
+if (!user) throw new Error('not auth');
+if (user.type === 'admin') { window.location.href = 'admin.html'; }
+
+const CONG_ID  = user.congId;
+const cong     = DB.get('congregacoes', []).find(c => c.id === CONG_ID);
+const todosPos = DB.get('postos', []);
+const desigs   = DB.get('designacoes', []).filter(d => d.congId === CONG_ID);
+
+function getCongConfig() {
+  const all = DB.get('cong_config', {});
+  return all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : { publicacoes: {}, escala: [] };
+}
+function saveCongConfig(cfg) {
+  const all = DB.get('cong_config', {});
+  all[CONG_ID] = cfg;
+  DB.set('cong_config', all);
+}
+
+// ── Banner ──
+document.getElementById('nav-cong-nome').textContent = cong?.nome || 'Congregação';
+document.getElementById('wb-nome').textContent       = cong?.nome || 'Bem-vindo!';
+document.getElementById('wb-cidade').textContent     = cong ? `📍 ${cong.cidade}` : '';
+if (cong?.cor) {
+  document.getElementById('cong-banner').style.background =
+    `linear-gradient(135deg, ${cong.cor}dd, ${cong.cor})`;
+}
+
+// ══════════════════════════════════════════
+//  CONTROLE DE ACESSO
+// ══════════════════════════════════════════
+function showStatus(icon, titulo, msg, hint, hintType) {
+  document.getElementById('tela-status').style.display       = 'block';
+  document.getElementById('conteudo-principal').style.display = 'none';
+  document.getElementById('s-icon').textContent   = icon;
+  document.getElementById('s-titulo').textContent = titulo;
+  document.getElementById('s-msg').innerHTML      = msg;
+  const colors = {
+    yellow: 'background:#FFF3CD;border:1px solid #FFC107;color:#856404',
+    green:  'background:#D4EDDA;border:1px solid #28A745;color:#155724',
+  };
+  document.getElementById('s-hint').innerHTML = hint
+    ? `<div class="status-hint" style="${colors[hintType||'yellow']};">${hint}</div>` : '';
+}
+
+if (!cong) {
+  document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">❌ Não encontrada</span>';
+  showStatus('❌','Congregação não encontrada','Não foi possível localizar sua congregação. Contate o administrador.');
+  throw new Error('no cong');
+}
+
+if (!cong.confirmada) {
+  document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">⏳ Aguardando confirmação</span>';
+  showStatus('⏳','Aguardando confirmação',
+    `Sua congregação <strong>${cong.nome}</strong> está cadastrada, mas a participação ainda <strong>não foi confirmada</strong> pelo administrador.<br><br>Assim que for confirmada, você terá acesso completo ao seu posto.`,
+    '💡 Já acertou com o coordenador? Peça para ele confirmar no <strong>Painel Admin</strong>.', 'yellow');
+  throw new Error('not confirmed');
+}
+
+if (desigs.length === 0) {
+  document.getElementById('banner-chips').innerHTML =
+    '<span class="chip green">✅ Confirmada</span><span class="chip yellow">📍 Sem posto ainda</span>';
+  showStatus('🎉','Participação confirmada!',
+    `<strong>${cong.nome}</strong> está confirmada para o evento! O administrador ainda não designou seu <strong>posto no percurso</strong>. Assim que for definido você verá aqui todas as informações.`,
+    '✅ Fique tranquilo — você será avisado assim que o posto for designado.', 'green');
+  throw new Error('no desig');
+}
+
+// ✅ ACESSO TOTAL
+document.getElementById('banner-chips').innerHTML =
+  '<span class="chip green">✅ Confirmada e designada</span>' +
+  `<span class="chip">📍 ${desigs.length} posto(s)</span>`;
+document.getElementById('conteudo-principal').style.display = 'block';
+
+const desigP = desigs[0];
+const postoP = todosPos.find(p => p.id === desigP.postoId);
+
+if (postoP) {
+  document.getElementById('banner-posto-chip').innerHTML = `
+    <div style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:.6rem 1rem;text-align:right;">
+      <div style="font-size:1.3rem;font-weight:800;">Km ${postoP.km}</div>
+      <div style="font-size:.8rem;opacity:.85;">${postoP.nome}</div>
+      <div style="font-size:.75rem;opacity:.7;">${desigP.inicio} – ${desigP.fim}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'tab-reg') carregarSelectPostos();
+  });
+});
+document.querySelectorAll('[data-tab]').forEach(a => {
+  a.addEventListener('click', e => {
+    const t = a.dataset.tab;
+    if (!t || !document.getElementById(t)) return;
+    e.preventDefault();
+    document.querySelector(`.tab-btn[data-tab="${t}"]`)?.click();
+  });
+});
+
+// ══════════════════════════════════════════
+//  ABA 1 — MEU POSTO
+// ══════════════════════════════════════════
+(function renderPosto() {
+  if (!postoP) return;
+  document.getElementById('ph-km').textContent   = `📏 Km ${postoP.km}`;
+  document.getElementById('ph-nome').textContent = postoP.nome;
+  document.getElementById('ph-detail').innerHTML = `
+    <span>📌 ${postoP.local || 'Local não informado'}</span>
+    <span>📊 Status: ${postoP.status==='ativo'?'🟢 Ativo':postoP.status==='standby'?'🟡 Standby':'🔴 Inativo'}</span>
+    ${postoP.responsavel ? `<span>👤 Responsável geral: ${postoP.responsavel}</span>` : ''}`;
+
+  const rows = desigs.map(d => {
+    const p  = todosPos.find(x => x.id === d.postoId);
+    const dt = d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}) : '—';
+    return `<tr>
+      <td><strong>${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">Km ${p?.km||'?'}</div></td>
+      <td>${dt}</td><td>${d.inicio}–${d.fim}</td>
+      <td>${d.irmaos||'?'} irmão(s)</td>
+      <td>${d.obs||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('card-desig').innerHTML = `
+    <div class="card-header"><span class="icon">🗓️</span><h2>Minhas Designações</h2></div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:.85rem;border-collapse:collapse;">
+        <thead><tr style="background:var(--primary-dark);color:white;">
+          <th style="padding:.5rem .8rem;text-align:left;">Posto</th>
+          <th style="padding:.5rem .8rem;">Data</th>
+          <th style="padding:.5rem .8rem;">Horário</th>
+          <th style="padding:.5rem .8rem;">Equipe</th>
+          <th style="padding:.5rem .8rem;">Obs.</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  // Mapa
+  const coordsBase = [
+    [-23.980,-46.400],[-23.994,-46.407],[-24.003,-46.415],[-24.010,-46.421],
+    [-24.018,-46.433],[-24.012,-46.425],[-24.005,-46.418],[-23.980,-46.400],
+  ];
+  const piIdx = todosPos.indexOf(postoP);
+  const center = coordsBase[piIdx] || [-24.000,-46.416];
+  const map = L.map('mini-map').setView(center, 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
+  L.polyline(coordsBase,{color:'#0057A8',weight:3,opacity:.4,dashArray:'8,6'}).addTo(map);
+  todosPos.forEach((p, i) => {
+    if (!coordsBase[i]) return;
+    const isMeu = desigs.some(d => d.postoId === p.id);
+    const sz = isMeu ? 44 : 28;
+    const icon = L.divIcon({
+      html:`<div style="background:${isMeu?cong?.cor||'#0057A8':'#9E9E9E'};color:white;border-radius:50%;
+        width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;
+        font-size:.62rem;font-weight:800;border:${isMeu?'3px solid white':'2px solid rgba(255,255,255,.4)'};
+        box-shadow:${isMeu?'0 3px 10px rgba(0,0,0,.4)':'none'};opacity:${isMeu?1:.4};">${p.km}km</div>`,
+      iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''
+    });
+    const m = L.marker(coordsBase[i],{icon}).addTo(map);
+    if (isMeu) {
+      const d = desigs.find(x => x.postoId === p.id);
+      m.bindPopup(`<strong>${p.nome}</strong><br>📏 Km ${p.km}<br>🕐 ${d?.inicio}–${d?.fim}<br>📌 ${p.local||''}`).openPopup();
+    }
+  });
+})();
+
+// ══════════════════════════════════════════
+//  ABA 2 — PUBLICAÇÕES
+// ══════════════════════════════════════════
+const PUBS = [
+  {id:'atalaias', nome:'A Sentinela',  icon:'📰'},
+  {id:'despertar',nome:'Despertai!',   icon:'📗'},
+  {id:'biblia',   nome:'Bíblia / NWT', icon:'📖'},
+  {id:'folheto',  nome:'Folheto',      icon:'📄'},
+  {id:'livro',    nome:'Livro',        icon:'📘'},
+  {id:'site',     nome:'Site (card)',  icon:'🌐'},
+];
+
+function renderPubGrid() {
+  const cfg = getCongConfig();
+  document.getElementById('pub-grid').innerHTML = PUBS.map(p => {
+    const q = cfg.publicacoes[p.id] || 0;
+    return `<div class="pub-item">
+      <span class="p-icon">${p.icon}</span>
+      <label for="pqty-${p.id}">${p.nome}</label>
+      <input class="pub-qty-input" type="number" id="pqty-${p.id}"
+        min="0" max="9999" value="${q}" oninput="calcTotalPub()"/>
+    </div>`;
+  }).join('');
+  calcTotalPub();
+  renderPubsSalvas();
+}
+
+window.calcTotalPub = function() {
+  let t = 0;
+  PUBS.forEach(p => { t += parseInt(document.getElementById(`pqty-${p.id}`)?.value)||0; });
+  document.getElementById('pub-total').textContent = t;
+};
+
+function renderPubsSalvas() {
+  const cfg  = getCongConfig();
+  const keys = Object.entries(cfg.publicacoes).filter(([,v]) => v > 0);
+  const card = document.getElementById('pubs-salvas-card');
+  if (!keys.length) { card.style.display='none'; document.getElementById('badge-pubs').style.display='none'; return; }
+  card.style.display = 'block';
+  const total = keys.reduce((s,[,v])=>s+v,0);
+  const ts = cfg.pubs_ts ? `<div style="font-size:.75rem;color:var(--gray);margin-bottom:.6rem;">💾 Última atualização: <strong>${cfg.pubs_ts}</strong></div>` : '';
+  document.getElementById('pubs-salvas-lista').innerHTML = ts + keys.map(([id,qty]) => {
+    const p = PUBS.find(x=>x.id===id);
+    return `<span class="badge badge-primary" style="font-size:.85rem;padding:.35rem .7rem;">
+      ${p?.icon} ${p?.nome}: <strong>${qty}</strong>
+    </span>`;
+  }).join('');
+  const b = document.getElementById('badge-pubs');
+  b.textContent = total; b.style.display = 'inline';
+}
+
+document.getElementById('btn-salvar-pubs').addEventListener('click', () => {
+  const cfg = getCongConfig();
+  PUBS.forEach(p => { cfg.publicacoes[p.id] = parseInt(document.getElementById(`pqty-${p.id}`)?.value)||0; });
+  cfg.pubs_ts = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  saveCongConfig(cfg);
+  showToast('Publicações salvas! ✅','success');
+  renderPubsSalvas();
+});
+
+renderPubGrid();
+
+// ══════════════════════════════════════════
+//  ABA 3 — ESCALA / TURNOS
+// ══════════════════════════════════════════
+
+function timeToMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+
+function gerarSlots(inicio, fim, duracaoH) {
+  const slots = [];
+  let s = timeToMin(inicio);
+  const e = timeToMin(fim);
+  while (s < e) {
+    const t = Math.min(s + duracaoH * 60, e);
+    slots.push({ inicio: minToTime(s), fim: minToTime(t) });
+    s = t;
+  }
+  return slots;
+}
+
+function getMembros() { return getCongConfig().membros || []; }
+function getTurnos()  { return getCongConfig().turnos  || {}; }
+
+function renderMembros() {
+  const membros = getMembros();
+  const el = document.getElementById('membros-chips');
+  el.innerHTML = membros.length
+    ? membros.map(m => `<span class="membro-chip">👤 ${m}<button onclick="removerMembro('${m.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">✕</button></span>`).join('')
+    : '<span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>';
+  const b = document.getElementById('badge-escala');
+  b.textContent = membros.length || '';
+  b.style.display = membros.length ? 'inline' : 'none';
+}
+
+function renderPostosTurnos() {
+  const el     = document.getElementById('postos-turnos');
+  const turnos = getTurnos();
+
+  if (!desigs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);background:white;border-radius:var(--radius);box-shadow:var(--shadow);">Nenhuma designação recebida ainda.</div>';
+    return;
+  }
+
+  el.innerHTML = desigs.map(desig => {
+    const posto   = todosPos.find(p => p.id === desig.postoId);
+    if (!posto) return '';
+    const duracao  = desig.duracaoTurno || 2;
+    const maxSlot  = desig.maxPorTurno  || 3;
+    const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
+    const assigned = turnos[desig.id] || {};
+    const dataFmt  = desig.data
+      ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', {weekday:'short',day:'numeric',month:'short'})
+      : '—';
+
+    const membros = getMembros();
+
+    const slotsHtml = slots.map(slot => {
+      const key     = slot.inicio;
+      const people  = assigned[key] || [];
+      const vagas   = maxSlot - people.length;
+
+      const peopleHtml = people.map(nome => `
+        <div class="turno-pessoa">
+          👤 ${nome}
+          <button onclick="removeFromSlot(${desig.id},'${key}','${nome.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="Remover">✕</button>
+        </div>`).join('');
+
+      const vagasHtml = Array.from({length: Math.max(0,vagas)}, (_,i) => {
+        const disponíveis = membros.filter(m => !(assigned[key]||[]).includes(m));
+        if (!disponíveis.length) return `<div style="font-size:.72rem;color:var(--gray);text-align:center;padding:.2rem;">— sem membros —</div>`;
+        return `<select class="turno-vaga-select" onchange="addToSlotFromSelect(${desig.id},'${key}',${maxSlot},this)">
+          <option value="">+ Vaga ${people.length+i+1}</option>
+          ${disponíveis.map(m => `<option value="${m.replace(/"/g,'&quot;')}">${m}</option>`).join('')}
+        </select>`;
+      }).join('');
+
+      return `
+        <div class="turno-slot">
+          <div class="turno-slot-header">${slot.inicio}–${slot.fim}</div>
+          <div class="turno-slot-body">${peopleHtml}${vagasHtml}</div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="carrinho-card">
+        <div class="carrinho-header">
+          <span class="ch-km">Km ${posto.km}</span>
+          <div style="flex:1;">
+            <strong>🪧 ${posto.nome}</strong>
+            <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">📍 ${posto.local}</div>
+          </div>
+          <div style="font-size:.78rem;opacity:.85;text-align:right;">
+            📅 ${dataFmt}<br>⏱️ ${desig.inicio}–${desig.fim}<br>${duracao}h/turno · máx. ${maxSlot}/turno
+          </div>
+        </div>
+        <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
+      </div>`;
+  }).join('');
+}
+
+window.addToSlotFromSelect = function(desigId, slotKey, maxSlot, selectEl) {
+  const nome = selectEl.value;
+  if (!nome) return;
+  const cfg    = getCongConfig();
+  const turnos = cfg.turnos || {};
+  if (!turnos[desigId]) turnos[desigId] = {};
+  if (!turnos[desigId][slotKey]) turnos[desigId][slotKey] = [];
+  const current = turnos[desigId][slotKey];
+  if (current.length >= maxSlot) { showToast('Turno cheio!', 'error'); selectEl.value = ''; return; }
+  if (current.includes(nome))    { showToast('Já está neste turno!', 'warning'); selectEl.value = ''; return; }
+  current.push(nome);
+  cfg.turnos = turnos;
+  saveCongConfig(cfg);
+  renderPostosTurnos();
+  showToast(`${nome} adicionado(a) ao turno ${slotKey} ✅`, 'success');
+};
+
+window.removeFromSlot = function(desigId, slotKey, nome) {
+  const cfg = getCongConfig();
+  const t   = cfg.turnos || {};
+  if (t[desigId] && t[desigId][slotKey]) {
+    t[desigId][slotKey] = t[desigId][slotKey].filter(n => n !== nome);
+    cfg.turnos = t;
+    saveCongConfig(cfg);
+    renderPostosTurnos();
+  }
+};
+
+document.getElementById('btn-add-membro').addEventListener('click', () => {
+  const nome = document.getElementById('input-membro').value.trim();
+  if (!nome) { showToast('Informe o nome!', 'error'); return; }
+  const cfg = getCongConfig();
+  cfg.membros = cfg.membros || [];
+  if (cfg.membros.includes(nome)) { showToast('Publicador já adicionado!', 'warning'); return; }
+  cfg.membros.push(nome);
+  saveCongConfig(cfg);
+  document.getElementById('input-membro').value = '';
+  renderMembros();
+  renderPostosTurnos();
+  showToast(`${nome} adicionado(a)! ✅`, 'success');
+});
+
+window.removerMembro = function(nome) {
+  const cfg = getCongConfig();
+  cfg.membros = (cfg.membros || []).filter(m => m !== nome);
+  if (cfg.turnos) {
+    Object.keys(cfg.turnos).forEach(did => {
+      Object.keys(cfg.turnos[did]).forEach(slot => {
+        cfg.turnos[did][slot] = cfg.turnos[did][slot].filter(n => n !== nome);
+      });
+    });
+  }
+  saveCongConfig(cfg);
+  renderMembros();
+  renderPostosTurnos();
+};
+
+document.getElementById('btn-salvar-escala').addEventListener('click', () => {
+  const cfg = getCongConfig();
+  cfg.escala_ts = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  saveCongConfig(cfg);
+  showToast('Escala salva! ✅', 'success');
+});
+
+document.getElementById('btn-export-pdf').addEventListener('click', exportarEscalaPDF);
+
+function exportarEscalaPDF() {
+  const evento  = DB.get('evento_config', {nome:'Corrida Internacional de Praia Grande'});
+  const cfg     = getCongConfig();
+  const turnos  = cfg.turnos  || {};
+  const membros = cfg.membros || [];
+
+  const desigHtml = desigs.map(desig => {
+    const posto   = todosPos.find(p => p.id === desig.postoId);
+    if (!posto) return '';
+    const duracao  = desig.duracaoTurno || 2;
+    const maxSlot  = desig.maxPorTurno  || 3;
+    const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
+    const assigned = turnos[desig.id] || {};
+    const dataFmt  = desig.data
+      ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', {weekday:'long',day:'numeric',month:'long',year:'numeric'})
+      : '—';
+
+    const rows = slots.map(slot => {
+      const people = assigned[slot.inicio] || [];
+      return `<tr>
+        <td style="font-weight:600;text-align:center;white-space:nowrap;">${slot.inicio}–${slot.fim}</td>
+        <td>${people.length ? people.join(', ') : '<em style="color:#999;">vaga</em>'}</td>
+        <td style="text-align:center;">${people.length}/${maxSlot}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div style="margin-bottom:1.5rem;">
+        <h3 style="background:#003D7A;color:white;padding:.6rem 1rem;border-radius:4px 4px 0 0;margin:0;">
+          🪧 ${posto.nome} &nbsp;|&nbsp; Km ${posto.km}
+        </h3>
+        <p style="background:#eef4fb;padding:.5rem 1rem;margin:0;font-size:.88rem;border:1px solid #cde0f5;border-top:none;">
+          📍 ${posto.local} &nbsp;|&nbsp; 📅 ${dataFmt} &nbsp;|&nbsp; ⏱️ ${desig.inicio}–${desig.fim} &nbsp;|&nbsp; ${duracao}h/turno
+        </p>
+        <table style="border-top:none;"><thead><tr><th>Horário</th><th>Publicadores</th><th>Ocupação</th></tr></thead><tbody>${rows}</tbody></table>
+      </div>`;
+  }).join('');
+
+  document.getElementById('print-content').innerHTML = `
+    <h1 style="color:#003D7A;">🏃 ${evento.nome}</h1>
+    <h2 style="color:#0057A8;">📋 Escala de Turnos — ${cong?.nome || ''}</h2>
+    <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
+    ${membros.length ? `<p><strong>Publicadores:</strong> ${membros.join(' · ')}</p>` : ''}
+    <hr/>
+    ${desigHtml || '<p>Nenhuma designação.</p>'}
+    <p style="margin-top:2rem;color:#999;font-size:.82rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;
+  window.print();
+}
+
+renderMembros();
+renderPostosTurnos();
+
+// ══════════════════════════════════════════
+//  ABA 4 — REGISTRAR
+// ══════════════════════════════════════════
+const PUB_ICONS = {'A Sentinela':'📰','Despertai!':'📗','Bíblia / NWT':'📖','Folheto':'📄','Livro':'📘','Site (card)':'🌐'};
+const TIPOS = [
+  {id:'publicacao',     icon:'📖',label:'Publicação'},
+  {id:'conversa',       icon:'💬',label:'Conversa'},
+  {id:'qrcode',         icon:'📱',label:'QR Code'},
+  {id:'contato_especial',icon:'⭐',label:'Especial'},
+];
+let selPub  = 'A Sentinela';
+let selTipo = 'publicacao';
+let qty     = 1;
+
+function renderPubSel() {
+  document.getElementById('pub-selector').innerHTML = PUBS.map(p => `
+    <button onclick="setSel('pub','${p.nome}')"
+      style="flex-direction:column;gap:.2rem;padding:.5rem .3rem;font-size:.7rem;cursor:pointer;
+        background:${selPub===p.nome?'var(--primary)':'white'};
+        color:${selPub===p.nome?'white':'var(--primary-dark)'};
+        border:2px solid ${selPub===p.nome?'var(--primary)':'var(--gray-light)'};
+        border-radius:var(--radius-sm);display:flex;align-items:center;transition:.2s;">
+      <span style="font-size:1.2rem;">${p.icon}</span>${p.nome}
+    </button>`).join('');
+}
+
+function renderTipoSel() {
+  document.getElementById('tipo-selector').innerHTML = TIPOS.map(t => `
+    <button onclick="setSel('tipo','${t.id}')"
+      style="flex-direction:column;gap:.2rem;padding:.5rem;font-size:.78rem;cursor:pointer;
+        background:${selTipo===t.id?'var(--accent)':'white'};
+        color:${selTipo===t.id?'white':'var(--primary-dark)'};
+        border:2px solid ${selTipo===t.id?'var(--accent)':'var(--gray-light)'};
+        border-radius:var(--radius-sm);display:flex;align-items:center;transition:.2s;">
+      <span style="font-size:1.1rem;">${t.icon}</span>${t.label}
+    </button>`).join('');
+}
+
+window.setSel = function(type, val) {
+  if (type==='pub')  selPub  = val;
+  if (type==='tipo') selTipo = val;
+  renderPubSel(); renderTipoSel();
+};
+
+function carregarSelectPostos() {
+  const ids  = [...new Set(desigs.map(d=>d.postoId))];
+  const list = ids.length ? todosPos.filter(p=>ids.includes(p.id)) : todosPos;
+  document.getElementById('my-posto').innerHTML =
+    list.map(p=>`<option value="${p.id}">${p.nome} (Km ${p.km})</option>`).join('');
+}
+
+document.getElementById('my-minus').addEventListener('click',()=>{
+  if(qty>1){qty--;document.getElementById('my-qty').textContent=qty;}
+});
+document.getElementById('my-plus').addEventListener('click',()=>{
+  qty++;document.getElementById('my-qty').textContent=qty;
+});
+
+document.getElementById('btn-registrar').addEventListener('click',()=>{
+  const postoId = parseInt(document.getElementById('my-posto').value);
+  const posto   = todosPos.find(p=>p.id===postoId);
+  const obs     = document.getElementById('my-obs').value.trim();
+  const dist    = DB.get('distribuicoes',[]);
+  dist.unshift({
+    id:Date.now(), postoId, postoNome:posto?.nome||'', congId:CONG_ID, congNome:cong?.nome||'',
+    pub:selPub, pubIcon:PUB_ICONS[selPub]||'📖', tipo:selTipo, qty, obs,
+    hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    data:new Date().toISOString().split('T')[0],
+  });
+  DB.set('distribuicoes',dist);
+  // atualiza contatos no posto
+  const arr=DB.get('postos',[]);
+  const pi=arr.findIndex(p=>p.id===postoId);
+  if(pi>=0){arr[pi].contatos=(arr[pi].contatos||0)+1;DB.set('postos',arr);}
+  qty=1; document.getElementById('my-qty').textContent='1';
+  document.getElementById('my-obs').value='';
+  showToast(`${selPub} registrado! ✅`,'success');
+  renderHistorico(); renderResultado();
+});
+
+function renderHistorico() {
+  const dist = DB.get('distribuicoes',[]).filter(d=>d.congId===CONG_ID);
+  const el   = document.getElementById('meu-historico');
+  if (!dist.length) {
+    el.innerHTML='<div style="color:var(--gray);font-size:.82rem;text-align:center;padding:.8rem;">Nenhum registro ainda.</div>';
+    return;
+  }
+  el.innerHTML = dist.slice(0,20).map(r=>`
+    <div class="hist-item">
+      <span>${r.pubIcon}</span>
+      <span style="flex:1;"><strong>${r.pub}</strong> — ${r.postoNome}</span>
+      <span style="font-weight:800;color:var(--primary);">×${r.qty}</span>
+      <span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${r.hora}</span>
+    </div>`).join('');
+}
+
+window.limparHistorico = function() {
+  if (!confirm('Limpar todo o seu histórico?')) return;
+  DB.set('distribuicoes', DB.get('distribuicoes',[]).filter(d=>d.congId!==CONG_ID));
+  renderHistorico(); renderResultado();
+  showToast('Histórico limpo.','info');
+};
+
+function renderResultado() {
+  const dist   = DB.get('distribuicoes',[]).filter(d=>d.congId===CONG_ID);
+  const total  = dist.reduce((s,r)=>s+(r.qty||1),0);
+  const porPub = {};
+  dist.forEach(r=>{porPub[r.pub]=(porPub[r.pub]||0)+(r.qty||1);});
+  const items  = Object.entries(porPub).map(([pub,q])=>`
+    <div class="resultado-item">
+      <div class="r-qty">${q}</div>
+      <div class="r-label">${PUB_ICONS[pub]||'📖'} ${pub}</div>
+    </div>`).join('');
+  document.getElementById('resultado-grid').innerHTML = `
+    <div class="resultado-item">
+      <div class="r-qty">${total}</div>
+      <div class="r-label">📊 Total geral</div>
+    </div>${items}`;
+}
+
+window.imprimirResultado = function() {
+  const dist   = DB.get('distribuicoes',[]).filter(d=>d.congId===CONG_ID);
+  const evento = DB.get('evento_config',{nome:'Corrida Internacional de Praia Grande'});
+  const porPub = {};
+  dist.forEach(r=>{porPub[r.pub]=(porPub[r.pub]||0)+(r.qty||1);});
+  const total  = Object.values(porPub).reduce((s,v)=>s+v,0);
+  document.getElementById('print-content').innerHTML = `
+    <h1>🏃 ${evento.nome}</h1>
+    <h2>Relatório — ${cong?.nome}</h2>
+    <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')} &nbsp;|&nbsp; Posto: ${postoP?.nome||'—'} (Km ${postoP?.km||'?'})</p>
+    <h3>📚 Publicações distribuídas</h3>
+    <table>
+      <thead><tr><th>Publicação</th><th>Quantidade</th></tr></thead>
+      <tbody>
+        ${Object.entries(porPub).map(([p,q])=>`<tr><td>${PUB_ICONS[p]||'📖'} ${p}</td><td style="text-align:center;font-weight:700;">${q}</td></tr>`).join('')}
+        <tr style="background:#D4EDDA;"><td><strong>TOTAL</strong></td><td style="text-align:center;font-weight:800;">${total}</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:2rem;color:#999;font-size:.85rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;
+  window.print();
+};
+
+// Init aba registrar
+renderPubSel(); renderTipoSel(); carregarSelectPostos();
+renderHistorico(); renderResultado();
+</script>
+</body>
+</html>

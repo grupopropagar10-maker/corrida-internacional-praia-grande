@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Corrida Internacional de Praia Grande</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #001f4d 0%, #003D7A 50%, #0057A8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .login-wrap {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    /* ── CABEÇALHO ── */
+    .login-brand {
+      text-align: center;
+      color: white;
+      margin-bottom: 2rem;
+    }
+
+    .login-brand .race-icon {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+    }
+
+    .login-brand h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      line-height: 1.2;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .login-brand p {
+      font-size: 0.85rem;
+      opacity: 0.75;
+      margin-top: 0.4rem;
+    }
+
+    .event-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.9rem;
+      border-radius: 50px;
+      margin-top: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── CARD ── */
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2.2rem 2rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    /* ── TOGGLE TIPO ── */
+    .type-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1.8rem;
+      background: var(--light);
+      border-radius: 12px;
+      padding: 5px;
+    }
+
+    .type-btn {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: var(--transition);
+      color: var(--gray);
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .type-btn .t-icon { font-size: 1.5rem; }
+
+    .type-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 14px rgba(0,87,168,0.4);
+    }
+
+    /* ── FORM ── */
+    .login-form { display: none; }
+    .login-form.active { display: block; }
+
+    .login-form h3 {
+      font-size: 1rem;
+      color: var(--primary-dark);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,87,168,0.4);
+    }
+
+    .login-btn:active { transform: scale(0.98); }
+
+    /* Senha com toggle */
+    .pass-wrap {
+      position: relative;
+    }
+
+    .pass-wrap .form-control {
+      padding-right: 3rem;
+    }
+
+    .pass-eye {
+      position: absolute;
+      right: 0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--gray);
+      padding: 0.2rem;
+    }
+
+    .error-msg {
+      background: #F8D7DA;
+      color: #721C24;
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+      border-left: 3px solid var(--danger);
+    }
+
+    /* ── RODAPÉ DO CARD ── */
+    .login-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--gray-light);
+      font-size: 0.78rem;
+      color: var(--gray);
+    }
+
+    /* ── LOADING ── */
+    .spin {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <!-- MARCA -->
+  <div class="login-brand">
+    <span class="race-icon">🏃</span>
+    <h1>Corrida Internacional<br>de Praia Grande</h1>
+    <p>Sistema de Gestão de Voluntários</p>
+    <span class="event-chip">🏅 Acesso restrito</span>
+  </div>
+
+  <!-- CARD -->
+  <div class="login-card">
+
+    <!-- TOGGLE -->
+    <div class="type-toggle">
+      <button class="type-btn active" id="btn-admin-type">
+        <span class="t-icon">🔑</span>
+        Administrador
+      </button>
+      <button class="type-btn" id="btn-cong-type">
+        <span class="t-icon">⛪</span>
+        Congregação
+      </button>
+    </div>
+
+    <!-- ERRO -->
+    <div class="error-msg" id="error-msg">Usuário ou senha incorretos. Tente novamente.</div>
+
+    <!-- FORM ADMIN -->
+    <div class="login-form active" id="form-admin">
+      <h3>🔑 Acesso Administrativo</h3>
+      <div class="form-group">
+        <label>Senha de administrador</label>
+        <div class="pass-wrap">
+          <input class="form-control" type="password" id="admin-senha" placeholder="Digite a senha..." autocomplete="current-password"/>
+          <button class="pass-eye" type="button" onclick="togglePass('admin-senha', this)">👁️</button>
+        </div>
+      </div>
+      <button class="login-btn" id="btn-login-admin">
+        <span>Entrar como Admin</span>
+      </button>
+    </div>
+
+    <!-- FORM CONGREGAÇÃO -->
+    <div class="login-form" id="form-cong">
+      <h3>⛪ Acesso da Congregação</h3>
+      <div class="form-group">
+        <label>Selecione sua congregação</label>
+        <select class="form-control" id="cong-select">
+          <option value="">-- Escolha sua congregação --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Senha / PIN</label>
+        <div class="pass-wrap">
+          <input class="form-control" type="password" id="cong-senha" placeholder="Informe sua senha..." autocomplete="current-password"/>
+          <button class="pass-eye" type="button" onclick="togglePass('cong-senha', this)">👁️</button>
+        </div>
+      </div>
+      <button class="login-btn" id="btn-login-cong" style="background:linear-gradient(135deg,#1a5f1a,#28A745);">
+        <span>Entrar</span>
+      </button>
+    </div>
+
+    <!-- RODAPÉ -->
+    <div class="login-footer">
+      Sistema interno de gestão — Corrida Internacional de Praia Grande<br>
+      Acesso exclusivo para administradores e congregações participantes
+    </div>
+  </div>
+
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Se já estiver logado, redireciona
+  const session = Auth.getSession();
+  if (session) {
+    window.location.href = session.type === 'admin' ? 'admin.html' : 'minha-congregacao.html';
+  }
+
+  // ── TOGGLE TIPO ──
+  document.getElementById('btn-admin-type').addEventListener('click', () => {
+    document.getElementById('btn-admin-type').classList.add('active');
+    document.getElementById('btn-cong-type').classList.remove('active');
+    document.getElementById('form-admin').classList.add('active');
+    document.getElementById('form-cong').classList.remove('active');
+    document.getElementById('error-msg').style.display = 'none';
+  });
+
+  document.getElementById('btn-cong-type').addEventListener('click', () => {
+    document.getElementById('btn-cong-type').classList.add('active');
+    document.getElementById('btn-admin-type').classList.remove('active');
+    document.getElementById('form-cong').classList.add('active');
+    document.getElementById('form-admin').classList.remove('active');
+    document.getElementById('error-msg').style.display = 'none';
+    carregarCongs();
+  });
+
+  // ── POPULA CONGREGAÇÕES ──
+  function carregarCongs() {
+    const congs = DB.get('congregacoes', []).filter(c => c.senha);
+    const sel   = document.getElementById('cong-select');
+    sel.innerHTML = '<option value="">-- Escolha sua congregação --</option>' +
+      congs.map(c => `<option value="${c.id}">${c.nome} — ${c.cidade}</option>`).join('');
+  }
+
+  // ── LOGIN ADMIN ──
+  function loginAdmin() {
+    const btn   = document.getElementById('btn-login-admin');
+    const senha = document.getElementById('admin-senha').value;
+    if (!senha) { mostrarErro('Informe a senha!'); return; }
+    btn.innerHTML = '<span class="spin"></span>';
+    setTimeout(() => {
+      if (Auth.loginAdmin(senha)) {
+        window.location.href = 'admin.html';
+      } else {
+        btn.innerHTML = '<span>Entrar como Admin</span>';
+        mostrarErro('Senha incorreta!');
+      }
+    }, 600);
+  }
+
+  document.getElementById('btn-login-admin').addEventListener('click', loginAdmin);
+  document.getElementById('admin-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginAdmin(); });
+
+  // ── LOGIN CONGREGAÇÃO ──
+  function loginCong() {
+    const btn    = document.getElementById('btn-login-cong');
+    const congId = document.getElementById('cong-select').value;
+    const senha  = document.getElementById('cong-senha').value;
+    if (!congId) { mostrarErro('Selecione sua congregação!'); return; }
+    if (!senha)  { mostrarErro('Informe a senha/PIN!'); return; }
+    btn.innerHTML = '<span class="spin"></span>';
+    setTimeout(() => {
+      if (Auth.loginCong(congId, senha)) {
+        window.location.href = 'minha-congregacao.html';
+      } else {
+        btn.innerHTML = '<span>Entrar</span>';
+        mostrarErro('Senha incorreta!');
+      }
+    }, 600);
+  }
+
+  document.getElementById('btn-login-cong').addEventListener('click', loginCong);
+  document.getElementById('cong-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginCong(); });
+
+  // ── UTILITÁRIOS ──
+  function mostrarErro(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  function togglePass(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (inp.type === 'password') { inp.type = 'text';     btn.textContent = '🙈'; }
+    else                         { inp.type = 'password'; btn.textContent = '👁️'; }
+  }
+</script>
+</body>
+</html>

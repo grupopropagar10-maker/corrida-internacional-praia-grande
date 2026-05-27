@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Corrida Internacional PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .chart-wrap {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+    }
+
+    .chart-wrap h3 {
+      font-size: 1rem;
+      color: var(--primary-dark);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    canvas { max-height: 260px; }
+
+    /* Ranking postos */
+    .rank-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--gray-light);
+    }
+
+    .rank-item:last-child { border: none; }
+
+    .rank-pos {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rank-pos.gold   { background: #FFD700; color: #5a4a00; }
+    .rank-pos.silver { background: #C0C0C0; color: #3a3a3a; }
+    .rank-pos.bronze { background: #CD7F32; color: white; }
+
+    .rank-info { flex: 1; }
+    .rank-info strong { font-size: 0.88rem; color: var(--primary-dark); }
+    .rank-info small  { display: block; font-size: 0.75rem; color: var(--gray); }
+
+    .rank-bar-wrap { flex: 2; }
+    .rank-num { font-size: 1rem; font-weight: 800; color: var(--primary); min-width: 40px; text-align: right; }
+
+    /* Timeline de atividade */
+    .timeline { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .tl-item {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+    }
+
+    .tl-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      margin-top: 4px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(0,87,168,0.15);
+    }
+
+    .tl-dot.orange { background: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,0,0.15); }
+    .tl-dot.green  { background: var(--success); box-shadow: 0 0 0 3px rgba(40,167,69,0.15); }
+
+    .tl-text strong { font-size: 0.85rem; color: var(--dark); }
+    .tl-text small  { display: block; font-size: 0.75rem; color: var(--gray); }
+
+    /* Export btn */
+    .export-bar {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Número em destaque */
+    .big-num {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+
+    .highlight-card {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .highlight-card .big-num { color: white; }
+    .highlight-card p { opacity: 0.85; margin-top: 0.5rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <span class="logo-icon">🏃</span>
+    <span>Corrida Internacional PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- HEADER -->
+<div class="page-header">
+  <h1>📊 Dashboard — Visão Geral do Evento</h1>
+  <p>Estatísticas em tempo real de todos os postos e distribuições</p>
+</div>
+
+<!-- EXPORT BAR -->
+<section class="section" style="padding-bottom:0;">
+  <div class="export-bar">
+    <button class="btn btn-outline btn-sm" id="btn-refresh">🔄 Atualizar</button>
+    <button class="btn btn-primary btn-sm" id="btn-export-csv">📥 Exportar CSV</button>
+    <button class="btn btn-success btn-sm" id="btn-export-print">🖨️ Imprimir Relatório</button>
+  </div>
+</section>
+
+<!-- KPI CARDS -->
+<section class="section" style="padding-top:0; padding-bottom:0;">
+  <div class="grid grid-4" id="kpi-cards"></div>
+</section>
+
+<!-- DESTAQUE + CHARTS ROW 1 -->
+<section class="section" style="padding-top:1rem;">
+  <div class="grid grid-2" style="align-items:start;">
+
+    <!-- CHART: Publicações por posto -->
+    <div class="chart-wrap">
+      <h3>📍 Publicações por Posto</h3>
+      <canvas id="chart-postos"></canvas>
+    </div>
+
+    <!-- CHART: Tipos de contato -->
+    <div class="chart-wrap">
+      <h3>💬 Tipos de Contato</h3>
+      <canvas id="chart-tipos"></canvas>
+    </div>
+
+  </div>
+</section>
+
+<!-- RANKING + TIMELINE -->
+<section class="section" style="padding-top:0;">
+  <div class="grid grid-2" style="align-items:start;">
+
+    <!-- RANKING -->
+    <div class="chart-wrap">
+      <h3>🏆 Ranking de Postos (por contatos)</h3>
+      <div id="ranking-list"></div>
+    </div>
+
+    <!-- STATUS DOS POSTOS -->
+    <div class="chart-wrap">
+      <h3>📍 Status dos Postos</h3>
+      <canvas id="chart-status" style="max-height:220px;"></canvas>
+      <div id="status-detalhes" style="margin-top:1rem;"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CHARTS ROW 2: Congregações -->
+<section class="section" style="padding-top:0;">
+  <div class="grid grid-2" style="align-items:start;">
+
+    <!-- CHART: Distribuições por congregação -->
+    <div class="chart-wrap">
+      <h3>⛪ Distribuições por Congregação</h3>
+      <canvas id="chart-congs"></canvas>
+      <div id="chart-congs-empty" style="display:none;color:var(--gray);text-align:center;padding:1.5rem;font-size:.85rem;">Sem distribuições por congregação ainda.</div>
+    </div>
+
+    <!-- Publicações previstas -->
+    <div class="chart-wrap">
+      <h3>📚 Publicações Previstas (total)</h3>
+      <div id="pub-prev-dash"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ATIVIDADE RECENTE -->
+<section class="section" style="padding-top:0;">
+  <div class="chart-wrap">
+    <h3>🕓 Atividade Recente</h3>
+    <div class="timeline" id="timeline"></div>
+  </div>
+</section>
+
+<!-- TABELA COMPLETA -->
+<section class="section" style="padding-top:0;">
+  <div class="chart-wrap" style="padding:0; overflow:hidden;">
+    <div style="padding:1.2rem 1.5rem; border-bottom:2px solid var(--gray-light);">
+      <h3 style="margin:0;">📋 Tabela de Postos — Detalhamento</h3>
+    </div>
+    <div class="table-wrap" style="box-shadow:none; border-radius:0;">
+      <table id="tabela-postos"></table>
+    </div>
+  </div>
+</section>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  Auth.check();
+  let chartPostos = null;
+  let chartTipos  = null;
+  let chartStatus = null;
+  let chartCongs  = null;
+
+  function renderDashboard() {
+    const postos = DB.get('postos');
+    const dist   = DB.get('distribuicoes');
+
+    // ---- KPI ----
+    const totalPub    = dist.reduce((s, r) => s + (r.qty || 1), 0);
+    const totalCont   = dist.filter(r => r.tipo === 'conversa' || r.tipo === 'contato_especial').length;
+    const totalQR     = dist.filter(r => r.tipo === 'qrcode').length;
+    const postosAtiv  = postos.filter(p => p.status === 'ativo').length;
+
+    document.getElementById('kpi-cards').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon blue">📖</div>
+        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações entregues</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">💬</div>
+        <div class="stat-info"><h3>${totalCont}</h3><p>Conversas realizadas</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📱</div>
+        <div class="stat-info"><h3>${totalQR}</h3><p>QR Codes escaneados</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">📍</div>
+        <div class="stat-info"><h3>${postosAtiv}/${postos.length}</h3><p>Postos ativos</p></div>
+      </div>
+    `;
+
+    // ---- CHART: Publicações por posto ----
+    const pubPorPosto = {};
+    dist.forEach(r => {
+      pubPorPosto[r.postoNome] = (pubPorPosto[r.postoNome] || 0) + (r.qty || 1);
+    });
+
+    const labels1 = Object.keys(pubPorPosto);
+    const data1   = Object.values(pubPorPosto);
+
+    if (chartPostos) chartPostos.destroy();
+    chartPostos = new Chart(document.getElementById('chart-postos'), {
+      type: 'bar',
+      data: {
+        labels: labels1.length ? labels1 : ['Nenhum dado'],
+        datasets: [{
+          label: 'Publicações',
+          data: data1.length ? data1 : [0],
+          backgroundColor: '#0057A8',
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    // ---- CHART: Tipos ----
+    const tipos = {
+      publicacao:       dist.filter(r => r.tipo === 'publicacao').reduce((s,r) => s+(r.qty||1), 0),
+      conversa:         dist.filter(r => r.tipo === 'conversa').length,
+      qrcode:           dist.filter(r => r.tipo === 'qrcode').length,
+      contato_especial: dist.filter(r => r.tipo === 'contato_especial').length,
+    };
+
+    if (chartTipos) chartTipos.destroy();
+    chartTipos = new Chart(document.getElementById('chart-tipos'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Publicação', 'Conversa', 'QR Code', 'Contato Esp.'],
+        datasets: [{
+          data: [tipos.publicacao, tipos.conversa, tipos.qrcode, tipos.contato_especial],
+          backgroundColor: ['#0057A8', '#FF6B00', '#28A745', '#9B59B6'],
+          borderWidth: 3,
+          borderColor: 'white',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } }
+        },
+        cutout: '60%',
+      }
+    });
+
+    // ---- CHART: Status postos ----
+    const ativos   = postos.filter(p => p.status === 'ativo').length;
+    const standby  = postos.filter(p => p.status === 'standby').length;
+    const inativos = postos.filter(p => p.status === 'inativo').length;
+
+    if (chartStatus) chartStatus.destroy();
+    chartStatus = new Chart(document.getElementById('chart-status'), {
+      type: 'pie',
+      data: {
+        labels: ['Ativos', 'Standby', 'Inativos'],
+        datasets: [{
+          data: [ativos, standby, inativos],
+          backgroundColor: ['#28A745', '#FFC107', '#DC3545'],
+          borderWidth: 3,
+          borderColor: 'white',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { padding: 16 } } }
+      }
+    });
+
+    document.getElementById('status-detalhes').innerHTML = `
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;">
+        <span class="badge badge-ativo">✅ Ativos: ${ativos}</span>
+        <span class="badge badge-standby">⏳ Standby: ${standby}</span>
+        <span class="badge badge-inativo">❌ Inativos: ${inativos}</span>
+      </div>
+    `;
+
+    // ---- CHART: Distribuições por congregação ----
+    const pubPorCong = {};
+    dist.forEach(r => {
+      if (r.congNome) pubPorCong[r.congNome] = (pubPorCong[r.congNome] || 0) + (r.qty || 1);
+    });
+    const labelsCong = Object.keys(pubPorCong);
+    const canvasCong = document.getElementById('chart-congs');
+    const emptyCong  = document.getElementById('chart-congs-empty');
+    if (labelsCong.length) {
+      canvasCong.style.display = 'block';
+      emptyCong.style.display  = 'none';
+      const colorsCong = labelsCong.map((_,i) => `hsl(${Math.round(i*360/labelsCong.length)},55%,45%)`);
+      if (chartCongs) chartCongs.destroy();
+      chartCongs = new Chart(canvasCong, {
+        type: 'bar',
+        data: {
+          labels: labelsCong,
+          datasets: [{ label: 'Publicações', data: Object.values(pubPorCong), backgroundColor: colorsCong, borderRadius: 5 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    } else {
+      canvasCong.style.display = 'none';
+      emptyCong.style.display  = 'block';
+    }
+
+    // ---- Publicações previstas ----
+    const congCfgAll = DB.get('cong_config', {});
+    const congsConf  = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const PD = [{id:'atalaias',nome:'Sentinela'},{id:'despertar',nome:'Despertai'},{id:'biblia',nome:'Bíblia'},{id:'folheto',nome:'Folheto'},{id:'livro',nome:'Livro'},{id:'site',nome:'Site'}];
+    const ptots = {}; PD.forEach(p => { ptots[p.id] = 0; });
+    let ptotal = 0;
+    congsConf.forEach(c => {
+      const pubs = (congCfgAll[c.id]||{}).publicacoes||{};
+      PD.forEach(p => { const q=pubs[p.id]||0; ptots[p.id]+=q; ptotal+=q; });
+    });
+    const prevEl = document.getElementById('pub-prev-dash');
+    if (prevEl) prevEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.8rem;">
+        ${PD.map(p=>`<div style="background:var(--light);border-radius:6px;padding:.6rem;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:var(--primary-dark);">${ptots[p.id]}</div><div style="font-size:.72rem;color:var(--gray);">${p.nome}</div></div>`).join('')}
+      </div>
+      <div style="text-align:center;padding:.8rem;background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:var(--radius-sm);color:white;">
+        <div style="font-size:1.8rem;font-weight:800;">${ptotal}</div>
+        <div style="font-size:.8rem;opacity:.85;">publicações previstas (${congsConf.length} congregação(ões))</div>
+      </div>`;
+
+    // ---- RANKING ----
+    const sorted = [...postos].sort((a, b) => (b.contatos || 0) - (a.contatos || 0));
+    const maxCont = sorted[0]?.contatos || 1;
+    const posClasses = ['gold', 'silver', 'bronze'];
+
+    document.getElementById('ranking-list').innerHTML = sorted.length ?
+      sorted.map((p, i) => `
+        <div class="rank-item">
+          <div class="rank-pos ${posClasses[i] || ''}">${i + 1}</div>
+          <div class="rank-info">
+            <strong>${p.nome}</strong>
+            <small>👤 ${p.responsavel}</small>
+          </div>
+          <div class="rank-bar-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${maxCont > 0 ? Math.round(((p.contatos||0)/maxCont)*100) : 0}%"></div>
+            </div>
+          </div>
+          <span class="rank-num">${p.contatos || 0}</span>
+        </div>
+      `).join('')
+      : '<p style="color:var(--gray);text-align:center;padding:1rem;">Sem dados de contatos ainda.</p>';
+
+    // ---- TIMELINE ----
+    const dotClass = { publicacao: '', conversa: 'orange', qrcode: 'green', contato_especial: 'orange' };
+    const recent = dist.slice(0, 8);
+
+    document.getElementById('timeline').innerHTML = recent.length ?
+      recent.map(r => `
+        <div class="tl-item">
+          <div class="tl-dot ${dotClass[r.tipo] || ''}"></div>
+          <div class="tl-text">
+            <strong>${r.pubIcon} ${r.qty}× ${r.pub}</strong>
+            <small>📍 ${r.postoNome} &nbsp;|&nbsp; 🕐 ${r.hora} ${r.obs ? '&nbsp;|&nbsp; 💬 ' + r.obs : ''}</small>
+          </div>
+        </div>
+      `).join('')
+      : '<p style="color:var(--gray);">Sem atividade registrada ainda.</p>';
+
+    // ---- TABELA ----
+    document.getElementById('tabela-postos').innerHTML = `
+      <thead>
+        <tr>
+          <th>Km</th>
+          <th>Posto</th>
+          <th>Responsável</th>
+          <th>Status</th>
+          <th>Publicações disp.</th>
+          <th>Contatos</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${postos.map(p => `
+          <tr>
+            <td><strong>${p.km} km</strong></td>
+            <td>${p.nome}</td>
+            <td>👤 ${p.responsavel}</td>
+            <td>
+              ${p.status === 'ativo'   ? '<span class="badge badge-ativo">● Ativo</span>'   : ''}
+              ${p.status === 'standby' ? '<span class="badge badge-standby">● Standby</span>' : ''}
+              ${p.status === 'inativo' ? '<span class="badge badge-inativo">● Inativo</span>' : ''}
+            </td>
+            <td>📖 ${p.publicacoes}</td>
+            <td>🤝 ${p.contatos || 0}</td>
+            <td><a href="postos.html" class="btn btn-outline btn-sm">✏️ Editar</a></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    `;
+  }
+
+  // ---- EXPORT CSV ----
+  document.getElementById('btn-export-csv').addEventListener('click', () => {
+    const postos = DB.get('postos');
+    const dist   = DB.get('distribuicoes');
+    let csv = 'Posto,Responsável,Status,Publicações Disp.,Contatos\n';
+    postos.forEach(p => {
+      csv += `"${p.nome}","${p.responsavel}","${p.status}",${p.publicacoes},${p.contatos || 0}\n`;
+    });
+    csv += '\nRegistros de Distribuição\nHora,Posto,Publicação,Tipo,Qty,Observação\n';
+    dist.forEach(r => {
+      csv += `"${r.hora}","${r.postoNome}","${r.pub}","${r.tipo}",${r.qty},"${r.obs || ''}"\n`;
+    });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `relatorio_corrida_pg_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exportado com sucesso!', 'success');
+  });
+
+  // ---- IMPRIMIR ----
+  document.getElementById('btn-export-print').addEventListener('click', () => {
+    window.print();
+  });
+
+  // ---- REFRESH ----
+  document.getElementById('btn-refresh').addEventListener('click', () => {
+    renderDashboard();
+    showToast('Dashboard atualizado!', 'success');
+  });
+
+  // INIT
+  renderDashboard();
+
+  // Auto-refresh a cada 30s
+  setInterval(renderDashboard, 30000);
+</script>
+</body>
+</html>

@@ -504,12 +504,13 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script>
+(function() {
 // ══════════════════════════════════════════
 //  INIT + AUTH
 // ══════════════════════════════════════════
 const user = Auth.check();
-if (!user) throw new Error('not auth');
-if (user.type === 'admin') { window.location.href = 'admin.html'; }
+if (!user) return;
+if (user.type === 'admin') { window.location.href = 'admin.html'; return; }
 
 const CONG_ID  = user.congId;
 const cong     = DB.get('congregacoes', []).find(c => c.id === CONG_ID);
@@ -589,6 +590,8 @@ function abrirModalParticipacao() {
 function fecharModalParticipacao() {
   document.getElementById('modal-participacao').style.display = 'none';
 }
+window.abrirModalParticipacao  = abrirModalParticipacao;
+window.fecharModalParticipacao = fecharModalParticipacao;
 
 function salvarParticipacao() {
   const congs = DB.get('congregacoes', []);
@@ -1172,6 +1175,7 @@ window.imprimirResultado = function() {
 // Init aba registrar
 renderPubSel(); renderTipoSel(); carregarSelectPostos();
 renderHistorico(); renderResultado();
+})();
 </script>
 </body>
 </html>

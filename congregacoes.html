@@ -466,6 +466,12 @@
 //  DADOS INICIAIS
 // ================================================================
 function initCongData() {
+  // NUNCA sobrescreve se já houver congregações no Firebase/localStorage
+  const existing = DB.get('congregacoes', []);
+  if (existing.length > 0) {
+    localStorage.setItem('cong_init', true);
+    return;
+  }
   if (!localStorage.getItem('cong_init')) {
     DB.set('congregacoes', [
       { id: 1, nome: 'Praia Grande – Centro',    cidade: 'Praia Grande', cor: '#0057A8' },

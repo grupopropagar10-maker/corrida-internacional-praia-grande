@@ -271,6 +271,7 @@
     <a href="#sec-pdf"><span class="s-icon">📄</span> Gerar PDF</a>
     <a href="#sec-settings"><span class="s-icon">⚙️</span> Configurações</a>
     <a href="#sec-subadmins"><span class="s-icon">👥</span> Sub-Admins</a>
+    <a href="#sec-categorias"><span class="s-icon">📅</span> Categorias</a>
     <a href="quantidade.html"><span class="s-icon">🛒</span> Quantidades</a>
 
   </nav>
@@ -289,6 +290,13 @@
         <a href="distribuicao.html" class="modulo-btn"><span class="m-icon">📖</span>Distribuição</a>
         <a href="dashboard.html"    class="modulo-btn"><span class="m-icon">📊</span>Dashboard</a>
         <a href="index.html"        class="modulo-btn"><span class="m-icon">🏃</span>Página do Evento</a>
+      </div>
+      <div style="background:#fff5f5;border:1px solid #ffc5c5;border-radius:8px;padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem;">
+        <div>
+          <strong style="color:#a00;font-size:.9rem;">⚠️ Zona de Reset</strong>
+          <div style="font-size:.78rem;color:var(--gray);margin-top:.2rem;">Remove todos os postos e designações para começar do zero pelo mapa.</div>
+        </div>
+        <button class="btn btn-danger btn-sm" id="btn-limpar-postos">🗑️ Limpar todos os postos</button>
       </div>
     </section>
 
@@ -438,6 +446,13 @@
                 <input type="checkbox" id="sa-perm-congs"/> ⛪ Designar Congregações
               </label>
             </div>
+            <div style="margin:.8rem 0 .4rem;">
+              <strong style="font-size:.85rem;color:var(--primary-dark);">Categorias que pode gerenciar:</strong>
+              <small style="color:var(--gray);font-size:.75rem;margin-left:.4rem;">(deixe em branco para nenhuma)</small>
+            </div>
+            <div id="sa-perm-categorias" style="display:flex;flex-wrap:wrap;gap:.6rem;min-height:28px;margin-bottom:1rem;">
+              <span style="color:var(--gray);font-size:.8rem;font-style:italic;">Cadastre categorias primeiro ↑</span>
+            </div>
             <div style="display:flex;gap:0.8rem;">
               <button class="btn btn-primary" id="btn-salvar-sa">💾 Salvar</button>
               <button class="btn" id="btn-cancelar-sa"
@@ -456,6 +471,67 @@
             <div id="sa-activity-log"></div>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORIAS DO EVENTO -->
+    <section id="sec-categorias">
+      <div class="section-card">
+        <div class="section-card-header" style="background:linear-gradient(135deg,#005f8f,#0097c4);">
+          <h2>📅 Categorias do Evento</h2>
+          <button class="btn btn-sm" id="btn-nova-categoria"
+            style="background:rgba(255,255,255,0.2);color:white;">➕ Nova Categoria</button>
+        </div>
+        <div class="section-card-body">
+          <p style="font-size:.83rem;color:var(--gray);margin-bottom:1rem;">
+            Cada categoria representa uma prova/modalidade com suas datas e horários.
+            Os postos e designações são vinculados a uma categoria.
+          </p>
+
+          <!-- Formulário (oculto) -->
+          <div id="form-categoria" style="display:none;background:var(--light);border-radius:var(--radius);padding:1.2rem;margin-bottom:1.5rem;border:2px solid #0097c4;">
+            <h3 style="font-size:.95rem;margin-bottom:1rem;color:#005f8f;">➕ Cadastrar / Editar Categoria</h3>
+            <input type="hidden" id="cat-edit-id"/>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nome da categoria</label>
+                <input class="form-control" id="cat-nome" placeholder="Ex: Corrida 21km, Caminhada 5km..."/>
+              </div>
+              <div class="form-group">
+                <label>Cor identificadora</label>
+                <input type="color" class="form-control" id="cat-cor" value="#0057A8" style="height:42px;padding:4px;"/>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Horário de início</label>
+                <input type="time" class="form-control" id="cat-horario" value="06:00"/>
+              </div>
+              <div class="form-group">
+                <label>Horário de término</label>
+                <input type="time" class="form-control" id="cat-horario-fim" value="12:00"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Datas do evento
+                <button type="button" id="btn-add-data-cat"
+                  style="margin-left:.5rem;background:var(--primary);color:white;border:none;border-radius:4px;padding:.1rem .5rem;font-size:.72rem;cursor:pointer;">+ Data</button>
+              </label>
+              <div id="cat-datas-list" style="display:flex;flex-direction:column;gap:.4rem;margin-top:.3rem;"></div>
+            </div>
+            <div class="form-group">
+              <label>Descrição (opcional)</label>
+              <textarea class="form-control" id="cat-descricao" rows="2" placeholder="Ex: Prova principal, percurso litorâneo..."></textarea>
+            </div>
+            <div style="display:flex;gap:.8rem;">
+              <button class="btn btn-primary" id="btn-salvar-cat">💾 Salvar</button>
+              <button class="btn" id="btn-cancelar-cat" style="background:var(--gray-light);color:var(--text);">Cancelar</button>
+            </div>
+          </div>
+
+          <!-- Lista de categorias -->
+          <div id="cat-list"></div>
         </div>
       </div>
     </section>
@@ -1091,6 +1167,24 @@
     }
   }
 
+  // Helper: popula checkboxes de categoria no form sub-admin
+  function popularCategoriasNoForm(selecionadas = []) {
+    const cats = DB.get('categorias', []);
+    const el   = document.getElementById('sa-perm-categorias');
+    if (!cats.length) {
+      el.innerHTML = '<span style="color:var(--gray);font-size:.8rem;font-style:italic;">Cadastre categorias primeiro ↑</span>';
+      return;
+    }
+    el.innerHTML = cats.map(c => `
+      <label style="display:flex;align-items:center;gap:.35rem;font-size:.82rem;cursor:pointer;
+                    background:#f4f8ff;border:1px solid #c8ddf5;border-radius:6px;padding:.25rem .6rem;">
+        <input type="checkbox" class="sa-cat-cb" value="${c.id}"
+          ${selecionadas.includes(c.id) ? 'checked' : ''}>
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.cor};margin-right:2px;"></span>
+        ${c.nome}
+      </label>`).join('');
+  }
+
   document.getElementById('btn-novo-subadmin').addEventListener('click', () => {
     document.getElementById('sa-edit-id').value = '';
     document.getElementById('sa-nome').value = '';
@@ -1098,6 +1192,7 @@
     document.getElementById('sa-senha').value = '';
     document.getElementById('sa-perm-postos').checked = false;
     document.getElementById('sa-perm-congs').checked = false;
+    popularCategoriasNoForm([]);
     document.getElementById('form-subadmin').style.display = 'block';
     document.getElementById('sa-nome').focus();
   });
@@ -1113,27 +1208,28 @@
     const senha   = document.getElementById('sa-senha').value;
     const pPerms  = document.getElementById('sa-perm-postos').checked;
     const pCongs  = document.getElementById('sa-perm-congs').checked;
+    const catsSel = Array.from(document.querySelectorAll('.sa-cat-cb:checked')).map(cb => parseInt(cb.value));
 
     if (!nome || !usuario || !senha) { showToast('Preencha todos os campos!', 'error'); return; }
     if (senha.length < 4) { showToast('Senha mínima de 4 caracteres!', 'error'); return; }
 
     const lista = DB.get('sub_admins', []);
     if (id) {
-      // Editar
       const i = lista.findIndex(x => x.id === id);
       if (i >= 0) {
         lista[i].nome    = nome;
         lista[i].usuario = usuario;
         lista[i].senha   = senha;
         lista[i].permissoes = { criarPostos: pPerms, designarCongregacoes: pCongs };
+        lista[i].categorias = catsSel;
       }
     } else {
-      // Novo — checa usuário duplicado
       if (lista.find(x => x.usuario === usuario)) { showToast('Usuário já existe!', 'error'); return; }
       lista.push({
         id: 'sa_' + Date.now(),
         nome, usuario, senha,
         permissoes: { criarPostos: pPerms, designarCongregacoes: pCongs },
+        categorias: catsSel,
         atividades: []
       });
     }
@@ -1152,6 +1248,7 @@
     document.getElementById('sa-senha').value         = sa.senha;
     document.getElementById('sa-perm-postos').checked = !!sa.permissoes?.criarPostos;
     document.getElementById('sa-perm-congs').checked  = !!sa.permissoes?.designarCongregacoes;
+    popularCategoriasNoForm(sa.categorias || []);
     document.getElementById('form-subadmin').style.display = 'block';
     document.getElementById('form-subadmin').scrollIntoView({ behavior: 'smooth' });
   };
@@ -1166,7 +1263,135 @@
 
   renderSubAdmins();
 
-  // Smooth scroll sidebar
+  // ════════════════════════════════════════════
+  //  CATEGORIAS DO EVENTO
+  // ════════════════════════════════════════════
+  function renderCategorias() {
+    const cats = DB.get('categorias', []);
+    const el   = document.getElementById('cat-list');
+    if (!cats.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma categoria cadastrada ainda.</div>';
+      return;
+    }
+    el.innerHTML = cats.map(c => {
+      const datasStr = (c.datas || []).map(d => {
+        const [y, m, dia] = d.split('-');
+        return `${dia}/${m}/${y}`;
+      }).join(', ') || '—';
+      const postos = DB.get('postos').filter(p => p.categoriaId === c.id).length;
+      return `
+      <div style="display:flex;align-items:center;gap:.8rem;padding:.9rem 1rem;
+                  border-left:5px solid ${c.cor};border-bottom:1px solid var(--gray-light);background:white;">
+        <div style="flex:1;">
+          <div style="font-weight:700;color:var(--primary-dark);font-size:.95rem;">
+            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c.cor};margin-right:5px;"></span>
+            ${c.nome}
+          </div>
+          <div style="font-size:.78rem;color:var(--gray);margin-top:.2rem;">
+            📅 ${datasStr} &nbsp;&nbsp; ⏱️ ${c.horario || '—'}–${c.horarioFim || '—'}
+            &nbsp;&nbsp; 📍 ${postos} posto(s)
+          </div>
+          ${c.descricao ? `<div style="font-size:.75rem;color:var(--gray);margin-top:.1rem;">💬 ${c.descricao}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:.4rem;">
+          <button class="btn btn-primary btn-sm" onclick="editarCategoria(${c.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="excluirCategoria(${c.id})">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function adicionarDataCategoria(valor = '') {
+    const list = document.getElementById('cat-datas-list');
+    const div  = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:.4rem;';
+    div.innerHTML = `
+      <input type="date" value="${valor}" class="form-control cat-data-input"
+        style="flex:1;padding:.35rem .5rem;font-size:.85rem;"/>
+      <button type="button" onclick="this.parentElement.remove()"
+        style="background:#fde;border:none;border-radius:4px;padding:.2rem .5rem;cursor:pointer;color:var(--danger);">✕</button>`;
+    list.appendChild(div);
+  }
+
+  document.getElementById('btn-add-data-cat').addEventListener('click', () => adicionarDataCategoria());
+
+  document.getElementById('btn-nova-categoria').addEventListener('click', () => {
+    document.getElementById('cat-edit-id').value   = '';
+    document.getElementById('cat-nome').value      = '';
+    document.getElementById('cat-cor').value       = '#0057A8';
+    document.getElementById('cat-horario').value   = '06:00';
+    document.getElementById('cat-horario-fim').value = '12:00';
+    document.getElementById('cat-descricao').value = '';
+    document.getElementById('cat-datas-list').innerHTML = '';
+    adicionarDataCategoria();
+    document.getElementById('form-categoria').style.display = 'block';
+    document.getElementById('cat-nome').focus();
+  });
+
+  document.getElementById('btn-cancelar-cat').addEventListener('click', () => {
+    document.getElementById('form-categoria').style.display = 'none';
+  });
+
+  document.getElementById('btn-salvar-cat').addEventListener('click', () => {
+    const id         = parseInt(document.getElementById('cat-edit-id').value) || null;
+    const nome       = document.getElementById('cat-nome').value.trim();
+    const cor        = document.getElementById('cat-cor').value;
+    const horario    = document.getElementById('cat-horario').value;
+    const horarioFim = document.getElementById('cat-horario-fim').value;
+    const descricao  = document.getElementById('cat-descricao').value.trim();
+    const datas      = Array.from(document.querySelectorAll('.cat-data-input'))
+                           .map(i => i.value).filter(Boolean);
+
+    if (!nome) { showToast('Informe o nome da categoria!', 'error'); return; }
+
+    const cats = DB.get('categorias', []);
+    if (id) {
+      const idx = cats.findIndex(c => c.id === id);
+      if (idx >= 0) cats[idx] = { ...cats[idx], nome, cor, horario, horarioFim, descricao, datas };
+      showToast('Categoria atualizada! ✅', 'success');
+    } else {
+      cats.push({ id: Date.now(), nome, cor, horario, horarioFim, descricao, datas });
+      showToast('Categoria criada! ✅', 'success');
+    }
+    DB.set('categorias', cats);
+    document.getElementById('form-categoria').style.display = 'none';
+    renderCategorias();
+  });
+
+  window.editarCategoria = function(id) {
+    const c = DB.get('categorias', []).find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('cat-edit-id').value     = c.id;
+    document.getElementById('cat-nome').value        = c.nome;
+    document.getElementById('cat-cor').value         = c.cor;
+    document.getElementById('cat-horario').value     = c.horario    || '06:00';
+    document.getElementById('cat-horario-fim').value = c.horarioFim || '12:00';
+    document.getElementById('cat-descricao').value   = c.descricao  || '';
+    document.getElementById('cat-datas-list').innerHTML = '';
+    (c.datas || []).forEach(d => adicionarDataCategoria(d));
+    if (!(c.datas?.length)) adicionarDataCategoria();
+    document.getElementById('form-categoria').style.display = 'block';
+    document.getElementById('form-categoria').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.excluirCategoria = function(id) {
+    const c = DB.get('categorias', []).find(x => x.id === id);
+    if (!c || !confirm(`Excluir categoria "${c.nome}"? Os postos desta categoria ficam sem categoria.`)) return;
+    DB.set('categorias', DB.get('categorias', []).filter(x => x.id !== id));
+    renderCategorias();
+    showToast('Categoria excluída.', 'info');
+  };
+
+  renderCategorias();
+
+  // ── LIMPAR POSTOS ──
+  document.getElementById('btn-limpar-postos')?.addEventListener('click', () => {
+    if (!confirm('Isso vai EXCLUIR todos os postos e designações permanentemente. Tem certeza?')) return;
+    DB.set('postos', []);
+    DB.set('designacoes', []);
+    showToast('Todos os postos foram removidos. Crie novos pelo mapa. ✅', 'success');
+  });
+
   document.querySelectorAll('.sidebar a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();

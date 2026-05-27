@@ -194,6 +194,14 @@
     </div>
     <form id="form-posto">
       <input type="hidden" id="posto-id"/>
+      <input type="hidden" id="posto-lat"/>
+      <input type="hidden" id="posto-lng"/>
+      <div class="form-group">
+        <label>Categoria do evento</label>
+        <select class="form-control" id="posto-categoria">
+          <option value="">— Sem categoria —</option>
+        </select>
+      </div>
       <div class="grid grid-2">
         <div class="form-group">
           <label>Nome do Posto</label>
@@ -216,6 +224,16 @@
         <div class="form-group">
           <label>Publicações disponíveis</label>
           <input class="form-control" type="number" id="posto-publicacoes" min="0" value="50"/>
+        </div>
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label>🛒 Cap. Carrinhos</label>
+          <input class="form-control" type="number" id="posto-carrinhos" min="0" value="1"/>
+        </div>
+        <div class="form-group">
+          <label>🪧 Cap. Displays</label>
+          <input class="form-control" type="number" id="posto-displays" min="0" value="1"/>
         </div>
       </div>
       <div class="form-group">
@@ -364,12 +382,21 @@
     showToast(`Status alterado para "${p.status}"`, 'success');
   }
 
+  // Helper: popula select de categorias
+  function popularSelectCategoria(valorAtual = '') {
+    const cats = DB.get('categorias', []);
+    const sel  = document.getElementById('posto-categoria');
+    sel.innerHTML = '<option value="">— Sem categoria —</option>' +
+      cats.map(c => `<option value="${c.id}" ${c.id == valorAtual ? 'selected' : ''}>${c.nome}</option>`).join('');
+  }
+
   // ---- ABRIR MODAL NOVO ----
   document.getElementById('btn-novo-posto').addEventListener('click', () => {
     document.getElementById('modal-titulo').textContent = '➕ Novo Posto';
     document.getElementById('btn-salvar').textContent = '💾 Salvar Posto';
     document.getElementById('form-posto').reset();
     document.getElementById('posto-id').value = '';
+    popularSelectCategoria();
     document.getElementById('modal-posto').classList.add('open');
   });
 
@@ -391,13 +418,19 @@
     document.getElementById('modal-titulo').textContent = '✏️ Editar Posto';
     document.getElementById('btn-salvar').textContent   = '💾 Atualizar';
     document.getElementById('posto-id').value           = p.id;
+    document.getElementById('posto-lat').value          = p.lat  || '';
+    document.getElementById('posto-lng').value          = p.lng  || '';
     document.getElementById('posto-nome').value         = p.nome;
     document.getElementById('posto-km').value           = p.km;
     document.getElementById('posto-local').value        = p.local;
     document.getElementById('posto-responsavel').value  = p.responsavel;
     document.getElementById('posto-publicacoes').value  = p.publicacoes;
+    document.getElementById('posto-carrinhos').value    = p.capCarrinhos || 1;
+    document.getElementById('posto-displays').value     = p.capDisplays  || 1;
     document.getElementById('posto-status').value       = p.status;
     document.getElementById('posto-obs').value          = p.obs || '';
+    popularSelectCategoria(p.categoriaId || '');
+    document.getElementById('modal-posto').classList.add('open');
     document.getElementById('modal-posto').classList.add('open');
   }
 
@@ -413,10 +446,17 @@
       local:        document.getElementById('posto-local').value.trim(),
       responsavel:  document.getElementById('posto-responsavel').value.trim(),
       publicacoes:  parseInt(document.getElementById('posto-publicacoes').value) || 0,
+      capCarrinhos: parseInt(document.getElementById('posto-carrinhos').value)  || 0,
+      capDisplays:  parseInt(document.getElementById('posto-displays').value)   || 0,
+      categoriaId:  parseInt(document.getElementById('posto-categoria').value)  || null,
       status:       document.getElementById('posto-status').value,
       obs:          document.getElementById('posto-obs').value.trim(),
       contatos:     0,
     };
+    // Preserva coordenadas do mapa
+    const _lat = parseFloat(document.getElementById('posto-lat').value);
+    const _lng = parseFloat(document.getElementById('posto-lng').value);
+    if (!isNaN(_lat) && !isNaN(_lng)) { dados.lat = _lat; dados.lng = _lng; }
 
     if (id) {
       const idx = postos.findIndex(p => p.id === id);

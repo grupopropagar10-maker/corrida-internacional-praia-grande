@@ -557,6 +557,49 @@
               <label>Descrição (opcional)</label>
               <textarea class="form-control" id="cat-descricao" rows="2" placeholder="Ex: Prova principal, percurso litorâneo..."></textarea>
             </div>
+            <div style="margin:1rem 0 .7rem; padding:1rem; border:1px solid rgba(0,151,196,.18); border-radius:14px; background:rgba(240,250,255,.7);">
+              <label style="display:flex;align-items:center;gap:.55rem;font-weight:700;color:#005f8f;cursor:pointer;">
+                <input type="checkbox" id="cat-bebidas-ativa"/>
+                ☕ Ativar operação de bebidas quentes nesta categoria
+              </label>
+              <div style="font-size:.78rem;color:var(--gray);margin-top:.35rem;">
+                Quando ativo, o sub-admin recebe sugestão de café, chá, chocolate, bolinho e salgado, além das equipes logísticas do setor.
+              </div>
+              <div class="form-row" style="margin-top:.8rem;">
+                <div class="form-group">
+                  <label>Reposição a cada (horas)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-reposicao" min="1" step="1" value="2"/>
+                </div>
+                <div class="form-group">
+                  <label>Margem confortável (%)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-conforto" min="0" step="5" value="25"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Café por pessoa (ml)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-cafe" min="0" step="10" value="200"/>
+                </div>
+                <div class="form-group">
+                  <label>Chá por pessoa (ml)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-cha" min="0" step="10" value="150"/>
+                </div>
+                <div class="form-group">
+                  <label>Chocolate por pessoa (ml)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-chocolate" min="0" step="10" value="150"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Bolinho por pessoa (un.)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-bolinho" min="0" step="1" value="1"/>
+                </div>
+                <div class="form-group">
+                  <label>Salgado por pessoa (un.)</label>
+                  <input type="number" class="form-control" id="cat-bebidas-salgado" min="0" step="1" value="2"/>
+                </div>
+              </div>
+            </div>
             <div style="display:flex;gap:.8rem;">
               <button class="btn btn-primary" id="btn-salvar-cat">💾 Salvar</button>
               <button class="btn" id="btn-cancelar-cat" style="background:var(--gray-light);color:var(--text);">Cancelar</button>
@@ -1159,6 +1202,7 @@
   function renderSubAdmins() {
     const lista = DB.get('sub_admins', []);
     const el    = document.getElementById('sa-list');
+    const categorias = DB.get('categorias', []);
 
     if (!lista.length) {
       el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum sub-admin cadastrado ainda.</div>';
@@ -1172,7 +1216,10 @@
             ${sa.permissoes?.designarCongregacoes ? '<span class="badge badge-primary" style="font-size:0.7rem;">⛪ Designações</span>' : ''}
             ${!sa.permissoes?.criarPostos && !sa.permissoes?.designarCongregacoes ? '<span style="color:var(--gray)">Sem permissões</span>' : ''}
           </div>
-          <div style="font-size:0.75rem;color:var(--gray);">${sa.atividades?.length || 0} ação(ões) registradas</div>
+          <div style="font-size:0.75rem;color:var(--gray);">
+            ${(sa.categorias || []).map(id => categorias.find(c => c.id === id)?.nome).filter(Boolean).join(', ') || 'Sem categorias vinculadas'}
+            <div style="margin-top:.25rem;">${sa.atividades?.length || 0} ação(ões) registradas</div>
+          </div>
           <div style="display:flex;gap:0.4rem;">
             <button class="btn btn-primary btn-sm" onclick="editarSA('${sa.id}')">✏️</button>
             <button class="btn btn-danger btn-sm" onclick="excluirSA('${sa.id}')">🗑️</button>
@@ -1324,6 +1371,7 @@
             📅 ${datasStr} &nbsp;&nbsp; ⏱️ ${c.horario || '—'}–${c.horarioFim || '—'}
             &nbsp;&nbsp; 📍 ${postos} posto(s)
           </div>
+          ${c.operacaoBebidas?.ativa ? `<div style="font-size:.74rem;color:#7b4f00;margin-top:.2rem;">☕ Bebidas quentes ativas · reposição a cada ${c.operacaoBebidas.reposicaoHoras || 2}h</div>` : ''}
           ${c.descricao ? `<div style="font-size:.75rem;color:var(--gray);margin-top:.1rem;">💬 ${c.descricao}</div>` : ''}
         </div>
         <div style="display:flex;gap:.4rem;">
@@ -1371,6 +1419,14 @@
     document.getElementById('cat-horario').value   = '06:00';
     document.getElementById('cat-horario-fim').value = '12:00';
     document.getElementById('cat-descricao').value = '';
+    document.getElementById('cat-bebidas-ativa').checked = false;
+    document.getElementById('cat-bebidas-reposicao').value = 2;
+    document.getElementById('cat-bebidas-conforto').value = 25;
+    document.getElementById('cat-bebidas-cafe').value = 200;
+    document.getElementById('cat-bebidas-cha').value = 150;
+    document.getElementById('cat-bebidas-chocolate').value = 150;
+    document.getElementById('cat-bebidas-bolinho').value = 1;
+    document.getElementById('cat-bebidas-salgado').value = 2;
     document.getElementById('cat-datas-list').innerHTML = '';
     adicionarDataCategoria();
     document.getElementById('form-categoria').style.display = 'block';
@@ -1388,6 +1444,17 @@
     const horario    = document.getElementById('cat-horario').value;
     const horarioFim = document.getElementById('cat-horario-fim').value;
     const descricao  = document.getElementById('cat-descricao').value.trim();
+    const operacaoBebidas = {
+      ativa: document.getElementById('cat-bebidas-ativa').checked,
+      reposicaoHoras: parseInt(document.getElementById('cat-bebidas-reposicao').value, 10) || 2,
+      confortoPct: parseInt(document.getElementById('cat-bebidas-conforto').value, 10) || 25,
+      cafeMlPorPessoa: parseInt(document.getElementById('cat-bebidas-cafe').value, 10) || 200,
+      chaMlPorPessoa: parseInt(document.getElementById('cat-bebidas-cha').value, 10) || 150,
+      chocolateMlPorPessoa: parseInt(document.getElementById('cat-bebidas-chocolate').value, 10) || 150,
+      bolinhoPorPessoa: parseInt(document.getElementById('cat-bebidas-bolinho').value, 10) || 1,
+      salgadoPorPessoa: parseInt(document.getElementById('cat-bebidas-salgado').value, 10) || 2,
+      equipes: { cozinha: [], levarAoLocal: [], receberNoLocal: [], entregadores: [] },
+    };
     const datas      = Array.from(document.querySelectorAll('.cat-data-input'))
                            .map(i => i.value).filter(Boolean);
 
@@ -1396,10 +1463,22 @@
     const cats = DB.get('categorias', []);
     if (id) {
       const idx = cats.findIndex(c => c.id === id);
-      if (idx >= 0) cats[idx] = { ...cats[idx], nome, cor, horario, horarioFim, descricao, datas };
+      if (idx >= 0) cats[idx] = {
+        ...cats[idx],
+        nome, cor, horario, horarioFim, descricao, datas,
+        operacaoBebidas: {
+          ...operacaoBebidas,
+          equipes: {
+            cozinha: cats[idx].operacaoBebidas?.equipes?.cozinha || [],
+            levarAoLocal: cats[idx].operacaoBebidas?.equipes?.levarAoLocal || [],
+            receberNoLocal: cats[idx].operacaoBebidas?.equipes?.receberNoLocal || [],
+            entregadores: cats[idx].operacaoBebidas?.equipes?.entregadores || [],
+          },
+        },
+      };
       showToast('Categoria atualizada! ✅', 'success');
     } else {
-      cats.push({ id: Date.now(), nome, cor, horario, horarioFim, descricao, datas });
+      cats.push({ id: Date.now(), nome, cor, horario, horarioFim, descricao, datas, operacaoBebidas });
       showToast('Categoria criada! ✅', 'success');
     }
     DB.set('categorias', cats);
@@ -1416,6 +1495,14 @@
     document.getElementById('cat-horario').value     = c.horario    || '06:00';
     document.getElementById('cat-horario-fim').value = c.horarioFim || '12:00';
     document.getElementById('cat-descricao').value   = c.descricao  || '';
+    document.getElementById('cat-bebidas-ativa').checked = !!c.operacaoBebidas?.ativa;
+    document.getElementById('cat-bebidas-reposicao').value = c.operacaoBebidas?.reposicaoHoras || 2;
+    document.getElementById('cat-bebidas-conforto').value = c.operacaoBebidas?.confortoPct || 25;
+    document.getElementById('cat-bebidas-cafe').value = c.operacaoBebidas?.cafeMlPorPessoa || 200;
+    document.getElementById('cat-bebidas-cha').value = c.operacaoBebidas?.chaMlPorPessoa || 150;
+    document.getElementById('cat-bebidas-chocolate').value = c.operacaoBebidas?.chocolateMlPorPessoa || 150;
+    document.getElementById('cat-bebidas-bolinho').value = c.operacaoBebidas?.bolinhoPorPessoa || 1;
+    document.getElementById('cat-bebidas-salgado').value = c.operacaoBebidas?.salgadoPorPessoa || 2;
     document.getElementById('cat-datas-list').innerHTML = '';
     (c.datas || []).forEach(d => adicionarDataCategoria(d));
     if (!(c.datas?.length)) adicionarDataCategoria();

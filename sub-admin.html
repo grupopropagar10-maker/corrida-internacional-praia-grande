@@ -99,6 +99,170 @@
       color: var(--gray);
       margin-top: .25rem;
     }
+    .setor-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .9rem;
+      margin-bottom: 1rem;
+    }
+    .setor-stat {
+      background: linear-gradient(180deg, #fffaf4, #fff);
+      border: 1px solid rgba(224, 123, 0, 0.16);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: 0 10px 24px rgba(123, 79, 0, 0.08);
+    }
+    .setor-stat strong {
+      display: block;
+      font-size: 1.45rem;
+      color: #7b4f00;
+      line-height: 1;
+      margin-bottom: .35rem;
+    }
+    .setor-stat span {
+      font-size: .78rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .setor-scope-note {
+      font-size: .82rem;
+      color: var(--gray);
+      margin-bottom: 1rem;
+    }
+    .setor-cards {
+      display: grid;
+      gap: 1rem;
+    }
+    .setor-card {
+      background: #fff;
+      border: 1px solid rgba(123, 79, 0, 0.12);
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+      box-shadow: 0 8px 24px rgba(26, 26, 46, 0.05);
+    }
+    .setor-card.needs-attention {
+      border-left: 5px solid #e07b00;
+      background: linear-gradient(180deg, rgba(255, 244, 230, 0.95), #fff);
+    }
+    .setor-card.closed {
+      border-left: 5px solid #28A745;
+      background: linear-gradient(180deg, rgba(244, 251, 245, 0.95), #fff);
+    }
+    .setor-card.open {
+      border-left: 5px solid #dc3545;
+      background: linear-gradient(180deg, rgba(255, 244, 244, 0.95), #fff);
+    }
+    .setor-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-bottom: .7rem;
+    }
+    .setor-meta {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      margin-top: .5rem;
+    }
+    .setor-meta span {
+      font-size: .74rem;
+      color: #7b4f00;
+      background: rgba(224, 123, 0, 0.12);
+      border-radius: 999px;
+      padding: .22rem .55rem;
+    }
+    .setor-contact {
+      font-size: .8rem;
+      color: var(--gray);
+      margin-bottom: .7rem;
+    }
+    .setor-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: .65rem;
+      margin-bottom: .8rem;
+    }
+    .slot-pill {
+      border: 1px solid var(--gray-light);
+      border-radius: 12px;
+      padding: .65rem .75rem;
+      background: #fafbfd;
+      font-size: .78rem;
+    }
+    .slot-pill strong {
+      display: block;
+      color: var(--primary-dark);
+      margin-bottom: .2rem;
+    }
+    .slot-pill.missing {
+      background: #fff7ef;
+      border-color: rgba(224, 123, 0, 0.28);
+    }
+    .slot-pill.open {
+      background: #fff3f3;
+      border-color: rgba(220, 53, 69, 0.22);
+    }
+    .slot-pill.closed {
+      background: #f4fbf5;
+      border-color: rgba(40, 167, 69, 0.22);
+    }
+    .slot-pill-actions {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      margin-top: .45rem;
+    }
+    .setor-actions {
+      display: flex;
+      gap: .55rem;
+      flex-wrap: wrap;
+      margin-top: .4rem;
+    }
+    .bebidas-card {
+      background: linear-gradient(180deg, rgba(255,250,244,.96), #fff);
+      border: 1px solid rgba(123, 79, 0, 0.16);
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 10px 26px rgba(123, 79, 0, 0.06);
+    }
+    .bebidas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: .7rem;
+      margin: .9rem 0;
+    }
+    .bebidas-item {
+      border: 1px solid rgba(224, 123, 0, 0.18);
+      background: #fff;
+      border-radius: 12px;
+      padding: .8rem;
+    }
+    .bebidas-item strong {
+      display: block;
+      color: #7b4f00;
+      font-size: 1.1rem;
+      margin-bottom: .2rem;
+    }
+    .equipes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: .8rem;
+      margin-top: .9rem;
+    }
+    .equipe-box {
+      border: 1px solid rgba(0, 61, 122, 0.12);
+      border-radius: 12px;
+      background: #fff;
+      padding: .8rem;
+    }
+    .equipe-box textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
     @media (max-width: 900px) {
       .subadmin-layout { grid-template-columns: 1fr; }
       .sidebar {
@@ -148,6 +312,8 @@
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-title">Meu Painel</div>
+    <a href="#sec-setor" id="nav-setor"><span>📡</span> Meu Setor</a>
+    <a href="#sec-bebidas" id="nav-bebidas"><span>☕</span> Bebidas</a>
     <a href="#sec-postos" id="nav-postos"><span>📍</span> Postos</a>
     <a href="#sec-designar" id="nav-designar"><span>⛪</span> Designar Cong.</a>
     <a href="#sec-ajuda" id="nav-ajuda"><span>🆘</span> Pedidos de Ajuda</a>
@@ -155,6 +321,24 @@
   </nav>
 
   <main class="admin-main">
+
+    <section id="sec-setor">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>📡 Visão do Setor em Tempo Real</h2>
+        </div>
+        <div class="section-card-body" id="body-setor"></div>
+      </div>
+    </section>
+
+    <section id="sec-bebidas">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>☕ Operação de Bebidas Quentes</h2>
+        </div>
+        <div class="section-card-body" id="body-bebidas"></div>
+      </div>
+    </section>
 
     <!-- POSTOS -->
     <section id="sec-postos">
@@ -205,6 +389,23 @@
   </main>
 </div>
 
+<div id="print-area" style="display:none;"><div id="print-content"></div></div>
+
+<style>
+  @media print {
+    body * { visibility: hidden !important; }
+    #print-area, #print-area * { visibility: visible !important; }
+    #print-area { display: block !important; position: absolute; inset: 0; background: white; }
+    #print-content { font-family: Arial, sans-serif; padding: 2rem; }
+    #print-content h1 { color: #003D7A; }
+    #print-content h2 { color: #0057A8; }
+    #print-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    #print-content th { background: #0057A8; color: white; padding: .5rem .8rem; text-align: left; }
+    #print-content td { border: 1px solid #ddd; padding: .5rem .8rem; }
+    #print-content tr:nth-child(even) td { background: #f0f7ff; }
+  }
+</style>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="js/firebase-db.js"></script>
@@ -215,8 +416,451 @@
   if (session?.type === 'admin') window.location.href = 'admin.html';
   if (session?.type !== 'subadmin') window.location.href = 'login.html';
 
-  const perm = session?.permissoes || {};
+  const subAdminAtual = DB.get('sub_admins', []).find(sa => sa.id === session?.subAdminId) || null;
+  const perm = { ...(session?.permissoes || {}), ...(subAdminAtual?.permissoes || {}) };
+  const categoriaIds = Array.isArray(subAdminAtual?.categorias)
+    ? subAdminAtual.categorias.map(Number).filter(Number.isFinite)
+    : Array.isArray(session?.categorias)
+      ? session.categorias.map(Number).filter(Number.isFinite)
+      : [];
   const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';
+
+  function getCategoriaById(categoriaId) {
+    return DB.get('categorias', []).find(c => c.id === categoriaId) || null;
+  }
+
+  function timeToMin(t) {
+    const [h, m] = String(t || '00:00').split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  }
+
+  function minToTime(m) {
+    return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  }
+
+  function gerarSlots(inicio, fim, duracaoH) {
+    const slots = [];
+    let s = timeToMin(inicio);
+    let e = timeToMin(fim);
+    if (e <= s) e += 24 * 60;
+    while (s < e) {
+      const t = Math.min(s + duracaoH * 60, e);
+      slots.push({ inicio: minToTime(s % (24 * 60)), fim: minToTime(t % (24 * 60)) });
+      s = t;
+    }
+    return slots;
+  }
+
+  function getAgendaConfigByCong(cfg, desigId) {
+    const agenda = cfg?.agendaConfig?.[desigId] || {};
+    return {
+      duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
+      maxPorTurno: 3,
+    };
+  }
+
+  function getPessoasDoSlot(turnos, desigId, slotKey) {
+    return (turnos?.[desigId]?.[slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
+  }
+
+  function temEscopoCategoria() {
+    return categoriaIds.length > 0;
+  }
+
+  function pertenceAoSetor(categoriaId) {
+    return temEscopoCategoria() && categoriaIds.includes(Number(categoriaId));
+  }
+
+  function getCategoriasDoSetor() {
+    return DB.get('categorias', []).filter(cat => pertenceAoSetor(cat.id));
+  }
+
+  function getCategoriasBebidasAtivas() {
+    return getCategoriasDoSetor().filter(cat => cat.operacaoBebidas?.ativa);
+  }
+
+  function getPostosDoSetor() {
+    return DB.get('postos', []).filter(p => pertenceAoSetor(p.categoriaId));
+  }
+
+  function getDesignacoesDoSetor() {
+    const postoIds = new Set(getPostosDoSetor().map(p => p.id));
+    return DB.get('designacoes', []).filter(d => postoIds.has(d.postoId));
+  }
+
+  function getPedidosDoSetor() {
+    return getPedidosAjuda().filter(p => pertenceAoSetor(p.categoriaId));
+  }
+
+  function getCongregacoesElegiveisDoSetor() {
+    const postos = getPostosDoSetor();
+    const postoIds = new Set(postos.map(p => p.id));
+    const desigs = DB.get('designacoes', []);
+    return DB.get('congregacoes', [])
+      .filter(c => c.confirmada)
+      .filter(c => {
+        const atual = desigs.find(d => d.congId === c.id);
+        return !atual || postoIds.has(atual.postoId);
+      });
+  }
+
+  function getCoberturaDoSetor() {
+    const postos = getPostosDoSetor();
+    const postoMap = new Map(postos.map(p => [p.id, p]));
+    const congs = DB.get('congregacoes', []);
+    const pedidos = getPedidosDoSetor();
+
+    return getDesignacoesDoSetor().map(desig => {
+      const posto = postoMap.get(desig.postoId);
+      const cong = congs.find(c => c.id === desig.congId) || null;
+      const cfg = getCongConfigById(desig.congId);
+      const agenda = getAgendaConfigByCong(cfg, desig.id);
+      const turnos = cfg.turnos || {};
+      const slots = gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno).map(slot => {
+        const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+        const faltam = Math.max(0, agenda.maxPorTurno - pessoas.length);
+        const pedidoAberto = pedidos.find(p => p.designacaoId === desig.id && p.slotKey === slot.inicio && p.status === 'aberto');
+        return {
+          ...slot,
+          pessoas,
+          faltam,
+          pedidoAberto,
+        };
+      });
+
+      const faltando = slots.reduce((sum, slot) => sum + slot.faltam, 0);
+      const pedidosAbertos = slots.filter(slot => slot.pedidoAberto).length;
+
+      return {
+        desig,
+        posto,
+        cong,
+        agenda,
+        slots,
+        faltando,
+        pedidosAbertos,
+        completa: slots.length > 0 && faltando === 0,
+      };
+    }).sort((a, b) => {
+      if (a.completa !== b.completa) return a.completa ? 1 : -1;
+      if (a.pedidosAbertos !== b.pedidosAbertos) return b.pedidosAbertos - a.pedidosAbertos;
+      return b.faltando - a.faltando;
+    });
+  }
+
+  function getItemCobertura(desigId) {
+    return getCoberturaDoSetor().find(item => String(item.desig.id) === String(desigId)) || null;
+  }
+
+  function getCoberturaDaCategoria(categoriaId) {
+    return getCoberturaDoSetor().filter(item => Number(item.posto?.categoriaId) === Number(categoriaId));
+  }
+
+  function calcularSugestaoBebidas(categoria) {
+    const cfg = categoria.operacaoBebidas || {};
+    const cobertura = getCoberturaDaCategoria(categoria.id);
+    const totalEscalas = cobertura.reduce((sum, item) => sum + item.slots.reduce((s, slot) => s + slot.pessoas.length, 0), 0);
+    const picoSimultaneo = cobertura.reduce((max, item) => Math.max(max, ...item.slots.map(slot => slot.pessoas.length), 0), 0);
+    const inicio = categoria.horario || '06:00';
+    const fim = categoria.horarioFim || '12:00';
+    const duracaoMin = ((timeToMin(fim) <= timeToMin(inicio) ? timeToMin(fim) + 1440 : timeToMin(fim)) - timeToMin(inicio));
+    const duracaoHoras = Math.max(1, Math.ceil(duracaoMin / 60));
+    const reposicoes = Math.max(1, Math.ceil(duracaoHoras / Math.max(1, cfg.reposicaoHoras || 2)));
+    const basePessoas = Math.max(totalEscalas, picoSimultaneo);
+    const fatorConforto = 1 + ((cfg.confortoPct || 25) / 100);
+    const mlToLitros = valor => (valor / 1000).toFixed(1);
+    return {
+      basePessoas,
+      picoSimultaneo,
+      reposicoes,
+      cafeMin: mlToLitros(basePessoas * (cfg.cafeMlPorPessoa || 200)),
+      cafeConforto: mlToLitros(Math.ceil(basePessoas * (cfg.cafeMlPorPessoa || 200) * fatorConforto)),
+      chaMin: mlToLitros(basePessoas * (cfg.chaMlPorPessoa || 150)),
+      chaConforto: mlToLitros(Math.ceil(basePessoas * (cfg.chaMlPorPessoa || 150) * fatorConforto)),
+      chocolateMin: mlToLitros(basePessoas * (cfg.chocolateMlPorPessoa || 150)),
+      chocolateConforto: mlToLitros(Math.ceil(basePessoas * (cfg.chocolateMlPorPessoa || 150) * fatorConforto)),
+      bolinhoMin: Math.ceil(basePessoas * (cfg.bolinhoPorPessoa || 1)),
+      bolinhoConforto: Math.ceil(basePessoas * (cfg.bolinhoPorPessoa || 1) * fatorConforto),
+      salgadoMin: Math.ceil(basePessoas * (cfg.salgadoPorPessoa || 2)),
+      salgadoConforto: Math.ceil(basePessoas * (cfg.salgadoPorPessoa || 2) * fatorConforto),
+    };
+  }
+
+  function getEquipeTexto(categoria, frente) {
+    const draft = window.__bebidasEquipeDrafts?.[categoria.id]?.[frente];
+    if (typeof draft === 'string') return draft;
+    return (categoria.operacaoBebidas?.equipes?.[frente] || []).join('\n');
+  }
+
+  function capturarRascunhoEquipesBebidas(categoriaId) {
+    const frentes = ['cozinha', 'levarAoLocal', 'receberNoLocal', 'entregadores'];
+    window.__bebidasEquipeDrafts = window.__bebidasEquipeDrafts || {};
+    window.__bebidasEquipeDrafts[categoriaId] = window.__bebidasEquipeDrafts[categoriaId] || {};
+    frentes.forEach(frente => {
+      const textarea = document.getElementById(`bebidas-${categoriaId}-${frente}`);
+      if (textarea) {
+        window.__bebidasEquipeDrafts[categoriaId][frente] = textarea.value;
+      }
+    });
+  }
+
+  function salvarEquipeBebidas(categoriaId, frente) {
+    const cats = DB.get('categorias', []);
+    const idx = cats.findIndex(cat => cat.id === categoriaId);
+    if (idx < 0) return;
+    capturarRascunhoEquipesBebidas(categoriaId);
+    const textoAtual = window.__bebidasEquipeDrafts?.[categoriaId]?.[frente] || '';
+    const nomes = textoAtual.split('\n').map(nome => nome.trim()).filter(Boolean);
+    cats[idx].operacaoBebidas = cats[idx].operacaoBebidas || {};
+    cats[idx].operacaoBebidas.equipes = cats[idx].operacaoBebidas.equipes || {};
+    cats[idx].operacaoBebidas.equipes[frente] = nomes;
+    window.__bebidasEquipeDrafts[categoriaId][frente] = nomes.join('\n');
+    DB.set('categorias', cats);
+    Auth.registrarAtividade('Atualizou equipe de apoio', `${cats[idx].nome} · ${frente}`);
+    renderAtividades();
+    showToast('Equipe atualizada.', 'success');
+  }
+
+  function renderBebidasQuentes() {
+    const el = document.getElementById('body-bebidas');
+    if (!temEscopoCategoria()) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🧭</div>Sem categoria vinculada para operação de bebidas.</div>';
+      return;
+    }
+    const categorias = getCategoriasBebidasAtivas();
+    if (!categorias.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma categoria do seu setor está com bebidas quentes ativadas.</div>';
+      return;
+    }
+
+    el.innerHTML = categorias.map(categoria => {
+      const sugestao = calcularSugestaoBebidas(categoria);
+      return `
+        <div class="bebidas-card">
+          <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+            <div>
+              <strong style="font-size:1rem;color:#7b4f00;">${categoria.nome}</strong>
+              <div class="mini-note">Janela da categoria: ${categoria.horario || '—'}–${categoria.horarioFim || '—'} · reposição sugerida a cada ${categoria.operacaoBebidas?.reposicaoHoras || 2}h</div>
+            </div>
+            <span class="badge badge-ativo">☕ Ativo</span>
+          </div>
+          <div class="bebidas-grid">
+            <div class="bebidas-item"><strong>${sugestao.basePessoas}</strong>Pessoas base do setor</div>
+            <div class="bebidas-item"><strong>${sugestao.picoSimultaneo}</strong>Pico simultâneo</div>
+            <div class="bebidas-item"><strong>${sugestao.reposicoes}</strong>Reposições sugeridas</div>
+            <div class="bebidas-item"><strong>${sugestao.cafeMin}L / ${sugestao.cafeConforto}L</strong>Café min./confortável</div>
+            <div class="bebidas-item"><strong>${sugestao.chaMin}L / ${sugestao.chaConforto}L</strong>Chá min./confortável</div>
+            <div class="bebidas-item"><strong>${sugestao.chocolateMin}L / ${sugestao.chocolateConforto}L</strong>Chocolate min./confortável</div>
+            <div class="bebidas-item"><strong>${sugestao.bolinhoMin} / ${sugestao.bolinhoConforto}</strong>Bolinhos min./confortável</div>
+            <div class="bebidas-item"><strong>${sugestao.salgadoMin} / ${sugestao.salgadoConforto}</strong>Salgados min./confortável</div>
+          </div>
+          <div class="mini-note">Essas quantidades são baseadas nas escalas já registradas do setor e na margem confortável configurada na categoria.</div>
+          <div class="equipes-grid">
+            <div class="equipe-box">
+              <label>Cozinha</label>
+              <textarea class="form-control" id="bebidas-${categoria.id}-cozinha" placeholder="Um nome por linha">${getEquipeTexto(categoria, 'cozinha')}</textarea>
+              <div class="setor-actions"><button class="btn btn-outline btn-sm" onclick="salvarEquipeBebidas(${categoria.id}, 'cozinha')">Salvar equipe</button></div>
+            </div>
+            <div class="equipe-box">
+              <label>Levar ao local</label>
+              <textarea class="form-control" id="bebidas-${categoria.id}-levarAoLocal" placeholder="Um nome por linha">${getEquipeTexto(categoria, 'levarAoLocal')}</textarea>
+              <div class="setor-actions"><button class="btn btn-outline btn-sm" onclick="salvarEquipeBebidas(${categoria.id}, 'levarAoLocal')">Salvar equipe</button></div>
+            </div>
+            <div class="equipe-box">
+              <label>Receber e organizar no local</label>
+              <textarea class="form-control" id="bebidas-${categoria.id}-receberNoLocal" placeholder="Um nome por linha">${getEquipeTexto(categoria, 'receberNoLocal')}</textarea>
+              <div class="setor-actions"><button class="btn btn-outline btn-sm" onclick="salvarEquipeBebidas(${categoria.id}, 'receberNoLocal')">Salvar equipe</button></div>
+            </div>
+            <div class="equipe-box">
+              <label>Entregadores aos postos</label>
+              <textarea class="form-control" id="bebidas-${categoria.id}-entregadores" placeholder="Um nome por linha">${getEquipeTexto(categoria, 'entregadores')}</textarea>
+              <div class="setor-actions"><button class="btn btn-outline btn-sm" onclick="salvarEquipeBebidas(${categoria.id}, 'entregadores')">Salvar equipe</button></div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function getPedidoDoHorario(congId, desigId, slotKey) {
+    return getPedidosAjuda().find(p => p.congId === congId && p.designacaoId === desigId && p.slotKey === slotKey && p.status !== 'cancelado') || null;
+  }
+
+  function fecharHorarioDoSetor(congId, desigId, slotKey, faltaQtd) {
+    const item = getItemCobertura(desigId);
+    if (!item) { showToast('Arranjo não encontrado neste setor.', 'error'); return; }
+    const slot = item.slots.find(s => s.inicio === slotKey);
+    if (!slot || slot.faltam <= 0) { showToast('Este horário já está completo.', 'info'); return; }
+
+    const ajudantes = DB.get('congregacoes', []).filter(c => c.confirmada && c.id !== congId);
+    if (!ajudantes.length) { showToast('Nenhuma congregação ajudante disponível.', 'warning'); return; }
+
+    const ajudanteCongId = parseInt(prompt(`ID da congregação ajudante para ${slot.inicio}–${slot.fim}:\n\n${ajudantes.map(c => `${c.id}: ${c.nome}`).join('\n')}`), 10);
+    if (!ajudanteCongId) return;
+    const ajudanteCong = ajudantes.find(c => c.id === ajudanteCongId);
+    if (!ajudanteCong) { showToast('Congregação ajudante inválida.', 'error'); return; }
+
+    const nomesRaw = prompt(`Informe exatamente ${faltaQtd} nome(s) para completar ${slot.inicio}–${slot.fim}.\n\nSepare por vírgula.`) || '';
+    const nomes = nomesRaw.split(',').map(nome => nome.trim()).filter(Boolean);
+    if (nomes.length !== faltaQtd) { showToast(`Informe exatamente ${faltaQtd} nome(s).`, 'warning'); return; }
+
+    const cfg = getCongConfigById(congId);
+    cfg.turnos = cfg.turnos || {};
+    if (!cfg.turnos[desigId]) cfg.turnos[desigId] = {};
+    const atuais = (cfg.turnos[desigId][slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
+    const faltamAgora = Math.max(0, 3 - atuais.length);
+    if (faltamAgora !== faltaQtd) { showToast('Esse horário mudou. Atualize a tela e tente novamente.', 'warning'); return; }
+
+    const pedidoExistente = getPedidoDoHorario(congId, desigId, slotKey);
+    cfg.turnos[desigId][slotKey] = atuais.concat(nomes.map(nome => ({
+      nome,
+      origem: 'ajuda',
+      ajudanteCongId,
+      ajudanteCongNome: ajudanteCong.nome,
+      helperRequestId: pedidoExistente?.id || `help_${Date.now()}`,
+    })));
+    saveCongConfigById(congId, cfg);
+
+    const lista = getPedidosAjuda();
+    const pedido = pedidoExistente || {
+      id: `help_${Date.now()}`,
+      congId,
+      congNome: item.cong?.nome || '',
+      responsavelCong: item.cong?.contato || item.cong?.nome || '',
+      postoId: item.posto?.id || null,
+      postoNome: item.posto?.nome || '',
+      categoriaId: item.posto?.categoriaId || null,
+      categoriaNome: getCategoriaById(item.posto?.categoriaId)?.nome || '',
+      designacaoId: desigId,
+      data: item.desig?.data || '',
+      dataFmt: item.desig?.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—',
+      slotKey,
+      slotLabel: `${slot.inicio}–${slot.fim}`,
+      faltaQtd,
+      subAdminId: session.subAdminId,
+      subAdminNome: session.nome,
+      observacao: 'Fechado proativamente pelo sub-admin antes do pedido formal.',
+      criadoEm: new Date().toLocaleString('pt-BR'),
+      status: 'aberto',
+    };
+    pedido.subAdminId = session.subAdminId;
+    pedido.subAdminNome = session.nome;
+    pedido.ajudanteCongId = ajudanteCongId;
+    pedido.ajudanteCongNome = ajudanteCong.nome;
+    pedido.nomesResolvidos = nomes;
+    pedido.resolvidoPor = session.nome;
+    pedido.resolvidoEm = new Date().toLocaleString('pt-BR');
+    pedido.status = 'fechado';
+    if (!pedidoExistente) lista.unshift(pedido);
+    savePedidosAjuda(lista);
+
+    Auth.registrarAtividade('Fechou arranjo proativamente', `${item.cong?.nome || 'Congregação'} · ${item.posto?.nome || 'Posto'} · ${slot.inicio}–${slot.fim}`);
+    renderSetor();
+    renderPedidosAjuda();
+    renderAtividades();
+    showToast('Horário fechado pelo sub-admin.', 'success');
+  }
+
+  function exportarArranjoSetorPDF(desigId) {
+    const item = getItemCobertura(desigId);
+    if (!item) { showToast('Arranjo não encontrado.', 'error'); return; }
+    if (!item.completa) { showToast('Feche todos os horários deste arranjo antes de exportar o PDF.', 'warning'); return; }
+
+    const evento = DB.get('evento_config', { nome: 'Corrida Internacional de Praia Grande' });
+    const rows = item.slots.map(slot => `
+      <tr>
+        <td style="font-weight:600;text-align:center;white-space:nowrap;">${slot.inicio}–${slot.fim}</td>
+        <td>${slot.pessoas.map(p => p.nome + (p.origem === 'ajuda' && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')}</td>
+        <td style="text-align:center;">${slot.pessoas.length}/3</td>
+      </tr>`).join('');
+
+    document.getElementById('print-content').innerHTML = `
+      <h1>🏃 ${evento.nome}</h1>
+      <h2>📋 Arranjo Fechado — ${item.cong?.nome || ''}</h2>
+      <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
+      <p><strong>Categoria:</strong> ${getCategoriaById(item.posto?.categoriaId)?.nome || '—'}<br>
+      <strong>Posto:</strong> ${item.posto?.nome || '—'}${item.posto?.km ? ` · Km ${item.posto.km}` : ''}<br>
+      <strong>Local:</strong> ${item.posto?.local || '—'}<br>
+      <strong>Data:</strong> ${item.desig?.data || '—'}<br>
+      <strong>Horário base:</strong> ${item.desig?.inicio || '—'}–${item.desig?.fim || '—'}</p>
+      <table>
+        <thead><tr><th>Horário</th><th>Publicadores</th><th>Ocupação</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin-top:2rem;color:#999;font-size:.82rem;">Documento interno — liberado pelo sub-admin ${session.nome}</p>`;
+    window.print();
+  }
+
+  function renderSetor() {
+    const el = document.getElementById('body-setor');
+    if (!temEscopoCategoria()) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🧭</div>Este sub-admin ainda não tem categoria vinculada. Defina o setor no painel do admin para liberar a operação.</div>';
+      return;
+    }
+
+    const categorias = getCategoriasDoSetor();
+    const cobertura = getCoberturaDoSetor();
+    const postos = getPostosDoSetor();
+    const pedidosAbertos = getPedidosDoSetor().filter(p => p.status === 'aberto').length;
+    const faltando = cobertura.reduce((sum, item) => sum + item.faltando, 0);
+    const horarios = cobertura.reduce((sum, item) => sum + item.slots.length, 0);
+    const concluidos = cobertura.filter(item => item.completa).length;
+
+    if (!postos.length) {
+      el.innerHTML = `
+        <div class="setor-scope-note">Categorias deste sub-admin: <strong>${categorias.map(c => c.nome).join(', ')}</strong>.</div>
+        <div class="locked-msg"><div class="lock-icon">📍</div>Nenhum posto está vinculado a essas categorias ainda.</div>`;
+      return;
+    }
+
+    const cardsHtml = cobertura.length
+      ? cobertura.map(item => {
+          const statusClass = item.completa ? 'setor-card closed' : item.pedidosAbertos ? 'setor-card open' : 'setor-card needs-attention';
+          const contato = item.cong?.contato || item.cong?.responsavel || item.cong?.telefone || 'Sem contato informado';
+          return `
+            <div class="${statusClass}">
+              <div class="setor-card-head">
+                <div>
+                  <strong>${item.posto?.nome || 'Posto sem nome'}</strong>
+                  <div class="mini-note">${item.cong?.nome || 'Sem congregação'} · ${item.desig.data || 'Sem data'} · ${item.desig.inicio}–${item.desig.fim}</div>
+                  <div class="setor-meta">
+                    <span>${getCategoriaById(item.posto?.categoriaId)?.nome || 'Sem categoria'}</span>
+                    <span>${item.slots.length} horário(s)</span>
+                    <span>${item.agenda.duracaoTurno}h por turno</span>
+                  </div>
+                </div>
+                <span class="badge ${item.completa ? 'badge-ativo' : item.pedidosAbertos ? 'badge-standby' : 'badge-perigo'}">${item.completa ? 'Fechado' : item.pedidosAbertos ? 'Com pedido aberto' : 'Precisa ação'}</span>
+              </div>
+              <div class="setor-contact">Responsável/contato: <strong>${contato}</strong>${item.faltando > 0 && !item.pedidosAbertos ? ' · ainda sem pedido de ajuda aberto' : ''}</div>
+              <div class="setor-slots">
+                ${item.slots.map(slot => `
+                  <div class="slot-pill ${slot.faltam === 0 ? 'closed' : slot.pedidoAberto ? 'open' : 'missing'}">
+                    <strong>${slot.inicio}–${slot.fim}</strong>
+                    ${slot.pessoas.length}/3 escalados${slot.faltam > 0 ? ` · faltam ${slot.faltam}` : ' · completo'}
+                    ${slot.pedidoAberto ? `<div class="mini-note">🆘 ${slot.pedidoAberto.subAdminNome || 'Pedido aberto'}</div>` : ''}
+                    ${slot.faltam > 0 ? `<div class="slot-pill-actions"><button class="btn btn-outline btn-sm" onclick="fecharHorarioDoSetor(${item.cong?.id || 0}, '${escaparJs(item.desig.id)}', '${escaparJs(slot.inicio)}', ${slot.faltam})">Completar agora</button></div>` : ''}
+                  </div>`).join('')}
+              </div>
+              <div class="setor-actions">
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('sec-designar').scrollIntoView({ behavior: 'smooth' })">Ajustar designação</button>
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('sec-ajuda').scrollIntoView({ behavior: 'smooth' })">Ver pedidos de ajuda</button>
+                ${item.completa ? `<button class="btn btn-primary btn-sm" onclick="exportarArranjoSetorPDF('${escaparJs(item.desig.id)}')">🖨️ PDF pronto</button>` : ''}
+              </div>
+            </div>`;
+        }).join('')
+      : '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma designação vinculada ao seu setor ainda.</div>';
+
+    el.innerHTML = `
+      <div class="setor-scope-note">Categorias deste sub-admin: <strong>${categorias.map(c => c.nome).join(', ')}</strong>.</div>
+      <div class="setor-summary-grid">
+        <div class="setor-stat"><strong>${postos.length}</strong><span>Postos do setor</span></div>
+        <div class="setor-stat"><strong>${cobertura.length}</strong><span>Designações ativas</span></div>
+        <div class="setor-stat"><strong>${horarios}</strong><span>Horários monitorados</span></div>
+        <div class="setor-stat"><strong>${faltando}</strong><span>Pessoas faltando</span></div>
+        <div class="setor-stat"><strong>${pedidosAbertos}</strong><span>Pedidos abertos</span></div>
+        <div class="setor-stat"><strong>${concluidos}/${cobertura.length}</strong><span>Arranjos fechados</span></div>
+      </div>
+      <div class="setor-cards">${cardsHtml}</div>`;
+  }
 
   function getPedidosAjuda() {
     return DB.get(HELP_REQUEST_KEY, []);
@@ -237,6 +881,10 @@
     DB.set('cong_config', all);
   }
 
+  function escaparJs(value) {
+    return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  }
+
   function normalizarPessoaEscala(pessoa) {
     if (!pessoa) return null;
     if (typeof pessoa === 'string') return { nome: pessoa, origem: 'local' };
@@ -253,14 +901,20 @@
   function renderPostos() {
     const el = document.getElementById('body-postos');
     const btn = document.getElementById('btn-novo-posto');
+    if (!temEscopoCategoria()) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🧭</div>Sem categoria vinculada para gerenciar postos.</div>';
+      btn.style.display = 'none';
+      return;
+    }
     if (!perm.criarPostos) {
       el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para gerenciar postos.</div>';
       btn.style.display = 'none';
       return;
     }
-    const postos = DB.get('postos', []);
+    btn.style.display = 'inline-flex';
+    const postos = getPostosDoSetor();
     if (!postos.length) {
-      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum posto cadastrado ainda.</div>';
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum posto cadastrado no seu setor ainda.</div>';
       return;
     }
     el.innerHTML = `
@@ -281,21 +935,31 @@
     if (!confirm('Remover este posto?')) return;
     const resumo = window.removePostosAndDependencies ? window.removePostosAndDependencies(id) : { removedDesignacoes: 0 };
     Auth.registrarAtividade('Removeu posto', `ID ${id}`);
+    renderSetor();
     renderPostos();
+    renderDesignar();
+    renderPedidosAjuda();
     showToast(resumo.removedDesignacoes ? 'Posto e designações vinculadas removidos.' : 'Posto removido.', 'info');
   };
 
   document.getElementById('btn-novo-posto').addEventListener('click', () => {
     if (!perm.criarPostos) return;
+    const categorias = getCategoriasDoSetor();
+    if (!categorias.length) { showToast('Vincule uma categoria ao sub-admin antes de criar postos.', 'warning'); return; }
     const nome  = prompt('Nome do posto (ex: Posto 9 - Aviação):');
     if (!nome) return;
     const km    = prompt('Km do percurso:') || '0';
     const local = prompt('Endereço / localização:') || '';
+    const categoriaId = categorias.length === 1
+      ? categorias[0].id
+      : parseInt(prompt(`ID da categoria do posto:\n\n${categorias.map(cat => `${cat.id}: ${cat.nome}`).join('\n')}`), 10);
+    if (!categoriaId || !categorias.some(cat => cat.id === categoriaId)) { showToast('Categoria inválida para este setor.', 'error'); return; }
     const postos = DB.get('postos', []);
-    const novo = { id: Date.now(), nome, km, local, status: 'ativo', responsavel: session.nome, publicacoes: 50, contatos: 0 };
+    const novo = { id: Date.now(), nome, km, local, categoriaId, status: 'ativo', responsavel: session.nome, publicacoes: 50, contatos: 0 };
     postos.push(novo);
     DB.set('postos', postos);
     Auth.registrarAtividade('Criou posto', nome);
+    renderSetor();
     renderPostos();
     showToast('Posto criado! ✅', 'success');
   });
@@ -303,23 +967,28 @@
   // ── DESIGNAR CONGREGAÇÕES ──
   function renderDesignar() {
     const el = document.getElementById('body-designar');
+    if (!temEscopoCategoria()) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🧭</div>Sem categoria vinculada para operar designações.</div>';
+      return;
+    }
     if (!perm.designarCongregacoes) {
       el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para designar congregações.</div>';
       return;
     }
-    const congs  = DB.get('congregacoes', []).filter(c => c.confirmada);
-    const postos = DB.get('postos', []);
+    const congs  = getCongregacoesElegiveisDoSetor();
+    const postos = getPostosDoSetor();
     const desigs = DB.get('designacoes', []);
     if (!congs.length) {
-      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação confirmada ainda.</div>';
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação elegível para o seu setor ainda.</div>';
       return;
     }
+    const postoIds = new Set(postos.map(p => p.id));
     el.innerHTML = `
       <div class="cong-row header">
         <div></div><div>Congregação</div><div>Posto designado</div><div>Data</div><div>Ação</div>
       </div>
       ${congs.map(c => {
-        const d = desigs.find(x => x.congId === c.id);
+        const d = desigs.find(x => x.congId === c.id && postoIds.has(x.postoId));
         const posto = d ? postos.find(p => p.id === d.postoId) : null;
         return `
           <div class="cong-row">
@@ -335,7 +1004,8 @@
   }
 
   window.abrirDesig = function(congId) {
-    const postos = DB.get('postos', []);
+    const postos = getPostosDoSetor();
+    if (!postos.length) { showToast('Não há postos cadastrados no seu setor.', 'warning'); return; }
     const opcoes = postos.map(p => `${p.id}: ${p.nome}`).join('\n');
     const escolha = prompt(`Escolha o ID do posto para esta congregação:\n\n${opcoes}`);
     if (!escolha) return;
@@ -348,6 +1018,7 @@
     const cong  = DB.get('congregacoes', []).find(c => c.id === congId);
     const posto = postos.find(p => p.id === postoId);
     Auth.registrarAtividade('Designou congregação', `${cong?.nome} → ${posto?.nome}`);
+    renderSetor();
     renderDesignar();
     showToast('Designação salva! ✅', 'success');
   };
@@ -355,9 +1026,13 @@
   // ── PEDIDOS DE AJUDA ──
   function renderPedidosAjuda() {
     const el = document.getElementById('body-ajuda');
-    const pedidos = getPedidosAjuda().filter(p => p.subAdminId === session.subAdminId);
+    if (!temEscopoCategoria()) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🧭</div>Sem categoria vinculada para acompanhar pedidos.</div>';
+      return;
+    }
+    const pedidos = getPedidosDoSetor().filter(p => p.subAdminId === session.subAdminId);
     if (!pedidos.length) {
-      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum pedido de ajuda atribuído a você.</div>';
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum pedido de ajuda atribuído a você no seu setor.</div>';
       return;
     }
 
@@ -447,6 +1122,7 @@
     savePedidosAjuda(lista);
 
     Auth.registrarAtividade('Fechou pedido de ajuda', `${pedido.congNome} · ${pedido.slotLabel}`);
+    renderSetor();
     renderPedidosAjuda();
     renderAtividades();
     showToast('Arranjo fechado e responsável avisado na tela da congregação.', 'success');
@@ -460,6 +1136,7 @@
     pedido.canceladoEm = new Date().toLocaleString('pt-BR');
     pedido.motivoCancelamento = 'Cancelado pelo sub-admin.';
     savePedidosAjuda(lista);
+    renderSetor();
     renderPedidosAjuda();
     showToast('Pedido cancelado.', 'info');
   };
@@ -496,8 +1173,10 @@
   });
 
   // Sincroniza em tempo real
-  window.addEventListener('db-sync', () => { renderPostos(); renderDesignar(); renderPedidosAjuda(); renderAtividades(); });
+  window.addEventListener('db-sync', () => { renderSetor(); renderBebidasQuentes(); renderPostos(); renderDesignar(); renderPedidosAjuda(); renderAtividades(); });
 
+  renderSetor();
+  renderBebidasQuentes();
   renderPostos();
   renderDesignar();
   renderPedidosAjuda();

@@ -362,7 +362,7 @@
 
         <!-- CONGREGAÇÃO -->
         <div class="form-group">
-          <label>Congregação <small style="color:var(--gray);">(apenas quem respondeu participação)</small></label>
+          <label>Congregação <small style="color:var(--gray);">⏳ = aguardando informar carrinhos/displays</small></label>
           <select class="form-control" id="d-cong">
             <option value="">-- Selecione --</option>
           </select>
@@ -670,18 +670,20 @@ function abrirFormDesignar(postoId) {
     capBox.style.display = 'none';
   }
 
-  // Popula select — apenas congregações confirmadas QUE responderam a participação
-  const congs = DB.get('congregacoes').filter(c => c.confirmada && c.participacao?.respondeu);
+  // Popula select — todas as congregações confirmadas
+  const congs = DB.get('congregacoes').filter(c => c.confirmada);
   const sel = document.getElementById('d-cong');
   sel.innerHTML = '<option value="">-- Selecione a congregação --</option>' +
     congs.map(c => {
-      const p = c.participacao;
-      const total = (p.carrinhos || 0) + (p.displays || 0);
-      return `<option value="${c.id}">${c.nome} — 🛒${p.carrinhos} + 🪧${p.displays} = ${total} pts</option>`;
+      const p = c.participacao || {};
+      const carrinhos = p.carrinhos || 0;
+      const displays  = p.displays  || 0;
+      const pendente  = !p.respondeu ? ' ⏳' : '';
+      return `<option value="${c.id}">${c.nome}${pendente} — 🛒${carrinhos} + 🪧${displays}</option>`;
     }).join('');
 
   if (!congs.length) {
-    sel.innerHTML = '<option value="">⚠️ Nenhuma congregação respondeu a participação ainda</option>';
+    sel.innerHTML = '<option value="">⚠️ Nenhuma congregação confirmada ainda</option>';
   }
 
   // Cota: mostrar ao selecionar congregação

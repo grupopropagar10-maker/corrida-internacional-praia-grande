@@ -8,10 +8,11 @@
   <style>
     /* Card de registro rápido */
     .quick-card {
-      background: white;
+      background: rgba(255,255,255,0.95);
       border-radius: var(--radius);
       padding: 1.8rem;
       box-shadow: var(--shadow);
+      border: 1px solid rgba(0, 61, 122, 0.10);
     }
 
     .pub-grid {
@@ -91,10 +92,11 @@
       align-items: center;
       gap: 1rem;
       padding: 0.9rem 1rem;
-      background: white;
+      background: rgba(255,255,255,0.94);
       border-radius: var(--radius-sm);
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       transition: var(--transition);
+      border: 1px solid rgba(0, 61, 122, 0.08);
     }
 
     .registro-item:hover { box-shadow: var(--shadow); }
@@ -154,6 +156,17 @@
     .tipo-btn:hover   { border-color: var(--accent); color: var(--accent); }
     .tipo-btn.active  { border-color: var(--accent); background: var(--accent); color: white; }
     .tipo-btn .t-icon { font-size: 1.3rem; display: block; margin-bottom: 0.2rem; }
+
+    @media (max-width: 768px) {
+      .counter-box {
+        gap: 0.7rem;
+      }
+
+      .counter-num {
+        min-width: 60px;
+        font-size: 2rem;
+      }
+    }
   </style>
 </head>
 <body>

@@ -528,7 +528,7 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  Auth.check(true);
+  Auth.check('admin-only');
 // ================================================================
 //  DADOS INICIAIS
 // ================================================================
@@ -1003,8 +1003,7 @@ window.deletarPostoMapa = function(postoId) {
   if (!posto) return;
   if (!confirm(`Remover o posto ${posto.nome}?`)) return;
 
-  removeAutoDesignacoesForPosto(postoId);
-  DB.set('postos', DB.get('postos').filter(p => p.id !== postoId));
+  window.removePostosAndDependencies?.(postoId);
   resetPainelDesignar();
   renderMarcadores();
   renderKPI();

@@ -8,16 +8,17 @@
   <style>
     .subadmin-layout {
       display: grid;
-      grid-template-columns: 200px 1fr;
+      grid-template-columns: 230px 1fr;
       min-height: calc(100vh - 56px);
     }
     .sidebar {
-      background: var(--primary-dark);
+      background: linear-gradient(180deg, rgba(82, 52, 0, 0.98), rgba(123, 79, 0, 0.96));
       padding: 1.5rem 0;
       position: sticky;
       top: 56px;
       height: calc(100vh - 56px);
       overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.08);
     }
     .sidebar-title {
       color: rgba(255,255,255,0.5);
@@ -40,12 +41,12 @@
       border-left: 3px solid transparent;
     }
     .sidebar a:hover, .sidebar a.active {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.12);
       color: white;
       border-left-color: #e07b00;
     }
-    .admin-main { padding: 1.8rem; background: var(--light); overflow-y: auto; }
-    .section-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 1.5rem; }
+    .admin-main { padding: 2rem; background: transparent; overflow: visible; }
+    .section-card { background: rgba(255,255,255,0.94); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 1.5rem; border: 1px solid rgba(123, 79, 0, 0.12); }
     .section-card-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1.1rem 1.5rem;
@@ -98,11 +99,30 @@
       color: var(--gray);
       margin-top: .25rem;
     }
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .subadmin-layout { grid-template-columns: 1fr; }
-      .sidebar { height: auto; position: relative; top: 0; }
+      .sidebar {
+        height: auto;
+        position: relative;
+        top: 0;
+        padding: 0.8rem;
+        display: flex;
+        gap: 0.6rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+      }
+      .sidebar-title { display: none; }
+      .sidebar a {
+        border-left: none;
+        border-radius: 999px;
+        padding: 0.7rem 1rem;
+        background: rgba(255,255,255,0.08);
+        flex: 0 0 auto;
+      }
       .cong-row { grid-template-columns: 1fr; }
       .cong-row.header { display: none; }
+      .admin-main { padding: 1rem; }
     }
   </style>
 </head>
@@ -192,6 +212,7 @@
 <script src="js/auth.js"></script>
 <script>
   const session = Auth.check(true);
+  if (session?.type === 'admin') window.location.href = 'admin.html';
   if (session?.type !== 'subadmin') window.location.href = 'login.html';
 
   const perm = session?.permissoes || {};
@@ -258,11 +279,10 @@
 
   window.deletarPosto = function(id) {
     if (!confirm('Remover este posto?')) return;
-    const postos = DB.get('postos', []).filter(p => p.id !== id);
-    DB.set('postos', postos);
+    const resumo = window.removePostosAndDependencies ? window.removePostosAndDependencies(id) : { removedDesignacoes: 0 };
     Auth.registrarAtividade('Removeu posto', `ID ${id}`);
     renderPostos();
-    showToast('Posto removido.', 'info');
+    showToast(resumo.removedDesignacoes ? 'Posto e designações vinculadas removidos.' : 'Posto removido.', 'info');
   };
 
   document.getElementById('btn-novo-posto').addEventListener('click', () => {
@@ -323,7 +343,7 @@
     if (!postos.find(p => p.id === postoId)) { showToast('Posto não encontrado!', 'error'); return; }
     const data = prompt('Data da designação (ex: 2026-07-12):') || '';
     const desigs = DB.get('designacoes', []).filter(x => x.congId !== congId);
-    desigs.push({ congId, postoId, data, inicio: '07:00', fim: '09:00', irmaos: 0 });
+    desigs.push({ id: Date.now(), congId, postoId, data, inicio: '07:00', fim: '09:00', irmaos: 0 });
     DB.set('designacoes', desigs);
     const cong  = DB.get('congregacoes', []).find(c => c.id === congId);
     const posto = postos.find(p => p.id === postoId);

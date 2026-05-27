@@ -8,10 +8,11 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     .chart-wrap {
-      background: white;
+      background: rgba(255,255,255,0.94);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 1.5rem;
+      border: 1px solid rgba(0, 61, 122, 0.10);
     }
 
     .chart-wrap h3 {
@@ -112,6 +113,17 @@
 
     .highlight-card .big-num { color: white; }
     .highlight-card p { opacity: 0.85; margin-top: 0.5rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .export-bar {
+        justify-content: stretch;
+      }
+
+      .export-bar .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>

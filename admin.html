@@ -12,17 +12,18 @@
     /* ── ADMIN SIDEBAR LAYOUT ── */
     .admin-layout {
       display: grid;
-      grid-template-columns: 220px 1fr;
+      grid-template-columns: 250px 1fr;
       min-height: calc(100vh - 56px);
     }
 
     .sidebar {
-      background: var(--primary-dark);
+      background: linear-gradient(180deg, rgba(0, 61, 122, 0.98), rgba(0, 48, 98, 0.96));
       padding: 1.5rem 0;
       position: sticky;
       top: 56px;
       height: calc(100vh - 56px);
       overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.08);
     }
 
     .sidebar-title {
@@ -48,7 +49,7 @@
     }
 
     .sidebar a:hover, .sidebar a.active {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.12);
       color: white;
       border-left-color: var(--accent);
     }
@@ -63,18 +64,19 @@
 
     /* ── MAIN CONTENT ── */
     .admin-main {
-      padding: 1.8rem;
-      background: var(--light);
-      overflow-y: auto;
+      padding: 2rem;
+      background: transparent;
+      overflow: visible;
     }
 
     /* ── SECTION CARD ── */
     .section-card {
-      background: white;
+      background: rgba(255,255,255,0.94);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
       margin-bottom: 1.5rem;
+      border: 1px solid rgba(0, 61, 122, 0.10);
     }
 
     .section-card-header {
@@ -224,11 +226,31 @@
     }
 
     /* ── RESPONSIVO ── */
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .admin-layout { grid-template-columns: 1fr; }
-      .sidebar { height: auto; position: relative; top: 0; }
+      .sidebar {
+        height: auto;
+        position: relative;
+        top: 0;
+        padding: 0.8rem;
+        display: flex;
+        gap: 0.6rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+      }
+      .sidebar-title,
+      .sidebar-sep { display: none; }
+      .sidebar a {
+        border-left: none;
+        border-radius: 999px;
+        padding: 0.7rem 1rem;
+        background: rgba(255,255,255,0.06);
+        flex: 0 0 auto;
+      }
       .cong-row { grid-template-columns: 1fr; }
       .cong-row.header { display: none; }
+      .admin-main { padding: 1rem; }
     }
 
     /* ── PDF PREVIEW ── */
@@ -607,7 +629,7 @@
 <script src="js/auth.js"></script>
 <script>
   // ── PROTEÇÃO ADMIN ──
-  Auth.check(true);
+  Auth.check('admin-only');
 
   // ================================================================
   //  KPI
@@ -815,8 +837,8 @@
   window.deletarCong = function(id) {
     const c = DB.get('congregacoes', []).find(x => x.id === id);
     if (!confirm(`Remover "${c?.nome}" e todas as designações desta congregação?`)) return;
-    DB.set('congregacoes', DB.get('congregacoes', []).filter(x => x.id !== id));
-    DB.set('designacoes',  DB.get('designacoes',  []).filter(d => d.congId !== id));
+    DB.set('congregacoes', DB.get('congregacoes', []).filter(x => x.id !== id), { allowDestructive: true });
+    DB.set('designacoes',  DB.get('designacoes',  []).filter(d => d.congId !== id), { allowDestructive: true });
     renderCongTable();
     renderKPI();
     showToast('Congregação removida.', 'info');
@@ -1414,8 +1436,13 @@
   // ── LIMPAR POSTOS ──
   document.getElementById('btn-limpar-postos')?.addEventListener('click', () => {
     if (!confirm('Isso vai EXCLUIR todos os postos e designações permanentemente. Tem certeza?')) return;
-    DB.set('postos', []);
-    DB.set('designacoes', []);
+    if (window.removePostosAndDependencies) {
+      const ids = DB.get('postos', []).map(p => p.id);
+      window.removePostosAndDependencies(ids);
+    } else {
+      DB.set('postos', [], { allowDestructive: true });
+      DB.set('designacoes', [], { allowDestructive: true });
+    }
     showToast('Todos os postos foram removidos. Crie novos pelo mapa. ✅', 'success');
   });
 

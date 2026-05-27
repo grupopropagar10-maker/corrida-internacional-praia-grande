@@ -17,12 +17,13 @@
     .dot-inativo  { background: #DC3545; }
 
     .posto-card {
-      background: white;
+      background: rgba(255,255,255,0.95);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 1.4rem;
       transition: var(--transition);
       border-left: 5px solid var(--primary);
+      border: 1px solid rgba(0, 61, 122, 0.10);
     }
 
     .posto-card.standby { border-left-color: #FFC107; }
@@ -105,8 +106,8 @@
     .filter-btn {
       padding: 0.4rem 1rem;
       border-radius: 50px;
-      border: 2px solid var(--gray-light);
-      background: white;
+      border: 1px solid rgba(0, 61, 122, 0.14);
+      background: rgba(255,255,255,0.86);
       font-size: 0.82rem;
       cursor: pointer;
       transition: var(--transition);
@@ -124,12 +125,6 @@
       flex: 1;
       min-width: 200px;
       max-width: 320px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: var(--gray);
     }
 
     .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
@@ -275,7 +270,7 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  Auth.check(true);
+  Auth.check('admin-only');
   let filtroAtual = 'todos';
   let deleteTarget = null;
 
@@ -490,9 +485,8 @@
 
   document.getElementById('confirm-yes').addEventListener('click', () => {
     if (deleteTarget !== null) {
-      const postos = DB.get('postos').filter(p => p.id !== deleteTarget);
-      DB.set('postos', postos);
-      showToast('Posto removido.', 'info');
+      const resumo = window.removePostosAndDependencies ? window.removePostosAndDependencies(deleteTarget) : { removedDesignacoes: 0 };
+      showToast(resumo.removedDesignacoes ? 'Posto e designações vinculadas removidos.' : 'Posto removido.', 'info');
       renderPostos();
       renderStats();
       deleteTarget = null;

@@ -139,6 +139,7 @@ const Auth = {
 
   // Migra congregações existentes adicionando campos novos se ausentes
   migrateCongs() {
+    if (location.protocol === 'file:') return;
     const congs = DB.get('congregacoes', []);
     const normalized = congs.map(c => ({
       ...c,

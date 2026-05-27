@@ -15,9 +15,10 @@ const firebaseConfig = {
 // Inicializa Firebase
 firebase.initializeApp(firebaseConfig);
 const rtdb = firebase.database();
+const IS_LOCAL_FILE = location.protocol === 'file:';
 
 // Chaves que devem ser sincronizadas com o Firebase
-const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config'];
+const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config', 'evento_config', 'pedidos_ajuda_escala'];
 const CRITICAL_KEYS = ['congregacoes', 'postos', 'designacoes', 'cong_config'];
 const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
 const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';
@@ -154,10 +155,11 @@ function startSync() {
 }
 
 // Envia dado ao Firebase (chamado pelo DB.set)
-function pushToFirebase(key, value) {
+function pushToFirebase(key, value, options = {}) {
   if (!SYNC_KEYS.includes(key)) return;
+  if (IS_LOCAL_FILE) return;
   if (restoreInFlight) return;
-  if (isSuspiciousWrite(key, value)) {
+  if (!options.allowDestructive && isSuspiciousWrite(key, value)) {
     const restored = restoreFullBackup('suspicious-write');
     console.warn(`[Firebase] Escrita suspeita bloqueada em ${key}. Snapshot completo ${restored ? 'restaurado' : 'indisponivel'}.`);
     return;

@@ -8,6 +8,7 @@ const DB = {
     catch { return def; }
   },
   set(key, value) {
+    if (typeof savePrewriteSnapshot === 'function') savePrewriteSnapshot(key);
     localStorage.setItem(key, JSON.stringify(value));
     // Sincroniza com Firebase se disponível
     if (typeof pushToFirebase === 'function') pushToFirebase(key, value);

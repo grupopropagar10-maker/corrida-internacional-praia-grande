@@ -21,6 +21,7 @@ const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'ad
 const CRITICAL_KEYS = ['congregacoes', 'postos', 'designacoes', 'cong_config'];
 const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
 const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';
+const PREWRITE_BACKUP_KEY = 'firebase_prewrite_backup_latest';
 const BACKUP_LIMIT = 8;
 let restoreInFlight = false;
 
@@ -53,6 +54,21 @@ function getLatestSafeBackup() {
   return history.find(item => item && (item.source === 'pull' || item.source === 'bootstrap')) || null;
 }
 
+function savePrewriteSnapshot(triggerKey) {
+  const snapshot = {
+    ts: new Date().toISOString(),
+    source: 'prewrite',
+    key: triggerKey,
+    payload: getBackupPayload(),
+  };
+  localStorage.setItem(PREWRITE_BACKUP_KEY, JSON.stringify(snapshot));
+  return snapshot;
+}
+
+function getLatestRestoreSnapshot() {
+  return safeJsonParse(localStorage.getItem(PREWRITE_BACKUP_KEY), null) || getLatestSafeBackup();
+}
+
 function isSuspiciousWrite(key, nextValue) {
   if (!CRITICAL_KEYS.includes(key)) return false;
   const latest = getLatestSafeBackup();
@@ -67,22 +83,26 @@ function isSuspiciousWrite(key, nextValue) {
   return false;
 }
 
-function restoreBackupForKey(key, reason) {
-  const latest = getLatestSafeBackup();
-  if (!latest?.payload || !(key in latest.payload)) return false;
-  const backupValue = latest.payload[key];
+function restoreFullBackup(reason) {
+  const latest = getLatestRestoreSnapshot();
+  if (!latest?.payload) return false;
   restoreInFlight = true;
-  if (backupValue === null || backupValue === undefined) {
-    localStorage.removeItem(key);
-  } else {
-    localStorage.setItem(key, JSON.stringify(backupValue));
-  }
-  rtdb.ref(key).set(backupValue).catch(err => {
-    console.warn(`[Firebase] Falha ao restaurar backup seguro de ${key}:`, err);
-  }).finally(() => {
+  Object.entries(latest.payload).forEach(([key, value]) => {
+    if (value === null || value === undefined) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  });
+  Promise.all(
+    Object.entries(latest.payload)
+      .filter(([key]) => SYNC_KEYS.includes(key))
+      .map(([key, value]) =>
+        rtdb.ref(key).set(value).catch(err => {
+          console.warn(`[Firebase] Falha ao restaurar backup completo em ${key}:`, err);
+        })
+      )
+  ).finally(() => {
     restoreInFlight = false;
   });
-  window.dispatchEvent(new CustomEvent('db-restore-blocked-write', { detail: { key, reason, backupTs: latest.ts } }));
+  window.dispatchEvent(new CustomEvent('db-restore-blocked-write', { detail: { reason, backupTs: latest.ts, source: latest.source } }));
   return true;
 }
 
@@ -138,11 +158,14 @@ function pushToFirebase(key, value) {
   if (!SYNC_KEYS.includes(key)) return;
   if (restoreInFlight) return;
   if (isSuspiciousWrite(key, value)) {
-    const restored = restoreBackupForKey(key, 'suspicious-write');
-    console.warn(`[Firebase] Escrita suspeita bloqueada em ${key}. Backup seguro ${restored ? 'restaurado' : 'indisponivel'}.`);
+    const restored = restoreFullBackup('suspicious-write');
+    console.warn(`[Firebase] Escrita suspeita bloqueada em ${key}. Snapshot completo ${restored ? 'restaurado' : 'indisponivel'}.`);
     return;
   }
-  rtdb.ref(key).set(value).catch(err => console.warn('[Firebase] Erro ao salvar:', err));
+  rtdb.ref(key).set(value).catch(err => {
+    console.warn('[Firebase] Erro ao salvar:', err);
+    restoreFullBackup('write-error');
+  });
 }
 
 // Carrega dados do Firebase uma vez ao iniciar (garante dados frescos)

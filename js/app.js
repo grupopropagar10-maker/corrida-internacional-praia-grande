@@ -1,5 +1,5 @@
 // =====================================================
-//   DADOS COMPARTILHADOS - LocalStorage
+//   DADOS COMPARTILHADOS - LocalStorage + Firebase Sync
 // =====================================================
 
 const DB = {
@@ -9,6 +9,8 @@ const DB = {
   },
   set(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+    // Sincroniza com Firebase se disponível
+    if (typeof pushToFirebase === 'function') pushToFirebase(key, value);
   }
 };
 

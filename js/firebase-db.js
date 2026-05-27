@@ -17,7 +17,7 @@ firebase.initializeApp(firebaseConfig);
 const rtdb = firebase.database();
 
 // Chaves que devem ser sincronizadas com o Firebase
-const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds'];
+const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes'];
 
 // Escuta mudanças em tempo real e atualiza localStorage automaticamente
 function startSync() {

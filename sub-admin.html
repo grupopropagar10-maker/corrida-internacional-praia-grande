@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Sub-Admin — Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .subadmin-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      min-height: calc(100vh - 56px);
+    }
+    .sidebar {
+      background: var(--primary-dark);
+      padding: 1.5rem 0;
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+    }
+    .sidebar-title {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0.5rem 1.2rem;
+    }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.75rem 1.2rem;
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: var(--transition);
+      border-left: 3px solid transparent;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border-left-color: #e07b00;
+    }
+    .admin-main { padding: 1.8rem; background: var(--light); overflow-y: auto; }
+    .section-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 1.5rem; }
+    .section-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 1.5rem;
+      background: linear-gradient(135deg, #7b4f00, #e07b00);
+      color: white; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .section-card-header h2 { font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .section-card-body { padding: 1.5rem; }
+    .locked-msg {
+      text-align: center; padding: 2.5rem;
+      color: var(--gray); font-size: 0.9rem;
+    }
+    .locked-msg .lock-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .cong-row {
+      display: grid;
+      grid-template-columns: 18px 1fr 1fr 120px auto;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--gray-light);
+      font-size: 0.85rem;
+    }
+    .cong-row.header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white; font-weight: 700; font-size: 0.78rem;
+    }
+    .cor-dot { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    .activity-row {
+      display: flex; gap: 0.8rem; align-items: flex-start;
+      padding: 0.7rem 0; border-bottom: 1px solid var(--gray-light); font-size: 0.83rem;
+    }
+    .activity-ts { color: var(--gray); font-size: 0.75rem; white-space: nowrap; }
+    @media (max-width: 768px) {
+      .subadmin-layout { grid-template-columns: 1fr; }
+      .sidebar { height: auto; position: relative; top: 0; }
+      .cong-row { grid-template-columns: 1fr; }
+      .cong-row.header { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <span class="logo-icon">🏃</span>
+    <span>Corrida Internacional PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+  </ul>
+</nav>
+
+<div class="subadmin-layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-title">Meu Painel</div>
+    <a href="#sec-postos" id="nav-postos"><span>📍</span> Postos</a>
+    <a href="#sec-designar" id="nav-designar"><span>⛪</span> Designar Cong.</a>
+    <a href="#sec-atividades" id="nav-atividades"><span>📋</span> Minhas Atividades</a>
+  </nav>
+
+  <main class="admin-main">
+
+    <!-- POSTOS -->
+    <section id="sec-postos">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>📍 Gerenciar Postos</h2>
+          <button class="btn btn-sm" id="btn-novo-posto"
+            style="background:rgba(255,255,255,0.2);color:white;">➕ Novo Posto</button>
+        </div>
+        <div class="section-card-body" id="body-postos">
+          <div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para gerenciar postos.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESIGNAR CONGREGAÇÕES -->
+    <section id="sec-designar">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>⛪ Designar Congregações Confirmadas</h2>
+        </div>
+        <div class="section-card-body" id="body-designar">
+          <div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para designar congregações.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ATIVIDADES -->
+    <section id="sec-atividades">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>📋 Minhas Atividades Recentes</h2>
+        </div>
+        <div class="section-card-body" id="body-atividades"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="js/firebase-db.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const session = Auth.check(true);
+  if (session?.type !== 'subadmin') window.location.href = 'login.html';
+
+  const perm = session?.permissoes || {};
+
+  // ── POSTOS ──
+  function renderPostos() {
+    const el = document.getElementById('body-postos');
+    const btn = document.getElementById('btn-novo-posto');
+    if (!perm.criarPostos) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para gerenciar postos.</div>';
+      btn.style.display = 'none';
+      return;
+    }
+    const postos = DB.get('postos', []);
+    if (!postos.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum posto cadastrado ainda.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="cong-row header">
+        <div></div><div>Nome</div><div>Local</div><div>Km</div><div>Ações</div>
+      </div>
+      ${postos.map(p => `
+        <div class="cong-row">
+          <div class="cor-dot" style="background:${p.status==='ativo'?'var(--success)':'var(--warning)'};"></div>
+          <div><strong>${p.nome}</strong></div>
+          <div style="font-size:0.78rem;color:var(--gray);">${p.local}</div>
+          <div>${p.km} km</div>
+          <div><button class="btn btn-danger btn-sm" onclick="deletarPosto(${p.id})">🗑️</button></div>
+        </div>`).join('')}`;
+  }
+
+  window.deletarPosto = function(id) {
+    if (!confirm('Remover este posto?')) return;
+    const postos = DB.get('postos', []).filter(p => p.id !== id);
+    DB.set('postos', postos);
+    Auth.registrarAtividade('Removeu posto', `ID ${id}`);
+    renderPostos();
+    showToast('Posto removido.', 'info');
+  };
+
+  document.getElementById('btn-novo-posto').addEventListener('click', () => {
+    if (!perm.criarPostos) return;
+    const nome  = prompt('Nome do posto (ex: Posto 9 - Aviação):');
+    if (!nome) return;
+    const km    = prompt('Km do percurso:') || '0';
+    const local = prompt('Endereço / localização:') || '';
+    const postos = DB.get('postos', []);
+    const novo = { id: Date.now(), nome, km, local, status: 'ativo', responsavel: session.nome, publicacoes: 50, contatos: 0 };
+    postos.push(novo);
+    DB.set('postos', postos);
+    Auth.registrarAtividade('Criou posto', nome);
+    renderPostos();
+    showToast('Posto criado! ✅', 'success');
+  });
+
+  // ── DESIGNAR CONGREGAÇÕES ──
+  function renderDesignar() {
+    const el = document.getElementById('body-designar');
+    if (!perm.designarCongregacoes) {
+      el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para designar congregações.</div>';
+      return;
+    }
+    const congs  = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const postos = DB.get('postos', []);
+    const desigs = DB.get('designacoes', []);
+    if (!congs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação confirmada ainda.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="cong-row header">
+        <div></div><div>Congregação</div><div>Posto designado</div><div>Data</div><div>Ação</div>
+      </div>
+      ${congs.map(c => {
+        const d = desigs.find(x => x.congId === c.id);
+        const posto = d ? postos.find(p => p.id === d.postoId) : null;
+        return `
+          <div class="cong-row">
+            <div class="cor-dot" style="background:${c.cor||'#0057A8'};"></div>
+            <div><strong>${c.nome}</strong><div style="font-size:0.73rem;color:var(--gray);">${c.cidade}</div></div>
+            <div>${posto ? posto.nome : '<span style="color:var(--gray);">Sem designação</span>'}</div>
+            <div style="font-size:0.78rem;">${d?.data||'—'}</div>
+            <div>
+              <button class="btn btn-primary btn-sm" onclick="abrirDesig(${c.id})">✏️ Designar</button>
+            </div>
+          </div>`;
+      }).join('')}`;
+  }
+
+  window.abrirDesig = function(congId) {
+    const postos = DB.get('postos', []);
+    const opcoes = postos.map(p => `${p.id}: ${p.nome}`).join('\n');
+    const escolha = prompt(`Escolha o ID do posto para esta congregação:\n\n${opcoes}`);
+    if (!escolha) return;
+    const postoId = parseInt(escolha);
+    if (!postos.find(p => p.id === postoId)) { showToast('Posto não encontrado!', 'error'); return; }
+    const data = prompt('Data da designação (ex: 2026-07-12):') || '';
+    const desigs = DB.get('designacoes', []).filter(x => x.congId !== congId);
+    desigs.push({ congId, postoId, data, inicio: '07:00', fim: '09:00', irmaos: 0 });
+    DB.set('designacoes', desigs);
+    const cong  = DB.get('congregacoes', []).find(c => c.id === congId);
+    const posto = postos.find(p => p.id === postoId);
+    Auth.registrarAtividade('Designou congregação', `${cong?.nome} → ${posto?.nome}`);
+    renderDesignar();
+    showToast('Designação salva! ✅', 'success');
+  };
+
+  // ── ATIVIDADES ──
+  function renderAtividades() {
+    const lista  = DB.get('sub_admins', []);
+    const sa     = lista.find(x => x.id === session.subAdminId);
+    const ativs  = sa?.atividades || [];
+    const el     = document.getElementById('body-atividades');
+    if (!ativs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma atividade registrada ainda.</div>';
+      return;
+    }
+    el.innerHTML = ativs.map(a => `
+      <div class="activity-row">
+        <span style="font-size:1.1rem;">📌</span>
+        <div style="flex:1;">
+          <strong>${a.acao}</strong>
+          ${a.detalhes ? `<div style="color:var(--gray);font-size:0.78rem;">${a.detalhes}</div>` : ''}
+        </div>
+        <span class="activity-ts">${a.ts}</span>
+      </div>`).join('');
+  }
+
+  // Smooth scroll sidebar
+  document.querySelectorAll('.sidebar a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+      document.querySelectorAll('.sidebar a').forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+    });
+  });
+
+  // Sincroniza em tempo real
+  window.addEventListener('db-sync', () => { renderPostos(); renderDesignar(); renderAtividades(); });
+
+  renderPostos();
+  renderDesignar();
+  renderAtividades();
+</script>
+</body>
+</html>

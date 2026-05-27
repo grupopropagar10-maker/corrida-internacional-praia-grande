@@ -33,8 +33,12 @@ const Auth = {
   check(adminOnly = false) {
     const s = this.getSession();
     if (!s) { window.location.href = 'login.html'; return null; }
-    if (adminOnly && s.type !== 'admin') {
+    if (adminOnly && s.type !== 'admin' && s.type !== 'subadmin') {
       window.location.href = 'minha-congregacao.html';
+      return null;
+    }
+    if (adminOnly === 'admin-only' && s.type !== 'admin') {
+      window.location.href = s.type === 'subadmin' ? 'sub-admin.html' : 'login.html';
       return null;
     }
     return s;
@@ -47,6 +51,39 @@ const Auth = {
       return true;
     }
     return false;
+  },
+
+  loginSubAdmin(usuario, senha) {
+    const lista = DB.get('sub_admins', []);
+    const sa = lista.find(s => s.usuario === usuario && s.senha === senha);
+    if (sa) {
+      this.setSession({ type: 'subadmin', nome: sa.nome, subAdminId: sa.id, permissoes: sa.permissoes });
+      return true;
+    }
+    return false;
+  },
+
+  isSubAdmin() {
+    return this.getSession()?.type === 'subadmin';
+  },
+
+  canDo(permissao) {
+    const s = this.getSession();
+    if (s?.type === 'admin') return true;
+    if (s?.type === 'subadmin') return !!s.permissoes?.[permissao];
+    return false;
+  },
+
+  registrarAtividade(acao, detalhes = '') {
+    const s = this.getSession();
+    if (!s || s.type !== 'subadmin') return;
+    const lista = DB.get('sub_admins', []);
+    const sa = lista.find(x => x.id === s.subAdminId);
+    if (!sa) return;
+    if (!sa.atividades) sa.atividades = [];
+    sa.atividades.unshift({ acao, detalhes, ts: new Date().toLocaleString('pt-BR') });
+    if (sa.atividades.length > 50) sa.atividades = sa.atividades.slice(0, 50);
+    DB.set('sub_admins', lista);
   },
 
   loginCong(congId, senha) {
@@ -78,11 +115,18 @@ const Auth = {
                   font-size:0.78rem;font-weight:700;white-space:nowrap;text-decoration:none;">
            🔑 Painel Admin
          </a>`
-      : '';
+      : user.type === 'subadmin'
+        ? `<a href="sub-admin.html"
+             style="background:rgba(255,165,0,0.3);border:1px solid rgba(255,165,0,0.5);
+                    color:white;padding:0.3rem 0.8rem;border-radius:6px;cursor:pointer;
+                    font-size:0.78rem;font-weight:700;white-space:nowrap;text-decoration:none;">
+             🛡️ Meu Painel
+           </a>`
+        : '';
     badge.innerHTML = `
       ${adminLink}
       <span style="color:rgba(255,255,255,0.85);font-size:0.82rem;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;">
-        ${user.type === 'admin' ? '🔑' : '⛪'} <strong>${user.nome}</strong>
+        ${user.type === 'admin' ? '🔑' : user.type === 'subadmin' ? '🛡️' : '⛪'} <strong>${user.nome}</strong>
       </span>
       <button onclick="Auth.logout()"
         style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);

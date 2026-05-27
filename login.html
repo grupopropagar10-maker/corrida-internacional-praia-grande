@@ -220,6 +220,10 @@
         <span class="t-icon">🔑</span>
         Administrador
       </button>
+      <button class="type-btn" id="btn-subadmin-type">
+        <span class="t-icon">🛡️</span>
+        Sub-Admin
+      </button>
       <button class="type-btn" id="btn-cong-type">
         <span class="t-icon">⛪</span>
         Congregação
@@ -265,6 +269,25 @@
       </button>
     </div>
 
+    <!-- FORM SUB-ADMIN -->
+    <div class="login-form" id="form-subadmin">
+      <h3>🛡️ Acesso Sub-Administrador</h3>
+      <div class="form-group">
+        <label>Usuário</label>
+        <input class="form-control" type="text" id="subadmin-usuario" placeholder="Seu usuário..." autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="pass-wrap">
+          <input class="form-control" type="password" id="subadmin-senha" placeholder="Sua senha..." autocomplete="current-password"/>
+          <button class="pass-eye" type="button" onclick="togglePass('subadmin-senha', this)">👁️</button>
+        </div>
+      </div>
+      <button class="login-btn" id="btn-login-subadmin" style="background:linear-gradient(135deg,#7b4f00,#e07b00);">
+        <span>Entrar como Sub-Admin</span>
+      </button>
+    </div>
+
     <!-- RODAPÉ -->
     <div class="login-footer">
       Sistema interno de gestão — Corrida Internacional de Praia Grande<br>
@@ -283,26 +306,24 @@
   // Se já estiver logado, redireciona
   const session = Auth.getSession();
   if (session) {
-    window.location.href = session.type === 'admin' ? 'admin.html' : 'minha-congregacao.html';
+    if (session.type === 'admin') window.location.href = 'admin.html';
+    else if (session.type === 'subadmin') window.location.href = 'sub-admin.html';
+    else window.location.href = 'minha-congregacao.html';
   }
 
   // ── TOGGLE TIPO ──
-  document.getElementById('btn-admin-type').addEventListener('click', () => {
-    document.getElementById('btn-admin-type').classList.add('active');
-    document.getElementById('btn-cong-type').classList.remove('active');
-    document.getElementById('form-admin').classList.add('active');
-    document.getElementById('form-cong').classList.remove('active');
+  function setTab(active) {
+    ['btn-admin-type','btn-subadmin-type','btn-cong-type'].forEach(id => document.getElementById(id).classList.remove('active'));
+    ['form-admin','form-subadmin','form-cong'].forEach(id => document.getElementById(id).classList.remove('active'));
     document.getElementById('error-msg').style.display = 'none';
-  });
+    document.getElementById('btn-'+active+'-type').classList.add('active');
+    document.getElementById('form-'+active).classList.add('active');
+    if (active === 'cong') carregarCongs();
+  }
 
-  document.getElementById('btn-cong-type').addEventListener('click', () => {
-    document.getElementById('btn-cong-type').classList.add('active');
-    document.getElementById('btn-admin-type').classList.remove('active');
-    document.getElementById('form-cong').classList.add('active');
-    document.getElementById('form-admin').classList.remove('active');
-    document.getElementById('error-msg').style.display = 'none';
-    carregarCongs();
-  });
+  document.getElementById('btn-admin-type').addEventListener('click', () => setTab('admin'));
+  document.getElementById('btn-subadmin-type').addEventListener('click', () => setTab('subadmin'));
+  document.getElementById('btn-cong-type').addEventListener('click', () => setTab('cong'));
 
   // ── POPULA CONGREGAÇÕES ──
   function carregarCongs() {
@@ -330,6 +351,26 @@
 
   document.getElementById('btn-login-admin').addEventListener('click', loginAdmin);
   document.getElementById('admin-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginAdmin(); });
+
+  // ── LOGIN SUB-ADMIN ──
+  function loginSubAdmin() {
+    const btn     = document.getElementById('btn-login-subadmin');
+    const usuario = document.getElementById('subadmin-usuario').value.trim();
+    const senha   = document.getElementById('subadmin-senha').value;
+    if (!usuario || !senha) { mostrarErro('Informe usuário e senha!'); return; }
+    btn.innerHTML = '<span class="spin"></span>';
+    setTimeout(() => {
+      if (Auth.loginSubAdmin(usuario, senha)) {
+        window.location.href = 'sub-admin.html';
+      } else {
+        btn.innerHTML = '<span>Entrar como Sub-Admin</span>';
+        mostrarErro('Usuário ou senha incorretos!');
+      }
+    }, 600);
+  }
+
+  document.getElementById('btn-login-subadmin').addEventListener('click', loginSubAdmin);
+  document.getElementById('subadmin-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginSubAdmin(); });
 
   // ── LOGIN CONGREGAÇÃO ──
   function loginCong() {

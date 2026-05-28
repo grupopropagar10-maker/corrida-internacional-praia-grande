@@ -17,7 +17,8 @@
       width: 64px; height: 64px; border-radius: 50%;
       background: rgba(255,255,255,.18); border: 3px solid rgba(255,255,255,.35);
       display: flex; align-items: center; justify-content: center;
-      font-size: 2rem; flex-shrink: 0;
+      font-size: 1.15rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      flex-shrink: 0;
     }
     .cong-banner-info { flex: 1; min-width: 180px; }
     .cong-banner-info h1 { font-size: clamp(1.1rem,3vw,1.6rem); font-weight: 800; margin-bottom: .2rem; }
@@ -410,7 +411,7 @@
 
 <!-- BANNER -->
 <div class="cong-banner" id="cong-banner">
-  <div class="cong-banner-icon">⛪</div>
+  <div class="cong-banner-icon" id="cong-banner-icon">CG</div>
   <div class="cong-banner-info">
     <h1 id="wb-nome">Carregando...</h1>
     <p id="wb-cidade"></p>
@@ -716,6 +717,21 @@ const desigs   = getMinhasDesignacoes();
 const meusPostos = todosPos.filter(p => p.congId === CONG_ID);
 const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';
 
+function getCongInitials(nome) {
+  const parts = String(nome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const relevantParts = parts.filter(part => !['da', 'de', 'do', 'das', 'dos', 'e'].includes(part.toLowerCase()));
+  const source = relevantParts.length ? relevantParts : parts;
+  if (!source.length) return 'CG';
+  if (source.length === 1) return source[0].slice(0, 3).toUpperCase();
+  return source.slice(0, 3).map(part => part[0]).join('').toUpperCase();
+}
+
 function getCongConfig() {
   const all = DB.get('cong_config', {});
   return all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : { publicacoes: {}, escala: [] };
@@ -730,6 +746,7 @@ function saveCongConfig(cfg) {
 document.getElementById('nav-cong-nome').textContent = cong?.nome || 'Congregação';
 document.getElementById('wb-nome').textContent       = cong?.nome || 'Bem-vindo!';
 document.getElementById('wb-cidade').textContent     = cong ? `📍 ${cong.cidade}` : '';
+document.getElementById('cong-banner-icon').textContent = getCongInitials(cong?.nome);
 if (cong?.cor) {
   document.getElementById('cong-banner').style.background =
     `linear-gradient(135deg, ${cong.cor}dd, ${cong.cor})`;

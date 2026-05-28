@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+*.log
+.DS_Store
+Thumbs.db
+.vercel/
+.git/
+pre-deploy-backups/
+firebase-incident-backups/
+restore_congregacoes_20260527.json

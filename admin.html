@@ -677,13 +677,63 @@
   // ================================================================
   //  KPI
   // ================================================================
+  function normalizeAdminMembro(membro) {
+    if (!membro) return null;
+    if (typeof membro === 'string') {
+      const nome = membro.trim();
+      return nome ? { nome, funcao: 'Publicador', podeRepetir: false } : null;
+    }
+    const nome = String(membro.nome || '').trim();
+    if (!nome) return null;
+    return {
+      nome,
+      funcao: membro.funcao || 'Publicador',
+      podeRepetir: !!membro.podeRepetir,
+    };
+  }
+
+  function getAdminPeopleStats(cfg = {}) {
+    const membrosMap = new Map();
+    (cfg.membros || []).map(normalizeAdminMembro).filter(Boolean).forEach(membro => {
+      membrosMap.set(membro.nome.toLowerCase(), membro);
+    });
+
+    const escalados = new Set();
+    let alocacoes = 0;
+    Object.values(cfg.turnos || {}).forEach(slotMap => {
+      Object.values(slotMap || {}).forEach(pessoas => {
+        (pessoas || []).forEach(pessoa => {
+          const nome = typeof pessoa === 'string' ? pessoa.trim() : String(pessoa?.nome || '').trim();
+          if (!nome) return;
+          escalados.add(nome.toLowerCase());
+          alocacoes += 1;
+        });
+      });
+    });
+
+    return {
+      membros: Array.from(membrosMap.values()),
+      membrosCount: membrosMap.size,
+      escaladosCount: escalados.size,
+      alocacoes,
+    };
+  }
+
   function renderKPI() {
     const congs   = DB.get('congregacoes', []);
     const desigs  = DB.get('designacoes', []);
     const postos  = DB.get('postos', []);
+    const congConfig = DB.get('cong_config', {});
     const conf    = congs.filter(c => c.confirmada).length;
-    const irmaos  = desigs.reduce((s,d) => s + (d.irmaos||0), 0);
     const cobertos = [...new Set(desigs.map(d=>d.postoId))].length;
+    let totalCadastrados = 0;
+    let totalEscalados = 0;
+
+    Object.values(congConfig).forEach(cfg => {
+      const stats = getAdminPeopleStats(cfg || {});
+      totalCadastrados += stats.membrosCount;
+      totalEscalados += stats.escaladosCount;
+    });
 
     document.getElementById('kpi-admin').innerHTML = `
       <div class="stat-card">
@@ -696,7 +746,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon orange">👥</div>
-        <div class="stat-info"><h3>${irmaos}</h3><p>Irmãos escalados</p></div>
+        <div class="stat-info"><h3>${totalCadastrados}</h3><p>Nomes cadastrados</p><div style="font-size:.72rem;color:var(--gray);margin-top:.2rem;">${totalEscalados} já alocados nos turnos</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon purple">📍</div>
@@ -1063,7 +1113,7 @@
     const rows = congs.map(c => {
       const cfg   = congConfig[c.id] || {};
       const pubs  = cfg.publicacoes  || {};
-      const esc   = (cfg.escala || []).length;
+      const peopleStats = getAdminPeopleStats(cfg);
       const total = PL.reduce((s, p) => s + (pubs[p.id]||0), 0);
       totalGeral += total;
       PL.forEach(p => { totais[p.id] += (pubs[p.id]||0); });
@@ -1073,7 +1123,7 @@
           <td style="padding:.55rem .8rem;">
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.cor||'#0057A8'};margin-right:.4rem;"></span>
             <strong>${c.nome}</strong>
-            <div style="font-size:.73rem;color:var(--gray);">${esc ? `👥 ${esc} na escala` : '⚠️ sem escala'}${ts}</div>
+            <div style="font-size:.73rem;color:var(--gray);">👥 ${peopleStats.membrosCount} cadastrado(s) · ✅ ${peopleStats.escaladosCount} em turnos${ts}</div>
           </td>
           ${PL.map(p => `<td style="padding:.45rem .5rem;text-align:center;font-weight:${(pubs[p.id]||0)>0?700:400};color:${(pubs[p.id]||0)>0?'var(--primary-dark)':'#bbb'};">${pubs[p.id]||0}</td>`).join('')}
           <td style="padding:.5rem .8rem;text-align:center;font-weight:800;color:var(--primary);">${total||'<span style="color:#bbb">—</span>'}</td>
@@ -1121,7 +1171,8 @@
     if (!c) return;
     const cfg     = (DB.get('cong_config', {}))[id] || { publicacoes:{}, escala:[] };
     const pubs    = cfg.publicacoes || {};
-    const escala  = (cfg.escala || []).sort((a,b) => a.inicio.localeCompare(b.inicio));
+    const peopleStats = getAdminPeopleStats(cfg);
+    const membros = peopleStats.membros;
     const postoD  = DB.get('designacoes',[]).filter(d=>d.congId===id);
     const desigInfo = postoD.length
       ? postoD.map(d=>{const p=DB.get('postos',[]).find(x=>x.id===d.postoId);return p?`${p.nome} (Km ${p.km}) — ${d.data||'?'} ${d.inicio}–${d.fim}`:d.postoId;}).join('<br>')
@@ -1134,23 +1185,15 @@
         <strong style="color:${(pubs[p.id]||0)>0?'var(--primary)':'var(--gray)'}">${pubs[p.id]||0}</strong>
       </div>`).join('');
 
-    const calcH = (ini,fim) => {
-      const [hi,mi]=ini.split(':').map(Number),[hf,mf]=fim.split(':').map(Number);
-      const d=(hf*60+mf)-(hi*60+mi);
-      if(d<=0)return '—';
-      const h=Math.floor(d/60),m=d%60;
-      return h>0?`${h}h${m?m+'min':''}`:m+'min';
-    };
-    const escalaRows = escala.length
-      ? escala.map((ir,i) => `
+    const membrosRows = membros.length
+      ? membros.map((membro,i) => `
         <tr>
           <td>${i+1}</td>
-          <td><strong>${ir.nome}</strong></td>
-          <td>${ir.inicio}–${ir.fim}</td>
-          <td>${calcH(ir.inicio,ir.fim)}</td>
-          <td style="color:var(--gray);font-size:.8rem;">${ir.obs||'—'}</td>
+          <td><strong>${membro.nome}</strong></td>
+          <td>${membro.funcao}</td>
+          <td>${membro.podeRepetir ? 'Sim' : 'Nao'}</td>
         </tr>`).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:1rem;">Nenhum irmão na escala ainda.</td></tr>';
+      : '<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:1rem;">Nenhum nome cadastrado ainda.</td></tr>';
 
     const modal = document.createElement('div');
     modal.id = 'modal-detalhes';
@@ -1168,23 +1211,27 @@
           <div style="background:var(--light);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-bottom:1rem;font-size:.85rem;">
             <strong>📅 Designações:</strong><br>${desigInfo}
           </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+            <span class="badge badge-primary">👥 ${peopleStats.membrosCount} cadastrado(s)</span>
+            <span class="badge badge-ativo">✅ ${peopleStats.escaladosCount} em turnos</span>
+            <span class="badge badge-standby">🗓️ ${peopleStats.alocacoes} alocação(ões)</span>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
               <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">📚 Publicações (${totalPubs} total)</h3>
               ${pubRows}
             </div>
             <div>
-              <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">👥 Escala (${escala.length} irmão(s))</h3>
+              <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">👥 Nomes cadastrados (${peopleStats.membrosCount})</h3>
               <div style="overflow-x:auto;">
                 <table style="width:100%;font-size:.8rem;border-collapse:collapse;">
                   <thead><tr style="background:var(--primary-dark);color:white;">
                     <th style="padding:.35rem;">#</th>
                     <th style="padding:.35rem;text-align:left;">Nome</th>
-                    <th style="padding:.35rem;">Horário</th>
-                    <th style="padding:.35rem;">Dur.</th>
-                    <th style="padding:.35rem;text-align:left;">Obs.</th>
+                    <th style="padding:.35rem;">Função</th>
+                    <th style="padding:.35rem;">Repete?</th>
                   </tr></thead>
-                  <tbody style="font-size:.78rem;">${escalaRows}</tbody>
+                  <tbody style="font-size:.78rem;">${membrosRows}</tbody>
                 </table>
               </div>
             </div>

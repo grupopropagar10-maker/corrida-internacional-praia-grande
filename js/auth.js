@@ -57,7 +57,13 @@ const Auth = {
     const lista = DB.get('sub_admins', []);
     const sa = lista.find(s => s.usuario === usuario && s.senha === senha);
     if (sa) {
-      this.setSession({ type: 'subadmin', nome: sa.nome, subAdminId: sa.id, permissoes: sa.permissoes });
+      this.setSession({
+        type: 'subadmin',
+        nome: sa.nome,
+        subAdminId: sa.id,
+        permissoes: sa.permissoes,
+        categorias: sa.categorias || [],
+      });
       return true;
     }
     return false;

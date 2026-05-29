@@ -260,6 +260,14 @@
     const dist   = DB.get('distribuicoes');
     const congCfgAll = DB.get('cong_config', {});
     const participantesSet = new Set();
+    const cadastradosSet = new Set();
+
+    Object.values(congCfgAll).forEach(cfg => {
+      (cfg?.membros || []).forEach(membro => {
+        const nome = typeof membro === 'string' ? membro : membro?.nome;
+        if (nome) cadastradosSet.add(nome.trim().toLowerCase());
+      });
+    });
 
     Object.values(congCfgAll).forEach(cfg => {
       const turnos = cfg?.turnos || {};
@@ -278,6 +286,7 @@
     const totalCont   = dist.filter(r => r.tipo === 'conversa' || r.tipo === 'contato_especial').length;
     const totalQR     = dist.filter(r => r.tipo === 'qrcode').length;
     const totalParticipantes = participantesSet.size;
+    const totalCadastrados = cadastradosSet.size;
     const postosAtiv  = postos.filter(p => p.status === 'ativo').length;
 
     document.getElementById('kpi-cards').innerHTML = `
@@ -295,7 +304,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#7b4f00;">👥</div>
-        <div class="stat-info"><h3>${totalParticipantes}</h3><p>Irmãos participantes</p></div>
+        <div class="stat-info"><h3>${totalCadastrados}</h3><p>Nomes cadastrados</p><div style="font-size:.72rem;color:var(--gray);margin-top:.2rem;">${totalParticipantes} em turnos</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon purple">📍</div>
@@ -533,7 +542,7 @@
     postos.forEach(p => {
       csv += `"${p.nome}","${p.responsavel}","${p.status}",${p.publicacoes},${p.contatos || 0}\n`;
     });
-    csv += `\nResumo\nIrmãos participantes únicos,${participantes.size}\n`;
+    csv += `\nResumo\nNomes cadastrados únicos,${cadastradosSet.size}\nIrmãos participantes únicos,${participantes.size}\n`;
     csv += '\nRegistros de Distribuição\nHora,Posto,Publicação,Tipo,Qty,Observação\n';
     dist.forEach(r => {
       csv += `"${r.hora}","${r.postoNome}","${r.pub}","${r.tipo}",${r.qty},"${r.obs || ''}"\n`;

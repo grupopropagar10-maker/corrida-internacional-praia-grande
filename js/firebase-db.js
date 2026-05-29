@@ -23,6 +23,7 @@ const CRITICAL_KEYS = ['congregacoes', 'postos', 'designacoes', 'cong_config'];
 const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
 const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';
 const PREWRITE_BACKUP_KEY = 'firebase_prewrite_backup_latest';
+const PENDING_WRITE_STORAGE_KEY = 'firebase_pending_writes_v1';
 const BACKUP_LIMIT = 8;
 let restoreInFlight = false;
 
@@ -120,6 +121,60 @@ function saveLocalBackup(source, key) {
   localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(history.slice(0, BACKUP_LIMIT)));
 }
 
+function getPendingWrites() {
+  return safeJsonParse(localStorage.getItem(PENDING_WRITE_STORAGE_KEY), {});
+}
+
+function savePendingWrites(pending) {
+  localStorage.setItem(PENDING_WRITE_STORAGE_KEY, JSON.stringify(pending));
+}
+
+function valuesMatch(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function markPendingWrite(key, value) {
+  const pending = getPendingWrites();
+  const entry = {
+    ts: new Date().toISOString(),
+    value,
+  };
+  pending[key] = entry;
+  savePendingWrites(pending);
+  return entry.ts;
+}
+
+function clearPendingWrite(key, ts) {
+  const pending = getPendingWrites();
+  if (!pending[key]) return;
+  if (ts && pending[key].ts !== ts) return;
+  delete pending[key];
+  savePendingWrites(pending);
+}
+
+function applyPendingWritesToLocal() {
+  const pending = getPendingWrites();
+  Object.entries(pending).forEach(([key, entry]) => {
+    if (!SYNC_KEYS.includes(key) || !entry) return;
+    localStorage.setItem(key, JSON.stringify(entry.value));
+  });
+}
+
+function flushPendingWrites() {
+  if (IS_LOCAL_FILE || restoreInFlight) return Promise.resolve();
+  const pending = getPendingWrites();
+  const entries = Object.entries(pending).filter(([key, entry]) => SYNC_KEYS.includes(key) && entry);
+  if (!entries.length) return Promise.resolve();
+
+  return Promise.all(entries.map(([key, entry]) =>
+    rtdb.ref(key).set(entry.value)
+      .then(() => clearPendingWrite(key, entry.ts))
+      .catch(err => {
+        console.warn(`[Firebase] Erro ao reenviar dado pendente em ${key}:`, err);
+      })
+  ));
+}
+
 window.FirebaseBackup = {
   latest() {
     return safeJsonParse(localStorage.getItem(BACKUP_LATEST_KEY), null);
@@ -145,6 +200,15 @@ function startSync() {
     rtdb.ref(key).on('value', snapshot => {
       const val = snapshot.val();
       if (val !== null) {
+        const pending = getPendingWrites()[key];
+        if (pending) {
+          if (valuesMatch(pending.value, val)) {
+            clearPendingWrite(key, pending.ts);
+          } else {
+            localStorage.setItem(key, JSON.stringify(pending.value));
+            return;
+          }
+        }
         localStorage.setItem(key, JSON.stringify(val));
         saveLocalBackup('pull', key);
         // Dispara evento para páginas atualizarem a UI sem recarregar
@@ -164,10 +228,13 @@ function pushToFirebase(key, value, options = {}) {
     console.warn(`[Firebase] Escrita suspeita bloqueada em ${key}. Snapshot completo ${restored ? 'restaurado' : 'indisponivel'}.`);
     return;
   }
-  rtdb.ref(key).set(value).catch(err => {
-    console.warn('[Firebase] Erro ao salvar:', err);
-    restoreFullBackup('write-error');
-  });
+  const writeTs = markPendingWrite(key, value);
+  rtdb.ref(key).set(value)
+    .then(() => clearPendingWrite(key, writeTs))
+    .catch(err => {
+      console.warn('[Firebase] Erro ao salvar:', err);
+      restoreFullBackup('write-error');
+    });
 }
 
 // Carrega dados do Firebase uma vez ao iniciar (garante dados frescos)
@@ -180,7 +247,9 @@ function pullFromFirebase() {
       })
     )
   ).then(() => {
+    applyPendingWritesToLocal();
     saveLocalBackup('bootstrap', 'all');
+    return flushPendingWrites();
   });
 }
 
@@ -190,3 +259,4 @@ window.DB_SYNC_READY = pullFromFirebase().catch(err => {
 
 // Inicia sincronização assim que o Firebase estiver pronto
 startSync();
+window.addEventListener('online', () => { flushPendingWrites(); });

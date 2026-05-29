@@ -679,7 +679,8 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script>
-(function() {
+(async function() {
+await (window.DB_SYNC_READY || Promise.resolve());
 // ══════════════════════════════════════════
 //  INIT + AUTH
 // ══════════════════════════════════════════
@@ -741,7 +742,15 @@ function getCongInitials(nome) {
 
 function getCongConfig() {
   const all = DB.get('cong_config', {});
-  return all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : { publicacoes: {}, escala: [] };
+  const raw = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
+  return {
+    publicacoes: raw.publicacoes && typeof raw.publicacoes === 'object' ? raw.publicacoes : {},
+    escala: Array.isArray(raw.escala) ? raw.escala : [],
+    membros: Array.isArray(raw.membros) ? raw.membros : [],
+    turnos: raw.turnos && typeof raw.turnos === 'object' ? raw.turnos : {},
+    agendaConfig: raw.agendaConfig && typeof raw.agendaConfig === 'object' ? raw.agendaConfig : {},
+    ...raw,
+  };
 }
 function saveCongConfig(cfg) {
   const all = DB.get('cong_config', {});
@@ -1510,6 +1519,7 @@ function exportarEscalaPDF() {
   const turnos  = cfg.turnos  || {};
   const membros = cfg.membros || [];
   const mapHtml = document.getElementById('mini-map')?.innerHTML || '';
+  const resumoLinhas = [];
 
   const desigHtml = desigs.map(desig => {
     const posto   = todosPos.find(p => p.id === desig.postoId);
@@ -1532,6 +1542,17 @@ function exportarEscalaPDF() {
       </tr>`;
     }).join('');
 
+    const totalAlocado = slots.reduce((sum, slot) => sum + getPessoasDoSlot(turnos, desig.id, slot.inicio).length, 0);
+    const totalCapacidade = slots.length * maxSlot;
+    resumoLinhas.push(`
+      <tr>
+        <td><strong>${posto.nome}</strong><br><span style="color:#666;font-size:.78rem;">${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}</span></td>
+        <td>${posto.local || 'Local não informado'}</td>
+        <td>${dataFmt}</td>
+        <td style="text-align:center;">${slots.length}</td>
+        <td style="text-align:center;">${totalAlocado}/${totalCapacidade}</td>
+      </tr>`);
+
     return `
       <div style="margin-bottom:1.5rem;">
         <h3 style="background:#003D7A;color:white;padding:.6rem 1rem;border-radius:4px 4px 0 0;margin:0;">
@@ -1544,6 +1565,21 @@ function exportarEscalaPDF() {
       </div>`;
   }).join('');
 
+  const resumoGeralHtml = `
+    <div style="margin-top:1.8rem;">
+      <h3 style="color:#003D7A;margin-bottom:.6rem;">📌 Resumo geral</h3>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;">
+        <span style="background:#eef4fb;color:#003D7A;border:1px solid #cde0f5;border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">👥 ${membros.length} publicador(es) cadastrados</span>
+        <span style="background:#eef4fb;color:#003D7A;border:1px solid #cde0f5;border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">🗓️ ${resumoEscala.totalSlots} horário(s)</span>
+        <span style="background:#eef4fb;color:#003D7A;border:1px solid #cde0f5;border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">✅ ${resumoEscala.totalPessoas} escala(s) preenchidas</span>
+        <span style="background:${resumoEscala.faltando ? '#fff4de' : '#edf8ef'};color:${resumoEscala.faltando ? '#7b4f00' : '#1d6b33'};border:1px solid ${resumoEscala.faltando ? '#f1d48b' : '#b9e1c2'};border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">${resumoEscala.faltando ? `⏳ ${resumoEscala.faltando} vaga(s) restantes` : '✅ escala completa'}</span>
+      </div>
+      <table>
+        <thead><tr><th>Posto</th><th>Local</th><th>Data</th><th>Horários</th><th>Preenchimento</th></tr></thead>
+        <tbody>${resumoLinhas.join('') || '<tr><td colspan="5">Nenhum posto na escala.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+
   document.getElementById('print-content').innerHTML = `
     <h1 style="color:#003D7A;">🏃 ${evento.nome}</h1>
     <h2 style="color:#0057A8;">📋 Escala de Turnos — ${cong?.nome || ''}</h2>
@@ -1552,12 +1588,33 @@ function exportarEscalaPDF() {
     ${mapHtml ? `<div style="margin:1rem 0 1.2rem;"><h3 style="color:#003D7A;">🗺️ Mapa do posto</h3><div style="height:260px;border:1px solid #d6e5f7;border-radius:10px;overflow:hidden;">${mapHtml}</div></div>` : ''}
     <hr/>
     ${desigHtml || '<p>Nenhuma designação.</p>'}
+    ${resumoGeralHtml}
     <p style="margin-top:2rem;color:#999;font-size:.82rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;
   window.print();
 }
 
 renderMembros();
 renderPostosTurnos();
+
+window.addEventListener('pageshow', () => {
+  renderMembros();
+  renderPostosTurnos();
+  renderPubsSalvas();
+  renderHistorico();
+  renderResultado();
+});
+
+window.addEventListener('db-sync', e => {
+  const key = e.detail?.key;
+  if (!['cong_config', 'pedidos_ajuda_escala', 'distribuicoes'].includes(key)) return;
+  renderMembros();
+  renderPostosTurnos();
+  if (key === 'cong_config') renderPubsSalvas();
+  if (key === 'distribuicoes') {
+    renderHistorico();
+    renderResultado();
+  }
+});
 
 // ══════════════════════════════════════════
 //  ABA 4 — REGISTRAR

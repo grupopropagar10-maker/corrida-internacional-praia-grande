@@ -140,6 +140,26 @@
       flex-wrap: wrap;
       gap: .55rem;
     }
+    .live-assignment-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+    }
+    .live-assignment-selector button {
+      border: 1px solid #cfe0f4;
+      background: white;
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: .38rem .72rem;
+      font-size: .75rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .live-assignment-selector button.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
     .live-assignment-note {
       padding: .85rem .95rem;
       border-radius: 14px;
@@ -412,6 +432,7 @@
         <div class="live-assignment-grid">
           <div class="live-assignment-details">
             <div class="live-assignment-note" id="assignment-note"></div>
+            <div class="live-assignment-selector" id="assignment-selector" style="display:none;"></div>
             <div class="live-assignment-chips" id="assignment-chips"></div>
             <div class="live-assignment-actions" id="assignment-actions"></div>
             <div class="live-guidance-card" id="assignment-guidance" style="display:none;">
@@ -454,6 +475,7 @@
     const CONG_ID = session.congId;
   let assignmentMap = null;
   let assignmentMarker = null;
+  let liveFocusAssignmentKey = '';
 
     function showStatus(icon, title, message) {
       document.getElementById('status-root').style.display = 'block';
@@ -595,23 +617,25 @@
       return (turnos?.[desigId]?.[slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
     }
 
-    function getCurrentSelection(cfg, inviteId) {
+    function getSelectionMap(cfg, inviteId) {
+      const selectionMap = {};
       const designacoes = getMinhasDesignacoes();
       for (const desig of designacoes) {
         const slotMap = cfg.turnos?.[desig.id] || {};
         for (const [slotKey, pessoas] of Object.entries(slotMap)) {
           if ((pessoas || []).some(pessoa => normalizarPessoaEscala(pessoa)?.liveInviteId === inviteId)) {
-            return { desigId: desig.id, slotKey };
+            selectionMap[String(desig.id)] = slotKey;
           }
         }
       }
-      return null;
+      return selectionMap;
     }
 
-    function getAssignmentForInvite(cfg, invite) {
+    function getAssignmentsForInvite(cfg, invite) {
       const designacoes = getMinhasDesignacoes();
       const postos = DB.get('postos', []);
-      let manualMatch = null;
+      const liveMatches = [];
+      const manualMatches = [];
       for (const desig of designacoes) {
         const slotMap = cfg.turnos?.[desig.id] || {};
         for (const [slotKey, pessoas] of Object.entries(slotMap)) {
@@ -626,31 +650,34 @@
               categoria: getCategoriaById(posto?.categoriaId),
               slotKey,
               slotFim,
+              key: `${desig.id}__${slotKey}`,
               resumo: `${posto?.nome || 'Posto'} · ${desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}`,
             };
-            if (pessoa.liveInviteId === invite.id) return assignment;
-            if (!manualMatch && normalizeCompareName(pessoa.nome) === normalizeCompareName(invite.nome)) {
-              manualMatch = assignment;
+            if (pessoa.liveInviteId === invite.id) {
+              liveMatches.push(assignment);
+            } else if (normalizeCompareName(pessoa.nome) === normalizeCompareName(invite.nome)) {
+              manualMatches.push(assignment);
             }
           }
         }
       }
-      return manualMatch;
+      return (liveMatches.length ? liveMatches : manualMatches)
+        .sort((a, b) => (String(a.desig.data) + String(a.slotKey)).localeCompare(String(b.desig.data) + String(b.slotKey)));
     }
 
     function renderAssignmentMap(assignment) {
       const mapEl = document.getElementById('assignment-map');
       const noteEl = document.getElementById('assignment-map-note');
       if (!mapEl || !noteEl) return;
+      if (assignmentMap) {
+        assignmentMap.remove();
+        assignmentMap = null;
+        assignmentMarker = null;
+      }
       const lat = Number(assignment?.posto?.lat);
       const lng = Number(assignment?.posto?.lng);
       const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
       if (!hasCoords || typeof L === 'undefined') {
-        if (assignmentMap) {
-          assignmentMap.remove();
-          assignmentMap = null;
-          assignmentMarker = null;
-        }
         mapEl.className = 'live-assignment-map empty';
         mapEl.innerHTML = assignment?.posto?.local
           ? `📍 ${assignment.posto.local}`
@@ -723,15 +750,44 @@
       return items;
     }
 
-    function renderAssignmentFocus(assignment, lockedByManual) {
+    function getFocusedAssignment(assignments) {
+      if (!assignments.length) {
+        liveFocusAssignmentKey = '';
+        return null;
+      }
+      if (!assignments.some(item => item.key === liveFocusAssignmentKey)) {
+        liveFocusAssignmentKey = assignments[0].key;
+      }
+      return assignments.find(item => item.key === liveFocusAssignmentKey) || assignments[0];
+    }
+
+    function renderAssignmentFocus(assignments, lockedByManual) {
       const root = document.getElementById('assignment-focus');
+      const selectorEl = document.getElementById('assignment-selector');
       if (!root) return;
+      const assignment = getFocusedAssignment(assignments || []);
       if (!assignment) {
         root.classList.remove('open');
+        if (selectorEl) {
+          selectorEl.style.display = 'none';
+          selectorEl.innerHTML = '';
+        }
         return;
       }
 
       root.classList.add('open');
+      if (selectorEl) {
+        if ((assignments || []).length > 1) {
+          selectorEl.style.display = 'flex';
+          selectorEl.innerHTML = assignments.map((item, index) => {
+            const dataLabel = item.desig?.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '—';
+            return `<button type="button" class="${item.key === assignment.key ? 'active' : ''}" onclick="selecionarEscolhaConfirmada('${item.key}')">Designacao ${String(index + 1).padStart(2, '0')} · ${dataLabel} · ${item.slotKey}${item.slotFim ? `–${item.slotFim}` : ''}</button>`;
+          }).join('');
+        } else {
+          selectorEl.style.display = 'none';
+          selectorEl.innerHTML = '';
+        }
+      }
       document.getElementById('assignment-title').textContent = lockedByManual ? 'Seu arranjo foi definido' : 'Seu posto confirmado';
       document.getElementById('assignment-subtitle').textContent = lockedByManual
         ? 'A congregacao ja fechou este arranjo para voce. O acesso fica somente para consulta.'
@@ -754,7 +810,7 @@
       ].filter(Boolean).map(item => `<span>${item}</span>`).join('');
       const mapsUrl = getGoogleMapsUrl(assignment);
       document.getElementById('assignment-actions').innerHTML = mapsUrl
-        ? `<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota no Google Maps</a>`
+        ? `<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota da designacao ${String((assignments || []).findIndex(item => item.key === assignment.key) + 1).padStart(2, '0')} no Google Maps</a>`
         : '';
       const guidance = getAssignmentGuidance(assignment);
       const guidanceRoot = document.getElementById('assignment-guidance');
@@ -772,7 +828,7 @@
     function getAvailableEntries(invite) {
       const cfg = getCongConfigById(CONG_ID);
       const turnos = cfg.turnos || {};
-      const current = getCurrentSelection(cfg, invite.id);
+      const currentMap = getSelectionMap(cfg, invite.id);
       const postos = DB.get('postos', []);
       return getMinhasDesignacoes().map(desig => {
         const posto = postos.find(p => p.id === desig.postoId);
@@ -782,7 +838,7 @@
           .map(slot => {
             const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
             const others = pessoas.filter(pessoa => pessoa.liveInviteId !== invite.id);
-            const selected = current && String(current.desigId) === String(desig.id) && current.slotKey === slot.inicio;
+            const selected = currentMap[String(desig.id)] === slot.inicio;
             const vagas = Math.max(0, agenda.maxPorTurno - others.length);
             const slotOvernight = getResumoVirada(desig.data, slot.inicio, slot.fim);
             return {
@@ -826,7 +882,8 @@
 
       document.getElementById('status-root').style.display = 'none';
       document.getElementById('live-root').style.display = 'grid';
-      const assignment = getAssignmentForInvite(cfg, invite);
+      const assignments = getAssignmentsForInvite(cfg, invite);
+      const assignment = getFocusedAssignment(assignments);
       const lockedByManual = assignment && assignment.source === 'manual';
       document.getElementById('live-title').textContent = `Ola, ${invite.nome}`;
       document.getElementById('live-subtitle').textContent = lockedByManual
@@ -840,10 +897,12 @@
       choiceBox.className = `live-choice-summary${lockedByManual ? ' locked' : ''}`;
       choiceBox.textContent = lockedByManual
         ? `Seu arranjo ja foi fechado: ${assignment.resumo}. O acesso permanece somente para consulta.`
-        : assignment
-          ? `Sua escolha atual: ${assignment.resumo}`
-          : 'Nenhum horario escolhido ainda. Escolha abaixo o melhor local e horario com vaga.';
-      renderAssignmentFocus(assignment, lockedByManual);
+        : assignments.length > 1
+          ? `Voce tem ${assignments.length} escolhas confirmadas. Abra a designacao desejada abaixo para ver posto, rota e horario.`
+          : assignment
+            ? `Sua escolha atual: ${assignment.resumo}`
+            : 'Nenhum horario escolhido ainda. Escolha abaixo o melhor local e horario com vaga.';
+      renderAssignmentFocus(assignments, lockedByManual);
 
       const entries = lockedByManual ? [] : getAvailableEntries(invite);
       const totalSlots = entries.reduce((sum, item) => sum + item.slots.length, 0);
@@ -851,7 +910,7 @@
       document.getElementById('live-stats').innerHTML = `
         <div class="live-stat"><strong>${lockedByManual ? '1' : totalPostos}</strong><span>${lockedByManual ? 'posto definido' : 'locais disponiveis'}</span></div>
         <div class="live-stat"><strong>${lockedByManual ? '0' : totalSlots}</strong><span>${lockedByManual ? 'trocas liberadas' : 'horarios com vaga'}</span></div>
-        <div class="live-stat"><strong>${assignment ? '1' : '0'}</strong><span>escolha ativa</span></div>
+        <div class="live-stat"><strong>${assignments.length}</strong><span>${assignments.length === 1 ? 'escolha ativa' : 'escolhas ativas'}</span></div>
       `;
 
       const listEl = document.getElementById('slots-list');
@@ -925,10 +984,8 @@
       }
 
       cfg.turnos = cfg.turnos || {};
-      Object.keys(cfg.turnos).forEach(currentDesigId => {
-        Object.keys(cfg.turnos[currentDesigId] || {}).forEach(currentSlotKey => {
-          cfg.turnos[currentDesigId][currentSlotKey] = (cfg.turnos[currentDesigId][currentSlotKey] || []).filter(pessoa => normalizarPessoaEscala(pessoa)?.liveInviteId !== invite.id);
-        });
+      Object.keys(cfg.turnos[desigId] || {}).forEach(currentSlotKey => {
+        cfg.turnos[desigId][currentSlotKey] = (cfg.turnos[desigId][currentSlotKey] || []).filter(pessoa => normalizarPessoaEscala(pessoa)?.liveInviteId !== invite.id);
       });
 
       if (!cfg.turnos[desigId]) cfg.turnos[desigId] = {};
@@ -958,7 +1015,13 @@
       }
 
       saveCongConfigById(CONG_ID, cfg);
+      liveFocusAssignmentKey = `${desigId}__${slotKey}`;
       showToast('Horario confirmado com sucesso!', 'success');
+      render();
+    };
+
+    window.selecionarEscolhaConfirmada = function(assignmentKey) {
+      liveFocusAssignmentKey = assignmentKey || '';
       render();
     };
 

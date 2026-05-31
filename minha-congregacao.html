@@ -1573,6 +1573,26 @@ renderPubGrid();
 function timeToMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
 function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 
+function cruzaMadrugada(inicio, fim) {
+  return timeToMin(fim) <= timeToMin(inicio);
+}
+
+function getResumoVirada(data, inicio, fim) {
+  if (!cruzaMadrugada(inicio, fim)) return null;
+  const inicioDia = data
+    ? new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit' })
+    : 'dia informado';
+  const fimBase = data ? new Date(`${data}T12:00:00`) : null;
+  if (fimBase) fimBase.setDate(fimBase.getDate() + 1);
+  const fimDia = fimBase
+    ? fimBase.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit' })
+    : 'dia seguinte';
+  return {
+    badge: 'Vira a madrugada',
+    texto: `Comeca ${inicio} em ${inicioDia} e termina ${fim} em ${fimDia}.`,
+  };
+}
+
 function gerarSlots(inicio, fim, duracaoH) {
   const slots = [];
   let s = timeToMin(inicio);
@@ -2600,13 +2620,14 @@ function renderPostosTurnos() {
     return;
   }
 
-  el.innerHTML = desigs.map(desig => {
+  el.innerHTML = desigs.map((desig, desigIndex) => {
     const posto   = todosPos.find(p => p.id === desig.postoId);
     if (!posto) return '';
     const agendaCfg = getAgendaConfig(desig.id);
     const duracao  = agendaCfg.duracaoTurno;
     const maxSlot  = agendaCfg.maxPorTurno;
     const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
+    const overnightInfo = getResumoVirada(desig.data, desig.inicio, desig.fim);
     const assigned = turnos[desig.id] || {};
     const agendaAberta = window._agendaAbertaId === desig.id;
     const dataFmt  = desig.data
@@ -2615,10 +2636,11 @@ function renderPostosTurnos() {
 
     const membros = getMembros();
 
-    const slotsHtml = slots.map(slot => {
+    const slotsHtml = slots.map((slot, slotIndex) => {
       const key     = slot.inicio;
       const people  = getPessoasDoSlot(turnos, desig.id, key);
       const vagas   = maxSlot - people.length;
+      const slotOvernight = getResumoVirada(desig.data, slot.inicio, slot.fim);
       const pedidoAjuda = getPedidoAjudaAberto(desig.id, key);
       const safeId = getDomIdSeguro(getChaveAjuda(desig.id, key));
       const subAdmins = getSubAdminsElegiveis(posto.categoriaId);
@@ -2646,7 +2668,8 @@ function renderPostosTurnos() {
 
       return `
         <div class="turno-slot">
-          <div class="turno-slot-header">${slot.inicio}–${slot.fim}</div>
+          <div class="turno-slot-header">Horario ${String(slotIndex + 1).padStart(2, '0')} · ${slot.inicio}–${slot.fim}</div>
+          ${slotOvernight ? `<div style="padding:.45rem .55rem 0;font-size:.74rem;color:#7b4f00;line-height:1.45;">🌙 ${slotOvernight.texto}</div>` : ''}
           <div class="turno-slot-body">${peopleHtml}${vagasHtml}${helpHtml}</div>
         </div>`;
     }).join('');
@@ -2664,13 +2687,14 @@ function renderPostosTurnos() {
         <div class="carrinho-header">
           <span class="ch-km">${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}</span>
           <div style="flex:1;">
+            <div style="display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .55rem;border-radius:999px;background:#eef4fb;color:var(--primary-dark);font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.45rem;"># Designacao ${String(desigIndex + 1).padStart(2, '0')}</div>
             <strong>🪧 ${posto.nome}</strong>
             <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">📍 ${posto.local}</div>
           </div>
           <div style="font-size:.78rem;opacity:.85;text-align:right;">
             <button class="agenda-trigger" onclick="configurarAgenda('${escaparJs(desig.id)}')">📅 Agenda: ${dataFmt} · ${duracao}h/turno</button>
             ${agendaAberta ? `<div class="agenda-chooser"><button class="agenda-choice-btn ${duracao === 2 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(desig.id)}', 2)">2h</button><button class="agenda-choice-btn ${duracao === 3 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(desig.id)}', 3)">3h</button></div>` : ''}<br>
-            ⏱️ ${desig.inicio}–${desig.fim}<br>máx. ${maxSlot} por horário
+            ⏱️ ${desig.inicio}–${desig.fim}<br>${overnightInfo ? `🌙 ${overnightInfo.badge}<br><span style="display:inline-block;max-width:240px;color:#7b4f00;line-height:1.4;">${overnightInfo.texto}</span><br>` : ''}máx. ${maxSlot} por horário
           </div>
         </div>
         ${actionsHtml}
@@ -2714,7 +2738,11 @@ window.enviarPedidoAjuda = function(desigId, slotKey, faltaQtd, postoId) {
     data: desig?.data || '',
     dataFmt: desig?.data ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—',
     slotKey,
-    slotLabel: `${slotKey}–${gerarSlots(desig?.inicio || '00:00', desig?.fim || '00:00', getAgendaConfig(desigId).duracaoTurno).find(s => s.inicio === slotKey)?.fim || ''}`,
+    slotLabel: (() => {
+      const slotFim = gerarSlots(desig?.inicio || '00:00', desig?.fim || '00:00', getAgendaConfig(desigId).duracaoTurno).find(s => s.inicio === slotKey)?.fim || '';
+      const overnightInfo = getResumoVirada(desig?.data || '', slotKey, slotFim || slotKey);
+      return `${slotKey}–${slotFim}${overnightInfo ? ` · ${overnightInfo.badge}` : ''}`;
+    })(),
     faltaQtd,
     subAdminId,
     subAdminNome: subAdmin?.nome || '',

@@ -283,10 +283,37 @@
       color: var(--primary-dark);
       font-size: .95rem;
     }
+    .live-slot-label {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      width: fit-content;
+      padding: .24rem .6rem;
+      border-radius: 999px;
+      background: #e8f1ff;
+      color: var(--primary-dark);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .live-slot-label.option {
+      background: #eefbf3;
+      color: #0f7a47;
+    }
     .live-slot-option .meta {
       color: var(--gray);
       font-size: .8rem;
       line-height: 1.45;
+    }
+    .live-slot-note {
+      color: #7b5600;
+      font-size: .76rem;
+      line-height: 1.45;
+      padding: .45rem .55rem;
+      border-radius: 10px;
+      background: #fff8ec;
+      border: 1px solid #f3d693;
     }
     .status-screen {
       max-width: 560px;
@@ -501,6 +528,29 @@
       return slots;
     }
 
+    function cruzaMadrugada(inicio, fim) {
+      return timeToMin(fim) <= timeToMin(inicio);
+    }
+
+    function formatarDataDia(data, fallback, options = { weekday: 'long', day: '2-digit', month: '2-digit' }) {
+      if (!data) return fallback;
+      return new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', options);
+    }
+
+    function getResumoVirada(data, inicio, fim) {
+      if (!cruzaMadrugada(inicio, fim)) return null;
+      const inicioDia = formatarDataDia(data, 'dia informado');
+      const fimBase = data ? new Date(`${data}T12:00:00`) : null;
+      if (fimBase) fimBase.setDate(fimBase.getDate() + 1);
+      const fimDia = fimBase
+        ? fimBase.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+        : 'dia seguinte';
+      return {
+        badge: 'Vira a madrugada',
+        texto: `Comeca ${inicio} em ${inicioDia} e termina ${fim} em ${fimDia}.`,
+      };
+    }
+
     function buildAutoDesignacoesForPosto(posto) {
       const categoria = getCategoriaById(posto.categoriaId);
       const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
@@ -693,13 +743,15 @@
       noteEl.textContent = lockedByManual
         ? `A congregacao/administracao ja designou voce neste arranjo: ${assignment.resumo}.`
         : `Seu horario atual e ${assignment.resumo}. Se a congregacao ainda estiver aceitando trocas, voce pode alterar abaixo.`;
+      const overnightInfo = getResumoVirada(assignment.desig?.data, assignment.slotKey, assignment.slotFim || assignment.slotKey);
       document.getElementById('assignment-chips').innerHTML = [
         `📍 ${assignment.posto?.nome || 'Posto'}`,
         `🧭 ${assignment.categoria?.nome || 'Sem setor'}`,
         `📅 ${assignment.desig?.data || '—'}`,
         `⏱️ ${assignment.slotKey}${assignment.slotFim ? `–${assignment.slotFim}` : ''}`,
+        overnightInfo ? `🌙 ${overnightInfo.badge}` : '',
         `📌 ${assignment.posto?.local || 'Local nao informado'}`,
-      ].map(item => `<span>${item}</span>`).join('');
+      ].filter(Boolean).map(item => `<span>${item}</span>`).join('');
       const mapsUrl = getGoogleMapsUrl(assignment);
       document.getElementById('assignment-actions').innerHTML = mapsUrl
         ? `<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota no Google Maps</a>`
@@ -725,18 +777,21 @@
       return getMinhasDesignacoes().map(desig => {
         const posto = postos.find(p => p.id === desig.postoId);
         const agenda = getAgendaConfig(desig.id);
+        const overnightInfo = getResumoVirada(desig.data, desig.inicio, desig.fim);
         const slots = gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno)
           .map(slot => {
             const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
             const others = pessoas.filter(pessoa => pessoa.liveInviteId !== invite.id);
             const selected = current && String(current.desigId) === String(desig.id) && current.slotKey === slot.inicio;
             const vagas = Math.max(0, agenda.maxPorTurno - others.length);
+            const slotOvernight = getResumoVirada(desig.data, slot.inicio, slot.fim);
             return {
               ...slot,
               selected,
               vagas,
               total: others.length + (selected ? 1 : 0),
               disponivel: selected || vagas > 0,
+              overnightInfo: slotOvernight,
             };
           })
           .filter(slot => slot.disponivel);
@@ -745,6 +800,7 @@
           posto,
           categoria: getCategoriaById(posto?.categoriaId),
           slots,
+          overnightInfo,
         };
       }).filter(item => item.posto && item.slots.length);
     }
@@ -752,7 +808,7 @@
     function getEscolhaResumo(item) {
       if (!item) return 'Nenhum horario escolhido ainda.';
       const posto = DB.get('postos', []).find(p => p.id === item.postoId);
-      return `${posto?.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey}`;
+      return `${posto?.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey}${item.overnightNote ? ` · ${item.overnightNote}` : ''}`;
     }
 
     function render() {
@@ -800,10 +856,13 @@
 
       const listEl = document.getElementById('slots-list');
       const sectionText = document.querySelector('#live-root .card p');
+      const haVirada = entries.some(item => item.overnightInfo || item.slots.some(slot => slot.overnightInfo));
       if (sectionText) {
         sectionText.textContent = lockedByManual
           ? 'Como a congregacao ja fechou seu arranjo, esta area fica travada somente para consulta.'
-          : 'A lista abaixo mostra apenas vagas abertas neste momento. Se voce ja escolheu um horario, pode trocar depois enquanto ainda houver vaga.';
+          : haVirada
+            ? 'A lista abaixo mostra apenas vagas abertas neste momento. Horarios com aviso de madrugada comecam em um dia e terminam no dia seguinte.'
+            : 'A lista abaixo mostra apenas vagas abertas neste momento. Se voce ja escolheu um horario, pode trocar depois enquanto ainda houver vaga.';
       }
       if (lockedByManual) {
         listEl.innerHTML = '<div class="card"><p style="color:var(--gray);font-size:.88rem;">Este acesso foi travado porque a congregacao ja designou voce manualmente. Use esta pagina apenas para consultar o posto, horario e local.</p></div>';
@@ -814,28 +873,39 @@
         return;
       }
 
-      listEl.innerHTML = entries.map(item => {
+      let opcaoIndex = 0;
+      listEl.innerHTML = entries.map((item, designacaoIndex) => {
         const dataFmt = item.desig.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—';
+        const designacaoLabel = `Designacao ${String(designacaoIndex + 1).padStart(2, '0')}`;
         return `
           <div class="live-slot-card">
             <div class="live-slot-head">
               <div>
+                <div class="live-slot-label"># ${designacaoLabel}</div>
                 <strong>${item.posto.nome}</strong>
                 <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.posto.local || 'Local nao informado'}</div>
                 <div class="live-slot-meta">
                   <span>📅 ${dataFmt}</span>
                   <span>🧭 ${item.categoria?.nome || 'Sem setor'}</span>
                   <span>⏱️ ${item.desig.inicio}–${item.desig.fim}</span>
+                  ${item.overnightInfo ? `<span>🌙 ${item.overnightInfo.badge}</span>` : ''}
                 </div>
+                ${item.overnightInfo ? `<div class="live-slot-note" style="margin-top:.6rem;">${item.overnightInfo.texto}</div>` : ''}
               </div>
             </div>
             <div class="live-slot-grid">
-              ${item.slots.map(slot => `
+              ${item.slots.map(slot => {
+                opcaoIndex += 1;
+                const opcaoLabel = `Opcao ${String(opcaoIndex).padStart(2, '0')}`;
+                return `
                 <div class="live-slot-option ${slot.selected ? 'current' : ''}">
+                  <div class="live-slot-label option"># ${opcaoLabel}</div>
                   <strong>${slot.inicio}–${slot.fim}</strong>
                   <div class="meta">${slot.selected ? 'Esta e sua escolha atual.' : `${slot.vagas} vaga(s) restante(s)`}</div>
+                  ${slot.overnightInfo ? `<div class="live-slot-note">${slot.overnightInfo.texto}</div>` : ''}
                   <button class="btn ${slot.selected ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="confirmarEscolha('${item.desig.id}','${slot.inicio}')">${slot.selected ? 'Manter este horario' : 'Escolher este horario'}</button>
-                </div>`).join('')}
+                </div>`;
+              }).join('')}
             </div>
           </div>`;
       }).join('');
@@ -879,11 +949,12 @@
       }
 
       const slotFim = gerarSlots(entry.desig.inicio, entry.desig.fim, agenda.duracaoTurno).find(item => item.inicio === slotKey)?.fim || '';
+      const overnightInfo = getResumoVirada(entry.desig.data, slotKey, slotFim || slotKey);
       const inviteRef = cfg.liveRequests.invites.find(item => item.id === invite.id);
       if (inviteRef) {
         inviteRef.confirmadoEm = new Date().toLocaleString('pt-BR');
         inviteRef.escolha = { desigId, slotKey, postoId: entry.posto.id };
-        inviteRef.escolhaResumo = `${entry.posto.nome} · ${entry.desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}`;
+        inviteRef.escolhaResumo = `${entry.posto.nome} · ${entry.desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}${overnightInfo ? ` · ${overnightInfo.badge}` : ''}`;
       }
 
       saveCongConfigById(CONG_ID, cfg);

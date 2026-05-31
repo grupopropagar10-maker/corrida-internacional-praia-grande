@@ -178,7 +178,7 @@ const Auth = {
     badge.innerHTML = `
       ${adminLink}
       <span style="color:rgba(255,255,255,0.85);font-size:0.82rem;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;">
-        ${user.type === 'admin' ? '🔑' : user.type === 'subadmin' ? '🛡️' : user.type === 'live' ? '📲' : '⛪'} <strong>${user.nome}</strong>
+        ${user.type === 'admin' ? '🔑' : user.type === 'subadmin' ? '🛡️' : user.type === 'live' ? '📲' : '🏃'} <strong>${user.nome}</strong>
       </span>
       <button onclick="Auth.logout()"
         style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);

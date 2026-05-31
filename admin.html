@@ -405,6 +405,18 @@
       </div>
     </section>
 
+    <section id="sec-campo-analitico">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>📍 Análise de Campo</h2>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:white;" onclick="renderCampoAnalitico()">🔄 Atualizar</button>
+        </div>
+        <div class="section-card-body">
+          <div id="campo-analitico-body"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- GERAR PDF -->
     <section id="sec-pdf">
       <div class="section-card">
@@ -455,6 +467,12 @@
               <div class="form-group">
                 <label>Senha</label>
                 <input class="form-control" type="password" id="sa-senha" placeholder="Mín. 4 caracteres"/>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>WhatsApp do responsável</label>
+                <input class="form-control" id="sa-telefone" placeholder="(13) 99718-0445" inputmode="tel"/>
               </div>
             </div>
             <div style="margin:0.8rem 0;">
@@ -1076,6 +1094,65 @@
     showToast('Dados do evento salvos!', 'success');
   });
 
+  function getAdminCategoriaById(categoriaId) {
+    return DB.get('categorias', []).find(c => String(c.id) === String(categoriaId)) || null;
+  }
+
+  function buildAdminAutoDesignacoesForPosto(posto) {
+    const categoria = getAdminCategoriaById(posto.categoriaId);
+    const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+    if (!categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+    return datas.map((data, idx) => ({
+      id: `${posto.id}-${idx}`,
+      postoId: posto.id,
+      congId: posto.congId,
+      data,
+      inicio: categoria.horario,
+      fim: categoria.horarioFim,
+      autoGerada: true,
+    }));
+  }
+
+  function getCampoRegistro(cfg) {
+    const raw = cfg?.registroCampo && typeof cfg.registroCampo === 'object' ? cfg.registroCampo : {};
+    return {
+      publicacoesDia: Array.isArray(raw.publicacoesDia) ? raw.publicacoesDia : [],
+      experiencias: Array.isArray(raw.experiencias) ? raw.experiencias : [],
+    };
+  }
+
+  function getAdminAllDesignacoesForCong(congId) {
+    const postos = DB.get('postos', []).filter(p => p.congId === congId);
+    const manuais = DB.get('designacoes', []).filter(d => d.congId === congId && !d.autoGerada);
+    const automaticas = postos.flatMap(buildAdminAutoDesignacoesForPosto);
+    return manuais.concat(automaticas);
+  }
+
+  function getAdminDesignacaoEnd(desig) {
+    const start = new Date(`${desig?.data || new Date().toISOString().split('T')[0]}T${desig?.inicio || '00:00'}:00`);
+    const end = new Date(start);
+    const [fh, fm] = String(desig?.fim || '00:00').split(':').map(Number);
+    end.setHours(fh || 0, fm || 0, 0, 0);
+    if (end <= start) end.setDate(end.getDate() + 1);
+    return end;
+  }
+
+  function getCampoResumoCong(cong) {
+    const cfg = (DB.get('cong_config', {}))[cong.id] || {};
+    const registro = getCampoRegistro(cfg);
+    const totalPublicacoes = registro.publicacoesDia.reduce((sum, item) => sum + (item.quantidade || 0), 0);
+    const experiencias = registro.experiencias.length;
+    const lastUpdate = [
+      ...registro.publicacoesDia.map(item => item.ts || ''),
+      ...registro.experiencias.map(item => item.ts || ''),
+    ].filter(Boolean).sort().reverse()[0] || '';
+    const now = new Date();
+    const pendencias = getAdminAllDesignacoesForCong(cong.id)
+      .filter(desig => getAdminDesignacaoEnd(desig) <= now)
+      .filter(desig => !registro.publicacoesDia.some(item => String(item.desigId) === String(desig.id))).length;
+    return { cfg, registro, totalPublicacoes, experiencias, pendencias, lastUpdate };
+  }
+
   // ================================================================
   //  INIT
   // ================================================================
@@ -1153,6 +1230,54 @@
       </div>`;
   };
 
+  window.renderCampoAnalitico = function() {
+    const congs = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const body = document.getElementById('campo-analitico-body');
+    if (!body) return;
+    if (!congs.length) {
+      body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma congregação confirmada para analisar.</div>';
+      return;
+    }
+
+    const summaries = congs.map(cong => ({ cong, ...getCampoResumoCong(cong) }));
+    const totalPublicacoes = summaries.reduce((sum, item) => sum + item.totalPublicacoes, 0);
+    const totalExperiencias = summaries.reduce((sum, item) => sum + item.experiencias, 0);
+    const totalPendencias = summaries.reduce((sum, item) => sum + item.pendencias, 0);
+
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.8rem;margin-bottom:1rem;">
+        <div class="stat-card" style="padding:1rem;"><div class="stat-icon blue">📚</div><div class="stat-info"><h3>${totalPublicacoes}</h3><p>Publicações fechadas no dia</p></div></div>
+        <div class="stat-card" style="padding:1rem;"><div class="stat-icon orange">✨</div><div class="stat-info"><h3>${totalExperiencias}</h3><p>Experiências enviadas</p></div></div>
+        <div class="stat-card" style="padding:1rem;"><div class="stat-icon" style="background:#F8D7DA;">🚨</div><div class="stat-info"><h3>${totalPendencias}</h3><p>Arranjos pendentes</p></div></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
+          <thead>
+            <tr style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:white;">
+              <th style="padding:.65rem .8rem;text-align:left;">Congregação</th>
+              <th style="padding:.65rem .8rem;text-align:center;">Publicações do dia</th>
+              <th style="padding:.65rem .8rem;text-align:center;">Experiências</th>
+              <th style="padding:.65rem .8rem;text-align:center;">Pendências</th>
+              <th style="padding:.65rem .8rem;text-align:left;">Última atualização</th>
+              <th style="padding:.65rem .8rem;text-align:center;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summaries.map(item => `
+              <tr style="border-bottom:1px solid var(--gray-light);">
+                <td style="padding:.6rem .8rem;"><strong>${item.cong.nome}</strong><div style="font-size:.74rem;color:var(--gray);">${item.cong.cidade || '—'}</div></td>
+                <td style="padding:.6rem .8rem;text-align:center;font-weight:800;color:var(--primary-dark);">${item.totalPublicacoes}</td>
+                <td style="padding:.6rem .8rem;text-align:center;">${item.experiencias}</td>
+                <td style="padding:.6rem .8rem;text-align:center;">${item.pendencias ? `<span class="badge badge-inativo">${item.pendencias}</span>` : '<span class="badge badge-ativo">0</span>'}</td>
+                <td style="padding:.6rem .8rem;">${item.lastUpdate || '<span style="color:var(--gray);">Sem envio ainda</span>'}</td>
+                <td style="padding:.6rem .8rem;text-align:center;"><button class="btn btn-sm" onclick="verDetalhes(${item.cong.id})" style="background:#6f42c1;color:white;">👁️ Ver</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:.8rem;font-size:.8rem;color:var(--gray);">A aba Registrar da congregação agora informa o total do dia por arranjo e as experiências com imagem.</div>`;
+  };
+
   // ================================================================
   //  MODAL DETALHES DA CONGREGAÇÃO
   // ================================================================
@@ -1171,6 +1296,8 @@
     if (!c) return;
     const cfg     = (DB.get('cong_config', {}))[id] || { publicacoes:{}, escala:[] };
     const pubs    = cfg.publicacoes || {};
+    const campo   = getCampoRegistro(cfg);
+    const campoResumo = getCampoResumoCong(c);
     const peopleStats = getAdminPeopleStats(cfg);
     const membros = peopleStats.membros;
     const postoD  = DB.get('designacoes',[]).filter(d=>d.congId===id);
@@ -1184,6 +1311,32 @@
         <span>${p.icon} ${p.nome}</span>
         <strong style="color:${(pubs[p.id]||0)>0?'var(--primary)':'var(--gray)'}">${pubs[p.id]||0}</strong>
       </div>`).join('');
+
+    const pubDiaRows = campo.publicacoesDia.length
+      ? campo.publicacoesDia.map(item => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.55rem .75rem;border-radius:10px;background:#f7fbff;border:1px solid #dce8f5;margin-bottom:.45rem;">
+          <div>
+            <strong>${item.postoNome}</strong>
+            <div style="font-size:.74rem;color:var(--gray);">${item.localLabel || 'Local não informado'} · ${item.dataRef || '—'} ${item.horario || ''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1rem;font-weight:800;color:var(--primary-dark);">${item.quantidade}</div>
+            <div style="font-size:.72rem;color:var(--gray);">${item.ts || ''}</div>
+          </div>
+        </div>`).join('')
+      : '<div style="color:var(--gray);font-size:.8rem;">Nenhum fechamento do dia enviado ainda.</div>';
+
+    const expRows = campo.experiencias.length
+      ? campo.experiencias.map(item => `
+        <div style="display:flex;gap:.7rem;padding:.65rem .75rem;border-radius:12px;background:#fff;border:1px solid #e2ebf7;margin-bottom:.55rem;align-items:flex-start;">
+          ${item.imageDataUrl ? `<img src="${item.imageDataUrl}" alt="Experiência" style="width:68px;height:68px;object-fit:cover;border-radius:10px;border:1px solid #d3e1f4;flex-shrink:0;"/>` : '<div style="width:68px;height:68px;border-radius:10px;background:#f3f7fc;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">✨</div>'}
+          <div style="flex:1;min-width:0;">
+            <strong style="display:block;color:var(--primary-dark);">${item.postoNome}</strong>
+            <div style="font-size:.74rem;color:var(--gray);margin:.15rem 0 .35rem;">${item.dataRef || '—'} ${item.horario || ''} · ${item.ts || ''}</div>
+            <div style="font-size:.82rem;line-height:1.45;color:var(--dark);">${item.detalhes}</div>
+          </div>
+        </div>`).join('')
+      : '<div style="color:var(--gray);font-size:.8rem;">Nenhuma experiência enviada ainda.</div>';
 
     const membrosRows = membros.length
       ? membros.map((membro,i) => `
@@ -1215,6 +1368,9 @@
             <span class="badge badge-primary">👥 ${peopleStats.membrosCount} cadastrado(s)</span>
             <span class="badge badge-ativo">✅ ${peopleStats.escaladosCount} em turnos</span>
             <span class="badge badge-standby">🗓️ ${peopleStats.alocacoes} alocação(ões)</span>
+            <span class="badge badge-primary">📚 ${campoResumo.totalPublicacoes} no dia</span>
+            <span class="badge badge-standby">✨ ${campoResumo.experiencias} experiência(s)</span>
+            ${campoResumo.pendencias ? `<span class="badge badge-inativo">🚨 ${campoResumo.pendencias} pendente(s)</span>` : ''}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
@@ -1236,6 +1392,16 @@
               </div>
             </div>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+            <div>
+              <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">📍 Fechamento do dia</h3>
+              ${pubDiaRows}
+            </div>
+            <div>
+              <h3 style="color:var(--primary-dark);font-size:.9rem;margin-bottom:.7rem;">✨ Experiências enviadas</h3>
+              ${expRows}
+            </div>
+          </div>
           <div style="margin-top:1rem;text-align:right;">
             <button onclick="document.getElementById('modal-detalhes').remove()" class="btn btn-outline">Fechar</button>
           </div>
@@ -1246,6 +1412,63 @@
   };
 
   // ── SUB-ADMINS ──
+  function getDigits(value) {
+    return String(value || '').replace(/\D/g, '');
+  }
+
+  function formatarTelefoneBR(value) {
+    const digits = getDigits(value);
+    if (!digits) return '';
+    const ddd = digits.slice(0, 2);
+    if (digits.length <= 10) {
+      const prefixo = digits.slice(2, 6);
+      const sufixo = digits.slice(6, 10);
+      return [ddd ? `(${ddd})` : '', prefixo, sufixo ? `-${sufixo}` : ''].join(' ').trim().replace(/\s-/, '-');
+    }
+    const prefixo = digits.slice(2, 7);
+    const sufixo = digits.slice(7, 11);
+    return [ddd ? `(${ddd})` : '', prefixo, sufixo ? `-${sufixo}` : ''].join(' ').trim().replace(/\s-/, '-');
+  }
+
+  function normalizarWhatsApp(value) {
+    const digits = getDigits(value);
+    if (!digits) return { ok: false, digits: '', formatted: '', waDigits: '' };
+    if (digits.length < 10 || digits.length > 11) {
+      return { ok: false, digits, formatted: formatarTelefoneBR(digits), waDigits: '' };
+    }
+    return {
+      ok: true,
+      digits,
+      formatted: formatarTelefoneBR(digits),
+      waDigits: `55${digits}`,
+    };
+  }
+
+  function getMensagemBoasVindasSubAdmin(sa, categorias) {
+    const categoriasTexto = categorias.length
+      ? categorias.map(c => c.nome).join(', ')
+      : 'Sem categorias vinculadas';
+    return [
+      `Olá, ${sa.nome}.`,
+      '',
+      'Seu acesso ao painel de setor da Corrida PG foi liberado.',
+      `Login: ${sa.usuario}`,
+      `Senha: ${sa.senha}`,
+      `Categorias: ${categoriasTexto}`,
+      '',
+      'Link de acesso:',
+      `${location.origin}${location.pathname.replace(/admin\.html$/i, 'login.html')}`,
+    ].join('\n');
+  }
+
+  function abrirTesteWhatsAppSubAdmin(sa) {
+    const tel = normalizarWhatsApp(sa.telefone);
+    if (!tel.ok) return;
+    const categorias = DB.get('categorias', []).filter(c => (sa.categorias || []).includes(c.id));
+    const mensagem = encodeURIComponent(getMensagemBoasVindasSubAdmin(sa, categorias));
+    window.open(`https://wa.me/${tel.waDigits}?text=${mensagem}`, '_blank', 'noopener');
+  }
+
   function renderSubAdmins() {
     const lista = DB.get('sub_admins', []);
     const el    = document.getElementById('sa-list');
@@ -1257,7 +1480,7 @@
       el.innerHTML = lista.map(sa => `
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;align-items:center;
                     gap:0.8rem;padding:0.9rem 1rem;border-bottom:1px solid var(--gray-light);font-size:0.85rem;">
-          <div><strong>${sa.nome}</strong><div style="font-size:0.75rem;color:var(--gray);">@${sa.usuario}</div></div>
+          <div><strong>${sa.nome}</strong><div style="font-size:0.75rem;color:var(--gray);">@${sa.usuario}</div><div style="font-size:0.75rem;color:var(--gray);">${sa.telefone || 'Sem WhatsApp'}</div></div>
           <div>
             ${sa.permissoes?.criarPostos ? '<span class="badge badge-success" style="font-size:0.7rem;margin-right:4px;">📍 Postos</span>' : ''}
             ${sa.permissoes?.designarCongregacoes ? '<span class="badge badge-primary" style="font-size:0.7rem;">⛪ Designações</span>' : ''}
@@ -1268,6 +1491,7 @@
             <div style="margin-top:.25rem;">${sa.atividades?.length || 0} ação(ões) registradas</div>
           </div>
           <div style="display:flex;gap:0.4rem;">
+            ${sa.telefone ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="testarWhatsAppSA('${sa.id}')">📱</button>` : ''}
             <button class="btn btn-primary btn-sm" onclick="editarSA('${sa.id}')">✏️</button>
             <button class="btn btn-danger btn-sm" onclick="excluirSA('${sa.id}')">🗑️</button>
           </div>
@@ -1317,11 +1541,17 @@
     document.getElementById('sa-nome').value = '';
     document.getElementById('sa-usuario').value = '';
     document.getElementById('sa-senha').value = '';
+    document.getElementById('sa-telefone').value = '';
     document.getElementById('sa-perm-postos').checked = false;
     document.getElementById('sa-perm-congs').checked = false;
     popularCategoriasNoForm([]);
     document.getElementById('form-subadmin').style.display = 'block';
     document.getElementById('sa-nome').focus();
+  });
+
+  document.getElementById('sa-telefone').addEventListener('input', e => {
+    const digits = getDigits(e.target.value).slice(0, 11);
+    e.target.value = formatarTelefoneBR(digits);
   });
 
   document.getElementById('btn-cancelar-sa').addEventListener('click', () => {
@@ -1333,37 +1563,50 @@
     const nome    = document.getElementById('sa-nome').value.trim();
     const usuario = document.getElementById('sa-usuario').value.trim();
     const senha   = document.getElementById('sa-senha').value;
+    const telInfo = normalizarWhatsApp(document.getElementById('sa-telefone').value);
     const pPerms  = document.getElementById('sa-perm-postos').checked;
     const pCongs  = document.getElementById('sa-perm-congs').checked;
     const catsSel = Array.from(document.querySelectorAll('.sa-cat-cb:checked')).map(cb => parseInt(cb.value));
 
     if (!nome || !usuario || !senha) { showToast('Preencha todos os campos!', 'error'); return; }
     if (senha.length < 4) { showToast('Senha mínima de 4 caracteres!', 'error'); return; }
+    if (catsSel.length && !telInfo.ok) {
+      showToast('Informe um WhatsApp válido com DDD para o responsável do setor.', 'error');
+      return;
+    }
 
     const lista = DB.get('sub_admins', []);
+    let salvo = null;
     if (id) {
       const i = lista.findIndex(x => x.id === id);
       if (i >= 0) {
         lista[i].nome    = nome;
         lista[i].usuario = usuario;
         lista[i].senha   = senha;
+        lista[i].telefone = telInfo.formatted;
         lista[i].permissoes = { criarPostos: pPerms, designarCongregacoes: pCongs };
         lista[i].categorias = catsSel;
+        salvo = lista[i];
       }
     } else {
       if (lista.find(x => x.usuario === usuario)) { showToast('Usuário já existe!', 'error'); return; }
-      lista.push({
+      salvo = {
         id: 'sa_' + Date.now(),
         nome, usuario, senha,
+        telefone: telInfo.formatted,
         permissoes: { criarPostos: pPerms, designarCongregacoes: pCongs },
         categorias: catsSel,
         atividades: []
-      });
+      };
+      lista.push(salvo);
     }
     DB.set('sub_admins', lista);
     document.getElementById('form-subadmin').style.display = 'none';
     renderSubAdmins();
     showToast(id ? 'Sub-admin atualizado! ✅' : 'Sub-admin criado! ✅', 'success');
+    if (salvo?.telefone) {
+      setTimeout(() => abrirTesteWhatsAppSubAdmin(salvo), 250);
+    }
   });
 
   window.editarSA = function(id) {
@@ -1373,11 +1616,22 @@
     document.getElementById('sa-nome').value          = sa.nome;
     document.getElementById('sa-usuario').value       = sa.usuario;
     document.getElementById('sa-senha').value         = sa.senha;
+    document.getElementById('sa-telefone').value      = sa.telefone || '';
     document.getElementById('sa-perm-postos').checked = !!sa.permissoes?.criarPostos;
     document.getElementById('sa-perm-congs').checked  = !!sa.permissoes?.designarCongregacoes;
     popularCategoriasNoForm(sa.categorias || []);
     document.getElementById('form-subadmin').style.display = 'block';
     document.getElementById('form-subadmin').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.testarWhatsAppSA = function(id) {
+    const sa = DB.get('sub_admins', []).find(x => x.id === id);
+    if (!sa) return;
+    if (!normalizarWhatsApp(sa.telefone).ok) {
+      showToast('Cadastre um WhatsApp válido para este sub-admin.', 'warning');
+      return;
+    }
+    abrirTesteWhatsAppSubAdmin(sa);
   };
 
   window.excluirSA = function(id) {
@@ -1566,6 +1820,7 @@
   };
 
   renderCategorias();
+  renderCampoAnalitico();
 
   // ── LIMPAR POSTOS ──
   document.getElementById('btn-limpar-postos')?.addEventListener('click', () => {

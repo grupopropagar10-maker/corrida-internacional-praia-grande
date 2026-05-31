@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pedidos ao vivo — Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(37, 211, 102, 0.10), transparent 28%),
+        linear-gradient(180deg, #f7fbff 0%, #edf4f9 100%);
+    }
+    .live-shell {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      display: grid;
+      gap: 1rem;
+    }
+    .live-page-hero {
+      background: linear-gradient(135deg, #0f7a47, #25D366);
+      color: white;
+      border-radius: var(--radius);
+      padding: 1.4rem 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .live-page-hero h1 {
+      font-size: clamp(1.2rem, 3vw, 1.7rem);
+      margin-bottom: .35rem;
+    }
+    .live-page-hero p {
+      opacity: .92;
+      font-size: .9rem;
+      margin: 0;
+    }
+    .live-top-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, .9fr) minmax(0, 1.1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    .live-choice-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(15, 122, 71, 0.12);
+      padding: 1.15rem 1.2rem;
+    }
+    .live-choice-card strong {
+      color: var(--primary-dark);
+    }
+    .live-choice-summary {
+      margin-top: .75rem;
+      padding: .8rem .9rem;
+      border-radius: 12px;
+      background: #f6fffa;
+      border: 1px solid rgba(37, 211, 102, 0.18);
+      color: #0f6a40;
+      font-size: .84rem;
+    }
+    .live-choice-summary.locked {
+      background: #fff8ec;
+      border-color: rgba(255, 193, 7, 0.32);
+      color: #7b5600;
+    }
+    .live-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: .8rem;
+    }
+    .live-stat {
+      background: white;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 61, 122, 0.10);
+      padding: .95rem 1rem;
+      box-shadow: var(--shadow);
+    }
+    .live-stat strong {
+      display: block;
+      font-size: 1.35rem;
+      color: var(--primary-dark);
+      line-height: 1;
+      margin-bottom: .3rem;
+    }
+    .live-stat span {
+      font-size: .76rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gray);
+    }
+    .live-list {
+      display: grid;
+      gap: 1rem;
+    }
+    .live-assignment-focus {
+      display: none;
+    }
+    .live-assignment-focus.open {
+      display: block;
+    }
+    .live-assignment-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,249,253,0.98));
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0, 61, 122, 0.10);
+      overflow: hidden;
+    }
+    .live-assignment-head {
+      display: flex;
+      justify-content: space-between;
+      gap: .8rem;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      padding: 1rem 1.15rem;
+      background: linear-gradient(135deg, rgba(0, 61, 122, 0.98), rgba(0, 87, 168, 0.92));
+      color: white;
+    }
+    .live-assignment-head p {
+      margin: .3rem 0 0;
+      opacity: .88;
+      font-size: .84rem;
+    }
+    .live-assignment-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, .95fr) minmax(0, 1.05fr);
+      gap: 1rem;
+      padding: 1rem 1.15rem 1.15rem;
+      align-items: stretch;
+    }
+    .live-assignment-details {
+      display: grid;
+      gap: .65rem;
+      align-content: start;
+    }
+    .live-assignment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+    }
+    .live-assignment-note {
+      padding: .85rem .95rem;
+      border-radius: 14px;
+      background: #eef6ff;
+      border: 1px solid #d4e4f7;
+      color: var(--primary-dark);
+      font-size: .84rem;
+    }
+    .live-assignment-note.locked {
+      background: #fff8ec;
+      border-color: #f3d693;
+      color: #7b5600;
+    }
+    .live-guidance-card {
+      padding: .95rem 1rem;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid #dbe7f5;
+      box-shadow: 0 10px 24px rgba(8, 45, 89, 0.05);
+      display: grid;
+      gap: .7rem;
+    }
+    .live-guidance-card strong {
+      color: var(--primary-dark);
+    }
+    .live-guidance-list {
+      display: grid;
+      gap: .55rem;
+    }
+    .live-guidance-item {
+      padding: .65rem .75rem;
+      border-radius: 12px;
+      background: #f7fbff;
+      border: 1px solid #e1ebf7;
+      color: var(--primary-dark);
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+    .live-guidance-item small {
+      display: block;
+      font-size: .72rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .18rem;
+    }
+    .live-assignment-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .live-assignment-chips span {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .28rem .65rem;
+      border-radius: 999px;
+      background: white;
+      border: 1px solid #d5e5f7;
+      color: var(--primary-dark);
+      font-size: .76rem;
+      font-weight: 700;
+    }
+    .live-assignment-map-wrap {
+      display: grid;
+      gap: .55rem;
+    }
+    .live-assignment-map-note {
+      font-size: .8rem;
+      color: var(--gray);
+    }
+    .live-assignment-map {
+      min-height: 240px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 61, 122, 0.10);
+      background: linear-gradient(180deg, #eef4fb, #f9fbff);
+    }
+    .live-assignment-map.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      color: var(--gray);
+      font-size: .84rem;
+      text-align: center;
+    }
+    .live-slot-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 61, 122, 0.10);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .live-slot-head {
+      padding: 1rem 1.1rem;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      gap: .8rem;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .live-slot-meta {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      margin-top: .45rem;
+    }
+    .live-slot-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      padding: .2rem .5rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      font-size: .72rem;
+    }
+    .live-slot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: .75rem;
+      padding: 1rem 1.1rem 1.1rem;
+      background: #f8fbff;
+    }
+    .live-slot-option {
+      border-radius: 14px;
+      border: 1px solid #d5e5f7;
+      background: white;
+      padding: .9rem .95rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .live-slot-option.current {
+      border-color: rgba(37, 211, 102, 0.45);
+      background: #f4fff8;
+    }
+    .live-slot-option strong {
+      color: var(--primary-dark);
+      font-size: .95rem;
+    }
+    .live-slot-option .meta {
+      color: var(--gray);
+      font-size: .8rem;
+      line-height: 1.45;
+    }
+    .status-screen {
+      max-width: 560px;
+      margin: 4rem auto;
+      text-align: center;
+      padding: 0 1.2rem;
+    }
+    .status-screen .s-icon { font-size: 4.5rem; margin-bottom: 1rem; }
+    .status-screen h2 { color: var(--primary-dark); margin-bottom: .7rem; }
+    .status-screen p { color: var(--gray); line-height: 1.7; margin-bottom: 1rem; }
+    @media (max-width: 900px) {
+      .live-top-grid { grid-template-columns: 1fr; }
+      .live-shell { padding: 1rem; }
+      .live-assignment-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .live-shell {
+        padding: .85rem;
+      }
+      .live-page-hero,
+      .live-choice-card,
+      .live-stat,
+      .live-slot-head,
+      .live-slot-grid {
+        padding-left: .95rem;
+        padding-right: .95rem;
+      }
+      .live-page-hero {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+      }
+      .live-slot-grid {
+        grid-template-columns: 1fr;
+        padding-bottom: 1rem;
+      }
+      .live-slot-option {
+        padding: .85rem .9rem;
+      }
+      .live-stat strong {
+        font-size: 1.15rem;
+      }
+      .live-assignment-head,
+      .live-assignment-grid {
+        padding-left: .95rem;
+        padding-right: .95rem;
+      }
+      .live-assignment-map {
+        min-height: 210px;
+      }
+      .live-assignment-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="pedidos-ao-vivo.html" class="navbar-brand">
+      <span class="logo-icon">📲</span>
+      <span>Pedidos ao vivo</span>
+    </a>
+  </nav>
+
+  <div id="status-root" class="status-screen" style="display:none;"></div>
+
+  <main id="live-root" class="live-shell" style="display:none;">
+    <section class="live-page-hero">
+      <h1 id="live-title">Escolha seu horario</h1>
+      <p id="live-subtitle">Selecione um local e um horario disponivel. Sua resposta vai direto para a congregacao.</p>
+    </section>
+
+    <section class="live-top-grid">
+      <div class="live-choice-card">
+        <div style="display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start;flex-wrap:wrap;">
+          <div>
+            <strong id="invite-name">Participante</strong>
+            <div style="color:var(--gray);font-size:.82rem;margin-top:.25rem;" id="invite-cong"></div>
+          </div>
+          <span class="badge badge-standby" id="invite-status">Aguardando escolha</span>
+        </div>
+        <div class="live-choice-summary" id="current-choice-box">Nenhum horario escolhido ainda.</div>
+      </div>
+      <div class="live-stats" id="live-stats"></div>
+    </section>
+
+    <section id="assignment-focus" class="live-assignment-focus">
+      <div class="live-assignment-card">
+        <div class="live-assignment-head">
+          <div>
+            <strong id="assignment-title">Seu arranjo</strong>
+            <p id="assignment-subtitle">Os detalhes do posto aparecem aqui assim que houver designacao.</p>
+          </div>
+          <span class="badge badge-primary" id="assignment-badge">Arranjo definido</span>
+        </div>
+        <div class="live-assignment-grid">
+          <div class="live-assignment-details">
+            <div class="live-assignment-note" id="assignment-note"></div>
+            <div class="live-assignment-chips" id="assignment-chips"></div>
+            <div class="live-assignment-actions" id="assignment-actions"></div>
+            <div class="live-guidance-card" id="assignment-guidance" style="display:none;">
+              <strong>Orientações do posto</strong>
+              <div class="live-guidance-list" id="assignment-guidance-list"></div>
+            </div>
+          </div>
+          <div class="live-assignment-map-wrap">
+            <div class="live-assignment-map-note" id="assignment-map-note"></div>
+            <div class="live-assignment-map empty" id="assignment-map">O mapa do posto aparece aqui quando a congregacao informar a localizacao.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header"><span class="icon">📍</span><h2>Horarios e locais disponiveis</h2></div>
+        <p style="color:var(--gray);font-size:.84rem;">A lista abaixo mostra apenas vagas abertas neste momento. Se voce ja escolheu um horario, pode trocar depois enquanto ainda houver vaga.</p>
+      </div>
+      <div class="live-list" id="slots-list"></div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/firebase-db.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (async function() {
+    await (window.DB_SYNC_READY || Promise.resolve());
+    const session = Auth.getSession();
+    if (!session || session.type !== 'live') {
+      window.location.href = 'login.html?type=live';
+      return;
+    }
+
+    const CONG_ID = session.congId;
+  let assignmentMap = null;
+  let assignmentMarker = null;
+
+    function showStatus(icon, title, message) {
+      document.getElementById('status-root').style.display = 'block';
+      document.getElementById('live-root').style.display = 'none';
+      document.getElementById('status-root').innerHTML = `
+        <div class="s-icon">${icon}</div>
+        <h2>${title}</h2>
+        <p>${message}</p>
+        <button class="btn btn-outline" onclick="Auth.logout()">↩ Sair</button>`;
+    }
+
+    function getCongregacao() {
+      return DB.get('congregacoes', []).find(c => c.id === CONG_ID) || null;
+    }
+
+    function getCongConfigById(congId) {
+      const all = DB.get('cong_config', {});
+      const raw = all[congId] ? JSON.parse(JSON.stringify(all[congId])) : {};
+      return {
+        membros: Array.isArray(raw.membros) ? raw.membros : [],
+        turnos: raw.turnos && typeof raw.turnos === 'object' ? raw.turnos : {},
+        agendaConfig: raw.agendaConfig && typeof raw.agendaConfig === 'object' ? raw.agendaConfig : {},
+        liveRequests: raw.liveRequests && typeof raw.liveRequests === 'object'
+          ? { enabled: !!raw.liveRequests.enabled, invites: Array.isArray(raw.liveRequests.invites) ? raw.liveRequests.invites : [] }
+          : { enabled: false, invites: [] },
+        ...raw,
+      };
+    }
+
+    function saveCongConfigById(congId, cfg) {
+      const all = DB.get('cong_config', {});
+      all[congId] = cfg;
+      DB.set('cong_config', all);
+    }
+
+    function getInvite() {
+      const cfg = getCongConfigById(CONG_ID);
+      return cfg.liveRequests.invites.find(item => item.id === session.liveInviteId) || null;
+    }
+
+    function getCategoriaById(categoriaId) {
+      return DB.get('categorias', []).find(c => String(c.id) === String(categoriaId)) || null;
+    }
+
+    function normalizeCompareName(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+    }
+
+    function timeToMin(t) {
+      const [h, m] = String(t || '00:00').split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    }
+
+    function minToTime(m) {
+      return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+    }
+
+    function gerarSlots(inicio, fim, duracaoH) {
+      const slots = [];
+      let s = timeToMin(inicio);
+      let e = timeToMin(fim);
+      if (e <= s) e += 24 * 60;
+      while (s < e) {
+        const t = Math.min(s + duracaoH * 60, e);
+        slots.push({ inicio: minToTime(s % (24 * 60)), fim: minToTime(t % (24 * 60)) });
+        s = t;
+      }
+      return slots;
+    }
+
+    function buildAutoDesignacoesForPosto(posto) {
+      const categoria = getCategoriaById(posto.categoriaId);
+      const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+      if (!categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+      return datas.map((data, idx) => ({
+        id: `${posto.id}-${idx}`,
+        postoId: posto.id,
+        congId: posto.congId,
+        data,
+        inicio: categoria.horario,
+        fim: categoria.horarioFim,
+        autoGerada: true,
+      }));
+    }
+
+    function getMinhasDesignacoes() {
+      const postos = DB.get('postos', []).filter(p => p.congId === CONG_ID);
+      const manuais = DB.get('designacoes', []).filter(d => d.congId === CONG_ID && !d.autoGerada);
+      const automaticas = postos.flatMap(buildAutoDesignacoesForPosto);
+      return manuais.concat(automaticas).sort((a, b) => (String(a.data) + String(a.inicio)).localeCompare(String(b.data) + String(b.inicio)));
+    }
+
+    function getAgendaConfig(desigId) {
+      const cfg = getCongConfigById(CONG_ID).agendaConfig?.[desigId] || {};
+      return {
+        duracaoTurno: cfg.duracaoTurno === 3 ? 3 : 2,
+        maxPorTurno: 3,
+      };
+    }
+
+    function normalizarPessoaEscala(pessoa) {
+      if (!pessoa) return null;
+      if (typeof pessoa === 'string') return { nome: pessoa, origem: 'local' };
+      return {
+        nome: String(pessoa.nome || '').trim(),
+        origem: pessoa.origem || 'local',
+        liveInviteId: pessoa.liveInviteId || null,
+      };
+    }
+
+    function getPessoasDoSlot(turnos, desigId, slotKey) {
+      return (turnos?.[desigId]?.[slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
+    }
+
+    function getCurrentSelection(cfg, inviteId) {
+      const designacoes = getMinhasDesignacoes();
+      for (const desig of designacoes) {
+        const slotMap = cfg.turnos?.[desig.id] || {};
+        for (const [slotKey, pessoas] of Object.entries(slotMap)) {
+          if ((pessoas || []).some(pessoa => normalizarPessoaEscala(pessoa)?.liveInviteId === inviteId)) {
+            return { desigId: desig.id, slotKey };
+          }
+        }
+      }
+      return null;
+    }
+
+    function getAssignmentForInvite(cfg, invite) {
+      const designacoes = getMinhasDesignacoes();
+      const postos = DB.get('postos', []);
+      let manualMatch = null;
+      for (const desig of designacoes) {
+        const slotMap = cfg.turnos?.[desig.id] || {};
+        for (const [slotKey, pessoas] of Object.entries(slotMap)) {
+          for (const pessoa of (pessoas || []).map(normalizarPessoaEscala).filter(Boolean)) {
+            const slotFim = gerarSlots(desig.inicio, desig.fim, getAgendaConfig(desig.id).duracaoTurno).find(item => item.inicio === slotKey)?.fim || '';
+            const posto = postos.find(item => item.id === desig.postoId) || null;
+            const assignment = {
+              source: pessoa.liveInviteId === invite.id ? 'live' : 'manual',
+              pessoa,
+              desig,
+              posto,
+              categoria: getCategoriaById(posto?.categoriaId),
+              slotKey,
+              slotFim,
+              resumo: `${posto?.nome || 'Posto'} · ${desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}`,
+            };
+            if (pessoa.liveInviteId === invite.id) return assignment;
+            if (!manualMatch && normalizeCompareName(pessoa.nome) === normalizeCompareName(invite.nome)) {
+              manualMatch = assignment;
+            }
+          }
+        }
+      }
+      return manualMatch;
+    }
+
+    function renderAssignmentMap(assignment) {
+      const mapEl = document.getElementById('assignment-map');
+      const noteEl = document.getElementById('assignment-map-note');
+      if (!mapEl || !noteEl) return;
+      const lat = Number(assignment?.posto?.lat);
+      const lng = Number(assignment?.posto?.lng);
+      const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+      if (!hasCoords || typeof L === 'undefined') {
+        if (assignmentMap) {
+          assignmentMap.remove();
+          assignmentMap = null;
+          assignmentMarker = null;
+        }
+        mapEl.className = 'live-assignment-map empty';
+        mapEl.innerHTML = assignment?.posto?.local
+          ? `📍 ${assignment.posto.local}`
+          : 'O mapa do posto aparece aqui quando a congregacao informar a localizacao.';
+        noteEl.textContent = assignment?.posto?.local
+          ? 'Local informado pela congregacao.'
+          : 'Ainda nao ha coordenadas cadastradas para esse posto.';
+        return;
+      }
+
+      mapEl.className = 'live-assignment-map';
+      mapEl.innerHTML = '';
+      noteEl.textContent = 'Mapa de referencia do posto designado.';
+      if (!assignmentMap) {
+        assignmentMap = L.map('assignment-map', {
+          zoomControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          tap: false,
+          touchZoom: false,
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(assignmentMap);
+      }
+      assignmentMap.setView([lat, lng], 15);
+      if (!assignmentMarker) {
+        assignmentMarker = L.marker([lat, lng]).addTo(assignmentMap);
+      } else {
+        assignmentMarker.setLatLng([lat, lng]);
+      }
+      assignmentMarker.bindPopup(`<strong>${assignment.posto?.nome || 'Posto'}</strong><br>${assignment.posto?.local || 'Local nao informado'}`).openPopup();
+      setTimeout(() => assignmentMap && assignmentMap.invalidateSize(), 0);
+    }
+
+    function getGoogleMapsUrl(assignment) {
+      const lat = Number(assignment?.posto?.lat);
+      const lng = Number(assignment?.posto?.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}&travelmode=driving`;
+      }
+      const query = assignment?.posto?.local || assignment?.posto?.nome || '';
+      return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : '';
+    }
+
+    function getAssignmentGuidance(assignment) {
+      const items = [];
+      if (assignment?.posto?.local) {
+        items.push({ label: 'Local de referencia', value: assignment.posto.local });
+      }
+      if (assignment?.posto?.responsavel) {
+        items.push({ label: 'Responsavel geral', value: assignment.posto.responsavel });
+      }
+      if (assignment?.desig?.responsavel) {
+        items.push({ label: 'Contato do arranjo', value: assignment.desig.responsavel });
+      }
+      if (assignment?.posto?.obs) {
+        items.push({ label: 'Observacao do posto', value: assignment.posto.obs });
+      }
+      if (assignment?.desig?.obs) {
+        items.push({ label: 'Orientacao da designacao', value: assignment.desig.obs });
+      }
+      if (assignment?.categoria?.nome) {
+        items.push({ label: 'Setor', value: assignment.categoria.nome });
+      }
+      return items;
+    }
+
+    function renderAssignmentFocus(assignment, lockedByManual) {
+      const root = document.getElementById('assignment-focus');
+      if (!root) return;
+      if (!assignment) {
+        root.classList.remove('open');
+        return;
+      }
+
+      root.classList.add('open');
+      document.getElementById('assignment-title').textContent = lockedByManual ? 'Seu arranjo foi definido' : 'Seu posto confirmado';
+      document.getElementById('assignment-subtitle').textContent = lockedByManual
+        ? 'A congregacao ja fechou este arranjo para voce. O acesso fica somente para consulta.'
+        : 'Seu pedido ao vivo ja fechou o arranjo. Veja abaixo os detalhes do posto e horario.';
+      document.getElementById('assignment-badge').className = `badge ${lockedByManual ? 'badge-primary' : 'badge-ativo'}`;
+      document.getElementById('assignment-badge').textContent = lockedByManual ? 'Designado pela congregacao' : 'Confirmado no acesso';
+      const noteEl = document.getElementById('assignment-note');
+      noteEl.className = `live-assignment-note${lockedByManual ? ' locked' : ''}`;
+      noteEl.textContent = lockedByManual
+        ? `A congregacao/administracao ja designou voce neste arranjo: ${assignment.resumo}.`
+        : `Seu horario atual e ${assignment.resumo}. Se a congregacao ainda estiver aceitando trocas, voce pode alterar abaixo.`;
+      document.getElementById('assignment-chips').innerHTML = [
+        `📍 ${assignment.posto?.nome || 'Posto'}`,
+        `🧭 ${assignment.categoria?.nome || 'Sem setor'}`,
+        `📅 ${assignment.desig?.data || '—'}`,
+        `⏱️ ${assignment.slotKey}${assignment.slotFim ? `–${assignment.slotFim}` : ''}`,
+        `📌 ${assignment.posto?.local || 'Local nao informado'}`,
+      ].map(item => `<span>${item}</span>`).join('');
+      const mapsUrl = getGoogleMapsUrl(assignment);
+      document.getElementById('assignment-actions').innerHTML = mapsUrl
+        ? `<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota no Google Maps</a>`
+        : '';
+      const guidance = getAssignmentGuidance(assignment);
+      const guidanceRoot = document.getElementById('assignment-guidance');
+      const guidanceList = document.getElementById('assignment-guidance-list');
+      if (guidance.length) {
+        guidanceRoot.style.display = 'grid';
+        guidanceList.innerHTML = guidance.map(item => `<div class="live-guidance-item"><small>${item.label}</small>${item.value}</div>`).join('');
+      } else {
+        guidanceRoot.style.display = 'none';
+        guidanceList.innerHTML = '';
+      }
+      renderAssignmentMap(assignment);
+    }
+
+    function getAvailableEntries(invite) {
+      const cfg = getCongConfigById(CONG_ID);
+      const turnos = cfg.turnos || {};
+      const current = getCurrentSelection(cfg, invite.id);
+      const postos = DB.get('postos', []);
+      return getMinhasDesignacoes().map(desig => {
+        const posto = postos.find(p => p.id === desig.postoId);
+        const agenda = getAgendaConfig(desig.id);
+        const slots = gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno)
+          .map(slot => {
+            const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+            const others = pessoas.filter(pessoa => pessoa.liveInviteId !== invite.id);
+            const selected = current && String(current.desigId) === String(desig.id) && current.slotKey === slot.inicio;
+            const vagas = Math.max(0, agenda.maxPorTurno - others.length);
+            return {
+              ...slot,
+              selected,
+              vagas,
+              total: others.length + (selected ? 1 : 0),
+              disponivel: selected || vagas > 0,
+            };
+          })
+          .filter(slot => slot.disponivel);
+        return {
+          desig,
+          posto,
+          categoria: getCategoriaById(posto?.categoriaId),
+          slots,
+        };
+      }).filter(item => item.posto && item.slots.length);
+    }
+
+    function getEscolhaResumo(item) {
+      if (!item) return 'Nenhum horario escolhido ainda.';
+      const posto = DB.get('postos', []).find(p => p.id === item.postoId);
+      return `${posto?.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey}`;
+    }
+
+    function render() {
+      const cong = getCongregacao();
+      const cfg = getCongConfigById(CONG_ID);
+      const invite = getInvite();
+      if (!cong || !invite) {
+        showStatus('❌', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
+        return;
+      }
+      if (!cfg.liveRequests.enabled || invite.ativo === false) {
+        showStatus('⛔', 'Acesso indisponivel', 'Os pedidos ao vivo desta congregacao nao estao disponiveis no momento.');
+        return;
+      }
+
+      document.getElementById('status-root').style.display = 'none';
+      document.getElementById('live-root').style.display = 'grid';
+      const assignment = getAssignmentForInvite(cfg, invite);
+      const lockedByManual = assignment && assignment.source === 'manual';
+      document.getElementById('live-title').textContent = `Ola, ${invite.nome}`;
+      document.getElementById('live-subtitle').textContent = lockedByManual
+        ? `Seu arranjo ja foi fechado pela congregacao ${cong.nome}. Aqui voce consulta os detalhes do posto designado.`
+        : `Escolha um horario disponivel da congregacao ${cong.nome}. Sua confirmacao atualiza a escala automaticamente.`;
+      document.getElementById('invite-name').textContent = invite.nome;
+      document.getElementById('invite-cong').textContent = cong.nome;
+      document.getElementById('invite-status').className = `badge ${lockedByManual ? 'badge-primary' : assignment ? 'badge-ativo' : 'badge-standby'}`;
+      document.getElementById('invite-status').textContent = lockedByManual ? 'Designado pela congregacao' : assignment ? 'Escolha confirmada' : 'Aguardando escolha';
+      const choiceBox = document.getElementById('current-choice-box');
+      choiceBox.className = `live-choice-summary${lockedByManual ? ' locked' : ''}`;
+      choiceBox.textContent = lockedByManual
+        ? `Seu arranjo ja foi fechado: ${assignment.resumo}. O acesso permanece somente para consulta.`
+        : assignment
+          ? `Sua escolha atual: ${assignment.resumo}`
+          : 'Nenhum horario escolhido ainda. Escolha abaixo o melhor local e horario com vaga.';
+      renderAssignmentFocus(assignment, lockedByManual);
+
+      const entries = lockedByManual ? [] : getAvailableEntries(invite);
+      const totalSlots = entries.reduce((sum, item) => sum + item.slots.length, 0);
+      const totalPostos = new Set(entries.map(item => item.posto.id)).size;
+      document.getElementById('live-stats').innerHTML = `
+        <div class="live-stat"><strong>${lockedByManual ? '1' : totalPostos}</strong><span>${lockedByManual ? 'posto definido' : 'locais disponiveis'}</span></div>
+        <div class="live-stat"><strong>${lockedByManual ? '0' : totalSlots}</strong><span>${lockedByManual ? 'trocas liberadas' : 'horarios com vaga'}</span></div>
+        <div class="live-stat"><strong>${assignment ? '1' : '0'}</strong><span>escolha ativa</span></div>
+      `;
+
+      const listEl = document.getElementById('slots-list');
+      const sectionText = document.querySelector('#live-root .card p');
+      if (sectionText) {
+        sectionText.textContent = lockedByManual
+          ? 'Como a congregacao ja fechou seu arranjo, esta area fica travada somente para consulta.'
+          : 'A lista abaixo mostra apenas vagas abertas neste momento. Se voce ja escolheu um horario, pode trocar depois enquanto ainda houver vaga.';
+      }
+      if (lockedByManual) {
+        listEl.innerHTML = '<div class="card"><p style="color:var(--gray);font-size:.88rem;">Este acesso foi travado porque a congregacao ja designou voce manualmente. Use esta pagina apenas para consultar o posto, horario e local.</p></div>';
+        return;
+      }
+      if (!entries.length) {
+        listEl.innerHTML = '<div class="card"><p style="color:var(--gray);font-size:.88rem;">No momento nao ha horarios com vaga disponiveis. Tente novamente mais tarde ou fale com a congregacao.</p></div>';
+        return;
+      }
+
+      listEl.innerHTML = entries.map(item => {
+        const dataFmt = item.desig.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—';
+        return `
+          <div class="live-slot-card">
+            <div class="live-slot-head">
+              <div>
+                <strong>${item.posto.nome}</strong>
+                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.posto.local || 'Local nao informado'}</div>
+                <div class="live-slot-meta">
+                  <span>📅 ${dataFmt}</span>
+                  <span>🧭 ${item.categoria?.nome || 'Sem setor'}</span>
+                  <span>⏱️ ${item.desig.inicio}–${item.desig.fim}</span>
+                </div>
+              </div>
+            </div>
+            <div class="live-slot-grid">
+              ${item.slots.map(slot => `
+                <div class="live-slot-option ${slot.selected ? 'current' : ''}">
+                  <strong>${slot.inicio}–${slot.fim}</strong>
+                  <div class="meta">${slot.selected ? 'Esta e sua escolha atual.' : `${slot.vagas} vaga(s) restante(s)`}</div>
+                  <button class="btn ${slot.selected ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="confirmarEscolha('${item.desig.id}','${slot.inicio}')">${slot.selected ? 'Manter este horario' : 'Escolher este horario'}</button>
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    window.confirmarEscolha = function(desigId, slotKey) {
+      const cfg = getCongConfigById(CONG_ID);
+      const invite = getInvite();
+      if (!invite) return;
+      const entries = getAvailableEntries(invite);
+      const entry = entries.find(item => String(item.desig.id) === String(desigId));
+      const slot = entry?.slots.find(item => item.inicio === slotKey);
+      if (!entry || !slot) {
+        showToast('Este horario nao esta mais disponivel.', 'warning');
+        render();
+        return;
+      }
+
+      cfg.turnos = cfg.turnos || {};
+      Object.keys(cfg.turnos).forEach(currentDesigId => {
+        Object.keys(cfg.turnos[currentDesigId] || {}).forEach(currentSlotKey => {
+          cfg.turnos[currentDesigId][currentSlotKey] = (cfg.turnos[currentDesigId][currentSlotKey] || []).filter(pessoa => normalizarPessoaEscala(pessoa)?.liveInviteId !== invite.id);
+        });
+      });
+
+      if (!cfg.turnos[desigId]) cfg.turnos[desigId] = {};
+      if (!cfg.turnos[desigId][slotKey]) cfg.turnos[desigId][slotKey] = [];
+
+      const pessoas = getPessoasDoSlot(cfg.turnos, desigId, slotKey).filter(pessoa => pessoa.liveInviteId !== invite.id);
+      const agenda = getAgendaConfig(desigId);
+      if (pessoas.length >= agenda.maxPorTurno) {
+        showToast('Esse horario acabou de lotar. Escolha outro.', 'warning');
+        render();
+        return;
+      }
+
+      cfg.turnos[desigId][slotKey] = pessoas.concat([{ nome: invite.nome, origem: 'pedido_ao_vivo', liveInviteId: invite.id }]);
+      cfg.membros = Array.isArray(cfg.membros) ? cfg.membros : [];
+      if (!cfg.membros.some(membro => String((typeof membro === 'string' ? membro : membro?.nome) || '').toLowerCase() === invite.nome.toLowerCase())) {
+        cfg.membros.push({ nome: invite.nome, funcao: 'Publicador', podeRepetir: false, origem: 'pedido_ao_vivo', whatsapp: invite.whatsapp });
+      }
+
+      const slotFim = gerarSlots(entry.desig.inicio, entry.desig.fim, agenda.duracaoTurno).find(item => item.inicio === slotKey)?.fim || '';
+      const inviteRef = cfg.liveRequests.invites.find(item => item.id === invite.id);
+      if (inviteRef) {
+        inviteRef.confirmadoEm = new Date().toLocaleString('pt-BR');
+        inviteRef.escolha = { desigId, slotKey, postoId: entry.posto.id };
+        inviteRef.escolhaResumo = `${entry.posto.nome} · ${entry.desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}`;
+      }
+
+      saveCongConfigById(CONG_ID, cfg);
+      showToast('Horario confirmado com sucesso!', 'success');
+      render();
+    };
+
+    window.addEventListener('db-sync', e => {
+      if (!['cong_config', 'postos', 'designacoes', 'categorias'].includes(e.detail?.key)) return;
+      render();
+    });
+
+    render();
+  })();
+  </script>
+</body>
+</html>

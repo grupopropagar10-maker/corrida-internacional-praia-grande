@@ -69,6 +69,45 @@ const Auth = {
     return false;
   },
 
+  findLiveInvite(usuario, senha) {
+    const all = DB.get('cong_config', {});
+    return Object.entries(all).reduce((found, [congId, cfg]) => {
+      if (found) return found;
+      const invites = Array.isArray(cfg?.liveRequests?.invites) ? cfg.liveRequests.invites : [];
+      const invite = invites.find(item => item && item.usuario === usuario && item.senha === senha && item.ativo !== false);
+      return invite ? { congId: parseInt(congId, 10), invite } : null;
+    }, null);
+  },
+
+  loginLiveInvite(usuario, senha) {
+    const found = this.findLiveInvite(usuario, senha);
+    if (!found) return false;
+    const all = DB.get('cong_config', {});
+    const cfg = all[found.congId] || {};
+    const invites = Array.isArray(cfg?.liveRequests?.invites) ? cfg.liveRequests.invites : [];
+    const invite = invites.find(item => item && item.id === found.invite.id);
+    if (invite) {
+      invite.loginCount = Number(invite.loginCount || 0) + 1;
+      invite.ultimoAcessoEm = new Date().toLocaleString('pt-BR');
+      all[found.congId] = {
+        ...cfg,
+        liveRequests: {
+          enabled: !!cfg?.liveRequests?.enabled,
+          invites,
+        },
+      };
+      DB.set('cong_config', all);
+    }
+    this.setSession({
+      type: 'live',
+      nome: found.invite.nome,
+      congId: found.congId,
+      liveInviteId: found.invite.id,
+      liveUsuario: found.invite.usuario,
+    });
+    return true;
+  },
+
   isSubAdmin() {
     return this.getSession()?.type === 'subadmin';
   },
@@ -128,11 +167,18 @@ const Auth = {
                     font-size:0.78rem;font-weight:700;white-space:nowrap;text-decoration:none;">
              🛡️ Meu Painel
            </a>`
+        : user.type === 'live'
+          ? `<a href="pedidos-ao-vivo.html"
+               style="background:rgba(40,167,69,0.3);border:1px solid rgba(40,167,69,0.5);
+                      color:white;padding:0.3rem 0.8rem;border-radius:6px;cursor:pointer;
+                      font-size:0.78rem;font-weight:700;white-space:nowrap;text-decoration:none;">
+               📲 Meu acesso
+             </a>`
         : '';
     badge.innerHTML = `
       ${adminLink}
       <span style="color:rgba(255,255,255,0.85);font-size:0.82rem;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;">
-        ${user.type === 'admin' ? '🔑' : user.type === 'subadmin' ? '🛡️' : '⛪'} <strong>${user.nome}</strong>
+        ${user.type === 'admin' ? '🔑' : user.type === 'subadmin' ? '🛡️' : user.type === 'live' ? '📲' : '⛪'} <strong>${user.nome}</strong>
       </span>
       <button onclick="Auth.logout()"
         style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);

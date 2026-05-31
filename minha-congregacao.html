@@ -214,6 +214,230 @@
       font-size: .68rem;
       font-weight: 700;
     }
+    .live-note {
+      margin-top: .8rem;
+      padding: .75rem .9rem;
+      border-radius: 12px;
+      border: 1px solid #cfe0f4;
+      background: #f7fbff;
+      color: var(--primary-dark);
+      font-size: .82rem;
+    }
+    .live-note.warn {
+      background: #fff8e8;
+      border-color: #f1d48b;
+      color: #7b4f00;
+    }
+    .live-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1rem;
+    }
+    .live-hero {
+      background: linear-gradient(135deg, #0f7a47, #25D366);
+      color: white;
+      border-radius: var(--radius);
+      padding: 1.2rem 1.35rem;
+      box-shadow: var(--shadow);
+    }
+    .live-hero p {
+      margin: .35rem 0 0;
+      font-size: .85rem;
+      opacity: .92;
+    }
+    .live-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .live-toggle label {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .live-toggle input { accent-color: #25D366; transform: scale(1.15); }
+    .live-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .8rem;
+    }
+    .live-stat {
+      border: 1px solid rgba(15, 122, 71, 0.16);
+      background: linear-gradient(180deg, #f5fff9, #fff);
+      border-radius: 14px;
+      padding: .95rem 1rem;
+      box-shadow: 0 10px 24px rgba(15, 122, 71, 0.08);
+    }
+    .live-stat strong {
+      display: block;
+      font-size: 1.35rem;
+      color: #0f7a47;
+      line-height: 1;
+      margin-bottom: .3rem;
+    }
+    .live-stat span {
+      font-size: .76rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .live-form-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(220px, .8fr) auto;
+      gap: .6rem;
+      align-items: end;
+    }
+    .live-list {
+      display: grid;
+      gap: .8rem;
+    }
+    .live-item {
+      border: 1px solid #d6e5f7;
+      border-radius: 14px;
+      background: white;
+      padding: .85rem .95rem;
+      box-shadow: 0 8px 22px rgba(26, 26, 46, 0.05);
+    }
+    .live-item-head {
+      display: flex;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .live-person {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      min-width: 0;
+      flex: 1 1 360px;
+    }
+    .live-entry-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: 0 0 10px;
+      background: #c8d4e4;
+      box-shadow: 0 0 0 3px rgba(200, 212, 228, 0.25);
+    }
+    .live-entry-dot.online {
+      background: #1fb75f;
+      box-shadow: 0 0 0 3px rgba(31, 183, 95, 0.18);
+    }
+    .live-name-block {
+      min-width: 0;
+    }
+    .live-name-row {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      flex-wrap: wrap;
+    }
+    .live-name-row strong {
+      color: var(--primary-dark);
+      font-size: .98rem;
+    }
+    .live-presence {
+      font-size: .74rem;
+      color: var(--gray);
+    }
+    .live-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      margin-top: .35rem;
+    }
+    .live-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      font-size: .73rem;
+      border-radius: 999px;
+      padding: .22rem .55rem;
+      background: #edf7ff;
+      color: var(--primary-dark);
+      border: 1px solid #d2e6f8;
+    }
+    .live-meta .warn {
+      background: #fff8e8;
+      color: #7b4f00;
+      border-color: #f1d48b;
+    }
+    .live-meta .success {
+      background: #eefbf3;
+      color: #0f7a47;
+      border-color: #bee5ca;
+    }
+    .live-inline-detail {
+      margin-top: .55rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .live-inline-detail span {
+      display: inline-flex;
+      align-items: center;
+      gap: .32rem;
+      border-radius: 999px;
+      padding: .22rem .6rem;
+      background: #f8fbff;
+      border: 1px solid #dbe8f7;
+      color: var(--primary-dark);
+      font-size: .74rem;
+      max-width: 100%;
+    }
+    .live-inline-detail .choice {
+      border-style: dashed;
+      background: #fcfdff;
+    }
+    .live-inline-detail .mono {
+      font-family: Consolas, monospace;
+    }
+    .live-actions {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 0 0 auto;
+    }
+    .live-row-actions {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      margin-top: .65rem;
+    }
+    .live-edit-panel {
+      margin-top: .75rem;
+      border-top: 1px dashed #dbe8f7;
+      padding-top: .75rem;
+      display: grid;
+      gap: .65rem;
+    }
+    .live-edit-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(220px, .85fr) minmax(180px, .7fr) auto;
+      gap: .6rem;
+      align-items: end;
+    }
+    .live-edit-panel small {
+      color: var(--gray);
+      font-size: .76rem;
+    }
+    .live-empty {
+      text-align: center;
+      padding: 1.6rem;
+      border-radius: 14px;
+      border: 1px dashed #cfe0f4;
+      background: #fbfdff;
+      color: var(--gray);
+      font-size: .84rem;
+    }
 
     /* ══ POSTO HERO ══ */
     .posto-hero {
@@ -281,6 +505,41 @@
       display: flex; gap: .6rem; padding: 1rem;
       overflow-x: auto; background: #f4f8fd; flex-wrap: wrap;
     }
+    .escala-sector-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: .8rem;
+      margin-bottom: 1rem;
+    }
+    .escala-sector-card {
+      background: white;
+      border: 1px solid #d6e5f7;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: .9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+    }
+    .escala-sector-meta {
+      color: var(--gray);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+    .escala-sector-buttons,
+    .carrinho-actions {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+    }
+    .carrinho-actions {
+      justify-content: flex-end;
+      padding: .7rem 1rem 0;
+    }
+    .btn[disabled] {
+      opacity: .55;
+      cursor: not-allowed;
+    }
     .turno-slot {
       min-width: 130px; flex: 1; max-width: 200px;
       background: white; border-radius: .5rem; border: 1.5px solid #cde0f5; overflow: hidden;
@@ -320,6 +579,144 @@
       display: flex; align-items: center; gap: .7rem; font-size: .83rem;
       padding: .55rem .8rem; background: var(--light); border-radius: 6px;
     }
+    .reg-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1rem;
+    }
+    .reg-alert {
+      display: none;
+      padding: .9rem 1rem;
+      border-radius: 14px;
+      border: 1px solid #f0b8bf;
+      background: #fff3f5;
+      color: #9b1c31;
+      font-size: .84rem;
+      line-height: 1.5;
+    }
+    .reg-alert.open {
+      display: block;
+    }
+    .reg-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+      gap: 1.2rem;
+      align-items: start;
+    }
+    .assignment-picker {
+      display: grid;
+      gap: .7rem;
+    }
+    .assignment-option {
+      text-align: left;
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid #d6e5f7;
+      background: white;
+      padding: .85rem .95rem;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 8px 20px rgba(8, 45, 89, 0.05);
+    }
+    .assignment-option.active {
+      border-color: var(--primary);
+      background: #eef6ff;
+      box-shadow: 0 12px 26px rgba(0, 87, 168, 0.10);
+    }
+    .assignment-option.alert {
+      border-color: #e19aa7;
+      background: #fff8f9;
+    }
+    .assignment-option strong {
+      display: block;
+      color: var(--primary-dark);
+      font-size: .92rem;
+    }
+    .assignment-option .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .45rem;
+    }
+    .assignment-option .meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      padding: .22rem .55rem;
+      border-radius: 999px;
+      background: #f7fbff;
+      border: 1px solid #dae7f6;
+      color: var(--primary-dark);
+      font-size: .74rem;
+    }
+    .reg-summary-box {
+      padding: .9rem 1rem;
+      border-radius: 14px;
+      border: 1px solid #d4e4f7;
+      background: #f7fbff;
+      color: var(--primary-dark);
+      font-size: .83rem;
+      line-height: 1.55;
+    }
+    .reg-summary-box strong {
+      display: block;
+      margin-bottom: .3rem;
+    }
+    .reg-inline-actions {
+      display: flex;
+      gap: .55rem;
+      flex-wrap: wrap;
+    }
+    .reg-input-lg {
+      width: 100%;
+      padding: .9rem 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 61, 122, 0.14);
+      background: rgba(255,255,255,0.96);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .exp-preview {
+      display: none;
+      gap: .6rem;
+      margin-top: .7rem;
+      align-items: center;
+      padding: .7rem .8rem;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #dce8f6;
+    }
+    .exp-preview.open {
+      display: flex;
+    }
+    .exp-preview img {
+      width: 74px;
+      height: 74px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid #d1e0f3;
+      background: white;
+    }
+    .exp-thumb {
+      width: 54px;
+      height: 54px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid #d1e0f3;
+      background: white;
+      flex-shrink: 0;
+    }
+    .hist-item.exp {
+      align-items: flex-start;
+    }
+    .reg-empty {
+      color: var(--gray);
+      font-size: .82rem;
+      text-align: center;
+      padding: .9rem;
+    }
 
     /* ══ RESULTADO ══ */
     .resultado-card { background: linear-gradient(135deg,var(--primary-dark),var(--primary)); color:white; border-radius:var(--radius); padding:1.5rem; }
@@ -333,14 +730,65 @@
       .tab-pane { padding: 1rem; }
       .cong-banner { padding: 1.1rem 1rem; }
       .posto-hero { padding: 1.15rem; }
+      .live-form-grid { grid-template-columns: 1fr; }
+      .live-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .live-edit-grid { grid-template-columns: 1fr; }
+      .reg-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width:640px) {
+      .cong-banner {
+        padding: 1rem .9rem;
+        gap: .9rem;
+      }
+      .cong-banner-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 1rem;
+      }
+      .cong-banner-info h1 {
+        font-size: 1.05rem;
+      }
+      .tab-bar {
+        position: sticky; top: 0; z-index: 5;
+        scroll-snap-type: x proximity;
+      }
+      .tab-btn {
+        padding: .8rem .95rem;
+        font-size: .78rem;
+        scroll-snap-align: start;
+      }
+      .tab-pane {
+        padding: .9rem;
+      }
       .escala-row { grid-template-columns:1fr 1fr; }
       .escala-row > *:last-child { grid-column:span 2; }
-      .tab-bar { position: sticky; top: 0; z-index: 5; }
       #mini-map { height: 280px; }
       .agenda-trigger { width: 100%; }
+      .live-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .live-stat {
+        padding: .8rem .85rem;
+      }
+      .live-item {
+        padding: .75rem .8rem;
+      }
+      .live-actions .btn {
+        flex: 1 1 calc(50% - .45rem);
+      }
+      .live-inline-detail span,
+      .live-meta span {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .reg-inline-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
 
     /* ══ MODAL PARTICIPAÇÃO ══ */
@@ -449,7 +897,10 @@
     <button class="tab-btn" data-tab="tab-escala">
       👥 Adicionar nomes <span class="tab-badge" id="badge-escala-tab" style="display:none;"></span>
     </button>
-    <button class="tab-btn" data-tab="tab-reg">📖 Registrar</button>
+    <button class="tab-btn" data-tab="tab-live">
+      📲 Pedidos ao vivo <span class="tab-badge" id="badge-live-tab" style="display:none;"></span>
+    </button>
+    <button class="tab-btn" data-tab="tab-reg">📖 Registrar <span class="tab-badge" id="badge-reg-tab" style="display:none;background:#dc3545;">!</span></button>
   </div>
 
   <!-- ══ ABA 1 — MEU POSTO ══ -->
@@ -530,6 +981,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.4rem 0;min-height:2.2rem;" id="membros-chips">
           <span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>
         </div>
+        <div id="live-request-note"></div>
         <div style="display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;">
           <input id="input-membro" class="form-control" placeholder="Nome do publicador (Ex: Irmão Carlos)" style="flex:1;min-width:200px;"/>
           <select id="select-funcao-membro" class="form-control" style="min-width:220px;flex:.8;">
@@ -548,71 +1000,124 @@
       <!-- Carrinhos / Postos com turnos -->
       <div id="escala-status-resumo" class="escala-status-box warning"></div>
       <div id="escala-avisos-ajuda"></div>
+      <div id="escala-sector-actions" class="escala-sector-actions"></div>
       <div id="postos-turnos"></div>
 
       <!-- Botões de ação -->
       <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
         <button class="btn btn-outline" id="btn-salvar-escala">💾 Salvar</button>
-        <button class="btn btn-primary" id="btn-export-pdf">🖨️ Exportar PDF da Escala</button>
+        <button class="btn btn-primary" id="btn-export-pdf">🖨️ Baixar PDF geral</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-live">
+    <div class="live-wrap">
+      <div class="live-hero">
+        <strong style="font-size:1.05rem;">📲 Pedidos ao vivo</strong>
+        <p>Libere um acesso simples para a pessoa escolher posto e horário disponível. A confirmação volta direto para a escala desta congregação.</p>
+      </div>
+      <div class="card">
+        <div class="live-toggle">
+          <div>
+            <strong style="color:var(--primary-dark);font-size:1rem;">Ativar pedidos ao vivo</strong>
+            <div style="color:var(--gray);font-size:.82rem;margin-top:.2rem;">Quando ativo, esta congregação pode enviar acessos individuais por WhatsApp.</div>
+          </div>
+          <label><input type="checkbox" id="live-enabled-toggle"/> Liberar acesso</label>
+        </div>
+      </div>
+      <div class="live-summary-grid" id="live-summary-grid"></div>
+      <div class="card">
+        <div class="card-header"><span class="icon">➕</span><h2>Novo acesso ao vivo</h2></div>
+        <div class="live-form-grid">
+          <div class="form-group" style="margin:0;">
+            <label>Nome</label>
+            <select id="live-nome" class="form-control">
+              <option value="">Selecione um nome ja cadastrado</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>WhatsApp</label>
+            <input id="live-whatsapp" class="form-control" placeholder="Ex: 13 99999-8888"/>
+          </div>
+          <button class="btn btn-primary" id="btn-live-add" style="white-space:nowrap;">➕ Criar acesso</button>
+        </div>
+        <div class="live-note" id="live-member-source-note" style="margin-top:1rem;">Os nomes aqui sao puxados da aba <strong>Adicionar nomes</strong>. Assim o pedido ao vivo sempre usa pessoas ja cadastradas pela congregacao.</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="icon">📋</span><h2>Acessos criados</h2></div>
+        <div class="live-list" id="live-requests-list"></div>
       </div>
     </div>
   </div>
 
   <!-- ══ ABA 4 — REGISTRAR ══ -->
   <div class="tab-pane" id="tab-reg">
-    <div style="max-width:780px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+    <div class="reg-shell">
+      <div class="reg-alert" id="reg-alert"></div>
+      <div class="reg-grid">
+        <div style="display:grid;gap:1rem;">
+          <div class="card">
+            <div class="card-header"><span class="icon">📍</span><h2>Qual arranjo deseja fechar?</h2></div>
+            <p style="color:var(--gray);font-size:.84rem;margin-bottom:.85rem;">Escolha o posto pelo horário, local e referência. Assim não aparecem opções iguais sem contexto.</p>
+            <div id="assignment-picker" class="assignment-picker"></div>
+          </div>
 
-      <!-- Formulário -->
-      <div class="card">
-        <div class="card-header"><span class="icon">📖</span><h2>Registrar distribuição</h2></div>
-        <div class="form-group">
-          <label>Posto</label>
-          <select class="form-control" id="my-posto"></select>
-        </div>
-        <div class="form-group">
-          <label>Publicação</label>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;" id="pub-selector"></div>
-        </div>
-        <div class="form-group">
-          <label>Tipo de contato</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;" id="tipo-selector"></div>
-        </div>
-        <div class="form-group">
-          <label>Quantidade</label>
-          <div class="reg-counter">
-            <button class="rcbtn" id="my-minus" style="background:#F8D7DA;color:var(--danger);">−</button>
-            <span class="reg-num" id="my-qty">1</span>
-            <button class="rcbtn" id="my-plus"  style="background:#D4EDDA;color:var(--success);">+</button>
+          <div class="card">
+            <div class="card-header"><span class="icon">📚</span><h2>Publicações que saíram no dia</h2></div>
+            <div class="reg-summary-box" id="reg-assignment-summary"></div>
+            <div class="form-group" style="margin-top:1rem;">
+              <label>Quantidade total distribuída nesse arranjo</label>
+              <input class="reg-input-lg" id="reg-total-publicacoes" type="number" min="0" step="1" value="0" placeholder="Ex: 42" />
+            </div>
+            <div class="reg-inline-actions">
+              <button class="btn btn-accent" id="btn-salvar-publicacoes">💾 Salvar total do dia</button>
+              <button class="btn btn-outline" id="btn-abrir-maps-reg">📍 Ver ponto no mapa</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="icon">✨</span><h2>Experiências</h2></div>
+            <p style="color:var(--gray);font-size:.84rem;margin-bottom:.85rem;">Envie uma foto e descreva rapidamente o que aconteceu nesse posto.</p>
+            <div class="form-group">
+              <label>Detalhes da experiência</label>
+              <textarea class="form-control" id="exp-detalhes" rows="3" placeholder="Ex: boa receptividade, conversa marcante, interesse no site..."></textarea>
+            </div>
+            <div class="reg-inline-actions">
+              <input id="exp-image-input" type="file" accept="image/*" style="display:none;" />
+              <button class="btn btn-outline" id="btn-escolher-imagem">🖼️ Escolher imagem</button>
+              <button class="btn btn-primary" id="btn-salvar-experiencia">📤 Salvar experiência</button>
+            </div>
+            <div class="exp-preview" id="exp-preview">
+              <img id="exp-preview-img" alt="Prévia da experiência" />
+              <div>
+                <strong id="exp-preview-name">Imagem selecionada</strong>
+                <div style="color:var(--gray);font-size:.8rem;">A foto será reduzida antes de salvar.</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label>Observação <span style="font-weight:400;color:var(--gray);">(opcional)</span></label>
-          <textarea class="form-control" id="my-obs" rows="2" placeholder="Ex: corredor muito interessado..."></textarea>
+
+        <div style="display:flex;flex-direction:column;gap:1.2rem;">
+          <div class="resultado-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+              <strong style="font-size:.95rem;">📊 Fechamento do campo</strong>
+              <button onclick="imprimirResultado()" class="btn btn-sm"
+                style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);">
+                🖨️ Imprimir
+              </button>
+            </div>
+            <div class="resultado-grid" id="resultado-grid"></div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">🕓</span><h2>Últimos registros</h2></div>
+              <button class="btn btn-outline btn-sm" onclick="limparHistorico()">🗑️ Limpar</button>
+            </div>
+            <div id="meu-historico" style="display:flex;flex-direction:column;gap:.4rem;max-height:360px;overflow-y:auto;"></div>
+          </div>
         </div>
-        <button class="btn btn-accent w-full" id="btn-registrar" style="justify-content:center;font-size:1rem;padding:.85rem;">✅ Registrar</button>
       </div>
-
-      <!-- Resultado + Histórico -->
-      <div style="display:flex;flex-direction:column;gap:1.2rem;">
-        <div class="resultado-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-            <strong style="font-size:.95rem;">📊 Resultado acumulado</strong>
-            <button onclick="imprimirResultado()" class="btn btn-sm"
-              style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);">
-              🖨️ Imprimir
-            </button>
-          </div>
-          <div class="resultado-grid" id="resultado-grid"></div>
-        </div>
-        <div class="card">
-          <div class="card-header" style="justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">🕓</span><h2>Histórico</h2></div>
-            <button class="btn btn-outline btn-sm" onclick="limparHistorico()">🗑️ Limpar</button>
-          </div>
-          <div id="meu-historico" style="display:flex;flex-direction:column;gap:.4rem;max-height:280px;overflow-y:auto;"></div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -673,6 +1178,8 @@
 </style>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="js/firebase-db.js"></script>
@@ -749,6 +1256,12 @@ function getCongConfig() {
     membros: Array.isArray(raw.membros) ? raw.membros : [],
     turnos: raw.turnos && typeof raw.turnos === 'object' ? raw.turnos : {},
     agendaConfig: raw.agendaConfig && typeof raw.agendaConfig === 'object' ? raw.agendaConfig : {},
+    liveRequests: raw.liveRequests && typeof raw.liveRequests === 'object'
+      ? {
+          enabled: !!raw.liveRequests.enabled,
+          invites: Array.isArray(raw.liveRequests.invites) ? raw.liveRequests.invites : [],
+        }
+      : { enabled: false, invites: [] },
     ...raw,
   };
 }
@@ -894,7 +1407,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'tab-reg') carregarSelectPostos();
+    if (btn.dataset.tab === 'tab-reg') {
+      renderAssignmentPicker();
+      renderRegisterForm();
+      renderRegisterAlert();
+    }
   });
 });
 document.querySelectorAll('[data-tab]').forEach(a => {
@@ -1256,6 +1773,791 @@ function renderResumoEscala() {
   exportBtn.style.cursor = resumo.todosFechados ? 'pointer' : 'not-allowed';
 }
 
+function getDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function formatarTelefoneBR(value) {
+  const digits = getDigits(value);
+  if (!digits) return '';
+  const ddd = digits.slice(0, 2);
+  if (digits.length <= 10) {
+    const prefixo = digits.slice(2, 6);
+    const sufixo = digits.slice(6, 10);
+    return [ddd ? `(${ddd})` : '', prefixo, sufixo ? `-${sufixo}` : ''].join(' ').trim().replace(/\s-/, '-');
+  }
+  const prefixo = digits.slice(2, 7);
+  const sufixo = digits.slice(7, 11);
+  return [ddd ? `(${ddd})` : '', prefixo, sufixo ? `-${sufixo}` : ''].join(' ').trim().replace(/\s-/, '-');
+}
+
+function normalizarWhatsApp(value) {
+  const digits = getDigits(value);
+  if (!digits || digits.length < 10 || digits.length > 11) return null;
+  return { digits, formatted: formatarTelefoneBR(digits), waDigits: `55${digits}` };
+}
+
+function getSubAdminsDoSetor(categoriaId) {
+  if (!categoriaId) return [];
+  return DB.get('sub_admins', []).filter(sa => Array.isArray(sa.categorias) && sa.categorias.includes(categoriaId));
+}
+
+function getResponsavelSetor(categoriaId) {
+  const candidatos = getSubAdminsDoSetor(categoriaId)
+    .map(sa => ({ ...sa, whatsapp: normalizarWhatsApp(sa.telefone) }))
+    .filter(sa => sa.whatsapp);
+  return candidatos.length === 1 ? candidatos[0] : null;
+}
+
+function sanitizeFileSegment(value) {
+  return String(value || 'escala')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'escala';
+}
+
+function getLiveRequestsConfig() {
+  const live = getCongConfig().liveRequests || {};
+  return {
+    enabled: !!live.enabled,
+    invites: Array.isArray(live.invites) ? live.invites : [],
+  };
+}
+
+function saveLiveRequestsConfig(liveRequests) {
+  const cfg = getCongConfig();
+  cfg.liveRequests = {
+    enabled: !!liveRequests.enabled,
+    invites: Array.isArray(liveRequests.invites) ? liveRequests.invites : [],
+  };
+  saveCongConfig(cfg);
+}
+
+function slugifySimple(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function gerarSenhaAutomatica() {
+  return Math.random().toString(36).slice(2, 6).toUpperCase() + String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function gerarUsuarioLive(nome, invites) {
+  const base = `${slugifySimple(cong?.nome || 'congregacao')}-${slugifySimple(nome || 'participante')}`.replace(/-+/g, '-').slice(0, 24) || `live-${Date.now()}`;
+  let usuario = base;
+  let idx = 2;
+  const usados = new Set((invites || []).map(item => item.usuario));
+  while (usados.has(usuario)) {
+    usuario = `${base}-${idx}`.slice(0, 28);
+    idx += 1;
+  }
+  return usuario;
+}
+
+function getBaseAppUrl() {
+  return window.location.href.replace(/[^/]+$/, '');
+}
+
+function getLiveAccessLink(invite) {
+  return `${getBaseAppUrl()}login.html?type=live&user=${encodeURIComponent(invite.usuario)}&pass=${encodeURIComponent(invite.senha)}`;
+}
+
+function getLiveInviteStatus(invite) {
+  if (!invite.ativo) return { label: 'Desativado', badge: 'badge-inativo' };
+  if (invite.confirmadoEm) return { label: 'Confirmado', badge: 'badge-ativo' };
+  if (invite.enviadoEm) return { label: 'Enviado', badge: 'badge-standby' };
+  return { label: 'Pronto para enviar', badge: 'badge-standby' };
+}
+
+function escapeHtmlAttr(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function renderLiveSummary() {
+  const live = getLiveRequestsConfig();
+  const invites = live.invites;
+  const enviados = invites.filter(item => item.enviadoEm).length;
+  const confirmados = invites.filter(item => item.confirmadoEm).length;
+  const pendentes = invites.filter(item => item.ativo !== false && !item.confirmadoEm).length;
+  document.getElementById('live-summary-grid').innerHTML = `
+    <div class="live-stat"><strong>${live.enabled ? 'On' : 'Off'}</strong><span>Status do modulo</span></div>
+    <div class="live-stat"><strong>${invites.length}</strong><span>Acessos criados</span></div>
+    <div class="live-stat"><strong>${enviados}</strong><span>WhatsApps enviados</span></div>
+    <div class="live-stat"><strong>${confirmados}</strong><span>Confirmados</span></div>
+    <div class="live-stat"><strong>${pendentes}</strong><span>Pendentes</span></div>
+  `;
+  const badge = document.getElementById('badge-live-tab');
+  badge.textContent = pendentes || '';
+  badge.style.display = pendentes ? 'inline' : 'none';
+}
+
+function renderLiveMembroNote() {
+  const el = document.getElementById('live-request-note');
+  if (!el) return;
+  const live = getLiveRequestsConfig();
+  if (!live.enabled) {
+    el.innerHTML = '';
+    return;
+  }
+  const confirmados = live.invites.filter(item => item.confirmadoEm).length;
+  el.innerHTML = `<div class="live-note">Pedidos ao vivo estao ativos. Recomendado manter os nomes principais tambem nesta lista manual. Confirmacoes recebidas pelo link aparecem automaticamente na escala.${confirmados ? ` Ja existem ${confirmados} confirmacao(oes) recebidas.` : ''}</div>`;
+}
+
+function renderLiveMemberOptions() {
+  const select = document.getElementById('live-nome');
+  const note = document.getElementById('live-member-source-note');
+  const btn = document.getElementById('btn-live-add');
+  if (!select || !note || !btn) return;
+  const membros = getMembros();
+  const current = select.value;
+  select.innerHTML = '<option value="">Selecione um nome ja cadastrado</option>' +
+    membros.map(membro => `<option value="${membro.nome.replace(/"/g, '&quot;')}">${membro.nome} · ${membro.funcao}</option>`).join('');
+  if (membros.some(membro => membro.nome === current)) {
+    select.value = current;
+  }
+  btn.disabled = !membros.length;
+  note.className = `live-note${membros.length ? '' : ' warn'}`;
+  note.innerHTML = membros.length
+    ? 'Os nomes aqui sao puxados da aba <strong>Adicionar nomes</strong>. Assim o pedido ao vivo sempre usa pessoas ja cadastradas pela congregacao.'
+    : 'Adicione pelo menos um nome na aba <strong>Adicionar nomes</strong> antes de criar um acesso ao vivo.';
+}
+
+function renderLiveRequests() {
+  const live = getLiveRequestsConfig();
+  const toggle = document.getElementById('live-enabled-toggle');
+  if (toggle) toggle.checked = live.enabled;
+  renderLiveSummary();
+  renderLiveMembroNote();
+
+  const listEl = document.getElementById('live-requests-list');
+  if (!listEl) return;
+  if (!live.invites.length) {
+    listEl.innerHTML = '<div class="live-empty">Nenhum acesso criado ainda. Cadastre o nome e o WhatsApp para gerar o acesso automatico.</div>';
+    return;
+  }
+
+  const membros = getMembros();
+  listEl.innerHTML = live.invites.map(invite => {
+    const status = getLiveInviteStatus(invite);
+    const jaNaLista = membros.some(m => String(m.nome).toLowerCase() === String(invite.nome).toLowerCase());
+    const whatsapp = normalizarWhatsApp(invite.whatsapp);
+    const loginCount = Number(invite.loginCount || 0);
+    const jaEntrou = loginCount > 0;
+    const ultimoAcesso = invite.ultimoAcessoEm || '';
+    const escolha = invite.escolhaResumo || 'Sem escolha ainda';
+    const editando = window.liveEditingInviteId === invite.id;
+    const options = ['<option value="">Selecione um nome ja cadastrado</option>']
+      .concat(membros.map(membro => `<option value="${escapeHtmlAttr(membro.nome)}" ${membro.nome === invite.nome ? 'selected' : ''}>${membro.nome} · ${membro.funcao}</option>`))
+      .join('');
+    return `
+      <div class="live-item">
+        <div class="live-item-head">
+          <div class="live-person">
+            <span class="live-entry-dot ${jaEntrou ? 'online' : ''}" title="${jaEntrou ? 'Ja entrou no acesso' : 'Ainda nao entrou'}"></span>
+            <div class="live-name-block">
+              <div class="live-name-row">
+                <strong>${invite.nome}</strong>
+                <span class="live-presence">${jaEntrou ? `Entrou ${loginCount}x${ultimoAcesso ? ` · ultimo acesso ${ultimoAcesso}` : ''}` : 'Ainda nao entrou no acesso'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="live-actions">
+            <span class="badge ${status.badge}">${status.label}</span>
+            <button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarAcessoLiveWhatsApp('${invite.id}')" ${!live.enabled ? 'disabled' : ''}>📱 Enviar</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleLiveInviteEditor('${invite.id}')">✏️ Editar</button>
+            <button class="btn btn-outline btn-sm" onclick="alternarAtivoLiveInvite('${invite.id}')">${invite.ativo === false ? 'Reativar' : 'Pausar'}</button>
+            <button class="btn btn-outline btn-sm" style="border-color:#f5c2c7;color:#b42318;" onclick="removerLiveInvite('${invite.id}')">🗑 Excluir</button>
+          </div>
+        </div>
+        <div class="live-meta">
+          <span>📱 ${whatsapp?.formatted || invite.whatsapp || 'sem WhatsApp valido'}</span>
+          <span>👤 ${invite.usuario}</span>
+          <span class="mono">🔐 ${invite.senha}</span>
+          <span class="${jaNaLista ? 'success' : 'warn'}">${jaNaLista ? '✅ ja esta em Adicionar nomes' : 'ℹ️ recomendado cadastrar em Adicionar nomes'}</span>
+          <span>${invite.enviadoEm ? `📤 enviado ${invite.enviadoEm}` : '📤 ainda nao enviado'}</span>
+        </div>
+        <div class="live-inline-detail">
+          <span class="choice">📍 ${escolha}</span>
+          <span>🔗 envio direto para app do WhatsApp com fallback web</span>
+        </div>
+        ${editando ? `
+          <div class="live-edit-panel">
+            <div class="live-edit-grid">
+              <div class="form-group" style="margin:0;">
+                <label>Nome</label>
+                <select id="edit-live-nome-${invite.id}">${options}</select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>WhatsApp</label>
+                <input id="edit-live-whatsapp-${invite.id}" type="text" value="${escapeHtmlAttr(invite.whatsapp)}" placeholder="Ex: 13 99999-8888" />
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Senha</label>
+                <input id="edit-live-senha-${invite.id}" type="text" value="${escapeHtmlAttr(invite.senha)}" maxlength="12" />
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="gerarNovaSenhaLive('${invite.id}')">🔄 Nova senha</button>
+            </div>
+            <div class="live-row-actions">
+              <button class="btn btn-primary btn-sm" onclick="salvarLiveInviteEdicao('${invite.id}')">Salvar edicao</button>
+              <button class="btn btn-outline btn-sm" onclick="toggleLiveInviteEditor('')">Cancelar</button>
+            </div>
+            <small>O usuario continua o mesmo. Aqui voce ajusta nome, WhatsApp e senha quando precisar.</small>
+            <div class="live-inline-detail">
+              <span class="mono">🔗 ${getLiveAccessLink(invite)}</span>
+            </div>
+          </div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+window.toggleLiveInviteEditor = function(inviteId) {
+  window.liveEditingInviteId = inviteId || '';
+  renderLiveRequests();
+};
+
+window.alternarAtivoLiveInvite = function(inviteId) {
+  const live = getLiveRequestsConfig();
+  const invite = live.invites.find(item => item.id === inviteId);
+  if (!invite) return;
+  invite.ativo = invite.ativo === false ? true : false;
+  saveLiveRequestsConfig(live);
+  renderLiveRequests();
+  showToast(invite.ativo === false ? 'Acesso ao vivo desativado.' : 'Acesso ao vivo reativado.', 'success');
+};
+
+function openWhatsAppLink(url, fallbackUrl) {
+  let fallbackTimer = null;
+  const cancelFallback = () => {
+    if (fallbackTimer) clearTimeout(fallbackTimer);
+    fallbackTimer = null;
+    window.removeEventListener('blur', cancelFallback);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+  const onVisibility = () => {
+    if (document.hidden) cancelFallback();
+  };
+
+  fallbackTimer = setTimeout(() => {
+    cancelFallback();
+    window.open(fallbackUrl, '_blank', 'noopener');
+  }, 900);
+
+  window.addEventListener('blur', cancelFallback, { once: true });
+  document.addEventListener('visibilitychange', onVisibility);
+
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+window.enviarAcessoLiveWhatsApp = function(inviteId) {
+  const live = getLiveRequestsConfig();
+  if (!live.enabled) { showToast('Ative primeiro os pedidos ao vivo desta congregacao.', 'warning'); return; }
+  const invite = live.invites.find(item => item.id === inviteId);
+  if (!invite) return;
+  const whatsapp = normalizarWhatsApp(invite.whatsapp);
+  if (!whatsapp) { showToast('WhatsApp invalido para este acesso.', 'warning'); return; }
+  const link = getLiveAccessLink(invite);
+  const mensagem = [
+    `Ola, ${invite.nome}.`,
+    '',
+    `Voce recebeu um acesso para escolher um horario disponivel da congregacao ${cong?.nome || ''}.`,
+    '',
+    `Site: ${link}`,
+    `Login: ${invite.usuario}`,
+    `Senha: ${invite.senha}`,
+    '',
+    'Ao entrar, escolha o local e o horario com vaga. Sua resposta vai direto para a escala da congregacao.',
+  ].join('\n');
+  invite.enviadoEm = new Date().toLocaleString('pt-BR');
+  saveLiveRequestsConfig(live);
+  renderLiveRequests();
+  const encoded = encodeURIComponent(mensagem);
+  openWhatsAppLink(`whatsapp://send?phone=${whatsapp.waDigits}&text=${encoded}`, `https://wa.me/${whatsapp.waDigits}?text=${encoded}`);
+  showToast('Tentando abrir o WhatsApp instalado. Se ele nao responder, o WhatsApp Web abre como fallback.', 'success');
+};
+
+window.gerarNovaSenhaLive = function(inviteId) {
+  const input = document.getElementById(`edit-live-senha-${inviteId}`);
+  if (!input) return;
+  input.value = gerarSenhaAutomatica();
+};
+
+window.salvarLiveInviteEdicao = function(inviteId) {
+  const live = getLiveRequestsConfig();
+  const invite = live.invites.find(item => item.id === inviteId);
+  if (!invite) return;
+  const nome = (document.getElementById(`edit-live-nome-${inviteId}`)?.value || '').trim();
+  const whatsapp = (document.getElementById(`edit-live-whatsapp-${inviteId}`)?.value || '').trim();
+  const senha = (document.getElementById(`edit-live-senha-${inviteId}`)?.value || '').trim();
+  if (!nome) { showToast('Selecione um nome valido.', 'warning'); return; }
+  if (!normalizarWhatsApp(whatsapp)) { showToast('Informe um WhatsApp valido.', 'warning'); return; }
+  if (!senha || senha.length < 6) { showToast('Informe uma senha com pelo menos 6 caracteres.', 'warning'); return; }
+  if (live.invites.some(item => item.id !== inviteId && item.ativo !== false && item.nome.toLowerCase() === nome.toLowerCase())) {
+    showToast('Ja existe outro acesso ativo com esse nome.', 'warning'); return;
+  }
+  invite.nome = nome;
+  invite.whatsapp = whatsapp;
+  invite.senha = senha;
+  saveLiveRequestsConfig(live);
+  window.liveEditingInviteId = '';
+  renderLiveRequests();
+  showToast('Acesso ao vivo atualizado.', 'success');
+};
+
+window.removerLiveInvite = function(inviteId) {
+  const live = getLiveRequestsConfig();
+  const invite = live.invites.find(item => item.id === inviteId);
+  if (!invite) return;
+  if (!confirm(`Excluir o acesso de ${invite.nome}? Se ja houver escolha vinculada, ela sera removida da escala.`)) return;
+  const cfg = getCongConfig();
+  Object.values(cfg.turnos || {}).forEach(slots => {
+    Object.keys(slots || {}).forEach(slotKey => {
+      slots[slotKey] = (Array.isArray(slots[slotKey]) ? slots[slotKey] : []).filter(pessoa => pessoa?.liveInviteId !== inviteId);
+    });
+  });
+  cfg.liveRequests = {
+    enabled: !!live.enabled,
+    invites: live.invites.filter(item => item.id !== inviteId),
+  };
+  saveCongConfig(cfg);
+  window.liveEditingInviteId = '';
+  renderLiveRequests();
+  showToast('Acesso ao vivo excluido.', 'success');
+};
+
+function getEscalaEntries(filterFn = null) {
+  const cfg = getCongConfig();
+  const turnos = cfg.turnos || {};
+  return desigs.map(desig => {
+    const posto = todosPos.find(p => p.id === desig.postoId);
+    if (!posto) return null;
+    const categoria = getCategoriaById(posto.categoriaId);
+    const baseEntry = { desig, posto, categoria };
+    if (filterFn && !filterFn(baseEntry)) return null;
+    const agendaCfg = getAgendaConfig(desig.id);
+    const duracao = agendaCfg.duracaoTurno;
+    const maxSlot = agendaCfg.maxPorTurno;
+    const slots = gerarSlots(desig.inicio, desig.fim, duracao).map(slot => {
+      const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+      return {
+        ...slot,
+        pessoas,
+        ocupacao: `${pessoas.length}/${maxSlot}`,
+      };
+    });
+    const totalAlocado = slots.reduce((sum, slot) => sum + slot.pessoas.length, 0);
+    const totalCapacidade = slots.length * maxSlot;
+    return {
+      ...baseEntry,
+      categoriaNome: categoria?.nome || 'Sem setor',
+      dataFmt: desig.data
+        ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+        : '—',
+      duracao,
+      maxSlot,
+      slots,
+      totalAlocado,
+      totalCapacidade,
+      completo: totalCapacidade > 0 && totalAlocado === totalCapacidade,
+    };
+  }).filter(Boolean);
+}
+
+function getResumoEntries(entries) {
+  const totalSlots = entries.reduce((sum, entry) => sum + entry.slots.length, 0);
+  const totalPessoas = entries.reduce((sum, entry) => sum + entry.totalAlocado, 0);
+  const totalCapacidade = entries.reduce((sum, entry) => sum + entry.totalCapacidade, 0);
+  return {
+    totalSlots,
+    totalPessoas,
+    totalCapacidade,
+    faltando: Math.max(0, totalCapacidade - totalPessoas),
+    todosFechados: !!entries.length && entries.every(entry => entry.completo),
+  };
+}
+
+function getSetorGroups() {
+  const groups = new Map();
+  getEscalaEntries().forEach(entry => {
+    const key = entry.categoria?.id ? `cat-${entry.categoria.id}` : `posto-${entry.posto.id}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        categoriaId: entry.categoria?.id || null,
+        nome: entry.categoria?.nome || entry.posto.nome,
+        entries: [],
+      });
+    }
+    groups.get(key).entries.push(entry);
+  });
+  return Array.from(groups.values()).map(group => ({
+    ...group,
+    resumo: getResumoEntries(group.entries),
+    responsavel: group.categoriaId ? getResponsavelSetor(group.categoriaId) : null,
+  }));
+}
+
+const PDF_LOCATION_CACHE = new Map();
+const PDF_MAP_IMAGE_CACHE = new Map();
+
+async function fetchJsonSafely(url, options = {}) {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+async function fetchImageDataUrl(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
+async function getStaticMapImageForPosto(posto) {
+  const cacheKey = String(posto?.id || posto?.nome || 'sem-posto');
+  if (PDF_MAP_IMAGE_CACHE.has(cacheKey)) return PDF_MAP_IMAGE_CACHE.get(cacheKey);
+  if (!(typeof posto?.lat === 'number' && typeof posto?.lng === 'number')) {
+    PDF_MAP_IMAGE_CACHE.set(cacheKey, null);
+    return null;
+  }
+
+  const url = `https://static-maps.yandex.ru/1.x/?lang=pt-BR&ll=${posto.lng},${posto.lat}&z=16&l=map&size=650,260&pt=${posto.lng},${posto.lat},pm2rdm`;
+  const imageDataUrl = await fetchImageDataUrl(url);
+  PDF_MAP_IMAGE_CACHE.set(cacheKey, imageDataUrl);
+  return imageDataUrl;
+}
+
+function parseLocalReferences(local) {
+  const raw = String(local || '').trim();
+  if (!raw) return { principal: 'Local não informado', referencias: [] };
+  const partes = raw
+    .split(/(?:\s+-\s+|;|,|\s+\/\s+|\s+pr[oó]ximo a\s+|\s+perto de\s+)/i)
+    .map(part => part.trim())
+    .filter(Boolean);
+  return {
+    principal: partes[0] || raw,
+    referencias: partes.slice(1, 3),
+  };
+}
+
+async function getNearbyRoadNames(lat, lng, primaryRoad) {
+  const query = `[out:json][timeout:8];way(around:120,${lat},${lng})["highway"]["name"];out tags 20;`;
+  const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+  const data = await fetchJsonSafely(url);
+  if (!data?.elements?.length) return [];
+  const primaryNorm = String(primaryRoad || '').toLowerCase();
+  return [...new Set(
+    data.elements
+      .map(element => element.tags?.name)
+      .filter(Boolean)
+      .filter(name => name.toLowerCase() !== primaryNorm)
+  )].slice(0, 2);
+}
+
+async function getLocationContextForPosto(posto) {
+  const cacheKey = String(posto?.id || posto?.nome || 'sem-posto');
+  if (PDF_LOCATION_CACHE.has(cacheKey)) return PDF_LOCATION_CACHE.get(cacheKey);
+
+  const parsed = parseLocalReferences(posto?.local);
+  const hasCoords = typeof posto?.lat === 'number' && typeof posto?.lng === 'number';
+  const context = {
+    principal: parsed.principal,
+    referencias: [...parsed.referencias],
+    bairroCidade: '',
+    coordenadas: hasCoords ? `${posto.lat.toFixed(6)}, ${posto.lng.toFixed(6)}` : '',
+    mapaUrl: hasCoords ? `https://www.google.com/maps?q=${posto.lat},${posto.lng}` : '',
+  };
+
+  if (hasCoords) {
+    const reverse = await fetchJsonSafely(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${posto.lat}&lon=${posto.lng}&zoom=18&addressdetails=1`);
+    const address = reverse?.address || {};
+    context.principal = address.road || address.pedestrian || address.footway || address.cycleway || context.principal;
+    context.bairroCidade = [address.suburb || address.neighbourhood || address.city_district, address.city || address.town || address.village]
+      .filter(Boolean)
+      .join(' · ');
+    const nearbyRoads = await getNearbyRoadNames(posto.lat, posto.lng, context.principal);
+    context.referencias = [...new Set([...context.referencias, ...nearbyRoads])].slice(0, 3);
+  }
+
+  PDF_LOCATION_CACHE.set(cacheKey, context);
+  return context;
+}
+
+function getPdfOrientacoes(entry) {
+  const orientacoes = [
+    'Apresente-se com 30 minutos de antecedência para organizar o carrinho e a troca de horário.',
+    'Utilize vestimenta discreta, adequada ao clima, e calçado confortável para permanência no posto.',
+    'Mantenha postura cordial e atenção constante para não obstruir a pista, a calçada ou o fluxo do público.',
+    'Priorize a segurança do grupo, do carrinho e dos pertences; diante de qualquer risco, recue e informe imediatamente o responsável.',
+    'Registre cada distribuição na aba "Registrar" e comunique prontamente qualquer imprevisto.',
+  ];
+  if (entry.posto?.responsavel) {
+    orientacoes.push(`Em caso de dúvida, alinhe qualquer mudança com ${entry.posto.responsavel} ou com o coordenador do setor.`);
+  }
+  return orientacoes;
+}
+
+async function buildPdfPayload(mode, entries, options = {}) {
+  const evento = DB.get('evento_config', { nome:'Corrida Internacional de Praia Grande' });
+  const membros = getMembros();
+  const resumo = getResumoEntries(entries);
+  const dataArquivo = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+  const titulo = mode === 'posto'
+    ? `Escala individual - ${options.postoNome}`
+    : mode === 'setor'
+      ? `Escala do setor - ${options.setorNome}`
+      : `Escala geral - ${cong?.nome || 'congregacao'}`;
+  const subtitulo = mode === 'geral'
+    ? `${cong?.nome || ''}`
+    : `${cong?.nome || ''} · ${options.setorNome || 'Sem setor'}`;
+  const filename = mode === 'posto'
+    ? `escala-posto-${sanitizeFileSegment(options.postoNome)}-${dataArquivo}.pdf`
+    : mode === 'setor'
+      ? `escala-setor-${sanitizeFileSegment(options.setorNome)}-${dataArquivo}.pdf`
+      : `escala-geral-${sanitizeFileSegment(cong?.nome)}-${dataArquivo}.pdf`;
+  const enrichedEntries = await Promise.all(entries.map(async entry => ({
+    ...entry,
+    locationContext: await getLocationContextForPosto(entry.posto),
+    staticMapImage: await getStaticMapImageForPosto(entry.posto),
+    orientacoesPdf: getPdfOrientacoes(entry),
+  })));
+  return { evento, membros, resumo, titulo, subtitulo, filename, entries: enrichedEntries };
+}
+
+function createPdfDoc(payload) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const resumoRows = [];
+  let y = 16;
+
+  const ensureSpace = (needed = 20) => {
+    if (y + needed > 282) {
+      doc.addPage();
+      y = 16;
+    }
+  };
+
+  const drawSectionTitle = (title) => {
+    ensureSpace(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(0, 87, 168);
+    doc.text(title, 14, y);
+    y += 5;
+    doc.setTextColor(33, 37, 41);
+  };
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(String(payload.evento.nome || 'Corrida Internacional de Praia Grande'), 14, y);
+  y += 8;
+  doc.setFontSize(13);
+  doc.text(payload.titulo, 14, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(payload.subtitulo, 14, y);
+  y += 5;
+  doc.text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 14, y);
+  y += 8;
+
+  payload.entries.forEach((entry, index) => {
+    if (index > 0) y += 2;
+    ensureSpace(24);
+    doc.setFillColor(0, 87, 168);
+    doc.rect(14, y, 182, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`Posto: ${entry.posto.nome}`, 16, y + 5.5);
+    y += 12;
+    doc.setTextColor(33, 37, 41);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    const locationContext = entry.locationContext || {};
+    [
+      `Setor: ${entry.categoriaNome}`,
+      `Data: ${entry.dataFmt}`,
+      `Horario base: ${entry.desig.inicio}–${entry.desig.fim} · ${entry.duracao}h/turno`,
+      entry.posto.responsavel ? `Responsavel do posto: ${entry.posto.responsavel}` : '',
+    ].filter(Boolean).forEach(line => {
+      const split = doc.splitTextToSize(line, 180);
+      doc.text(split, 14, y);
+      y += split.length * 4;
+    });
+
+    drawSectionTitle('Local do posto');
+    [
+      `Endereco base: ${locationContext.principal || entry.posto.local || 'Local não informado'}`,
+      locationContext.bairroCidade ? `Regiao: ${locationContext.bairroCidade}` : '',
+      locationContext.referencias?.length ? `Referencia proxima: ${locationContext.referencias.join(' · ')}` : '',
+    ].filter(Boolean).forEach(line => {
+      ensureSpace(8);
+      const split = doc.splitTextToSize(line, 180);
+      doc.text(split, 14, y);
+      y += split.length * 4;
+    });
+    if (entry.staticMapImage) {
+      ensureSpace(42);
+      doc.setDrawColor(210, 223, 241);
+      doc.roundedRect(14, y, 182, 38, 2, 2, 'S');
+      doc.addImage(entry.staticMapImage, 'PNG', 15.5, y + 1.5, 179, 35);
+      y += 41;
+    }
+    if (locationContext.mapaUrl) {
+      ensureSpace(14);
+      doc.setFillColor(237, 244, 251);
+      doc.setDrawColor(0, 87, 168);
+      doc.roundedRect(14, y - 1, 74, 9, 2, 2, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 87, 168);
+      doc.textWithLink('Abrir rota no Google Maps', 18, y + 4.5, { url: locationContext.mapaUrl });
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(33, 37, 41);
+      y += 12;
+    }
+
+    drawSectionTitle('Orientacoes para este posto');
+    entry.orientacoesPdf.forEach((orientacao, orientacaoIndex) => {
+      ensureSpace(10);
+      const prefixo = `${orientacaoIndex + 1}. `;
+      const split = doc.splitTextToSize(prefixo + orientacao, 178);
+      doc.text(split, 16, y);
+      y += split.length * 4.2;
+    });
+    y += 2;
+
+    drawSectionTitle('Escala por horario');
+    doc.autoTable({
+      startY: y,
+      margin: { left: 14, right: 14 },
+      head: [['Horario', 'Publicadores', 'Ocupacao']],
+      body: entry.slots.map(slot => ([
+        `${slot.inicio}–${slot.fim}`,
+        slot.pessoas.length
+          ? slot.pessoas.map(p => p.nome + (p.origem === 'ajuda' && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')
+          : 'vaga',
+        slot.ocupacao,
+      ])),
+      styles: { fontSize: 8.8, cellPadding: 2 },
+      headStyles: { fillColor: [0, 87, 168] },
+      theme: 'grid',
+    });
+    y = doc.lastAutoTable.finalY + 6;
+    resumoRows.push([
+      entry.posto.nome,
+      entry.categoriaNome,
+      entry.dataFmt,
+      String(entry.slots.length),
+      `${entry.totalAlocado}/${entry.totalCapacidade}`,
+    ]);
+  });
+
+  ensureSpace(24);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(33, 37, 41);
+  doc.text('Resumo', 14, y);
+  y += 4;
+  doc.autoTable({
+    startY: y,
+    margin: { left: 14, right: 14 },
+    head: [['Posto', 'Setor', 'Data', 'Horarios', 'Preenchimento']],
+    body: resumoRows.length ? resumoRows : [['Nenhum posto', '-', '-', '0', '0/0']],
+    styles: { fontSize: 8.5, cellPadding: 2 },
+    headStyles: { fillColor: [0, 87, 168] },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.text(`Publicadores cadastrados: ${payload.membros.length}`, 14, y);
+  y += 4;
+  doc.text(`Horarios: ${payload.resumo.totalSlots} · Escalas preenchidas: ${payload.resumo.totalPessoas} · Vagas restantes: ${payload.resumo.faltando}`, 14, y);
+  y += 8;
+  doc.setFontSize(8);
+  doc.text('Documento interno — Corrida Internacional de Praia Grande', 14, y);
+  return doc;
+}
+
+function downloadPdfDoc(doc, filename) {
+  doc.save(filename);
+}
+
+function abrirWhatsAppComPdf(responsavel, payload) {
+  if (!responsavel?.whatsapp) {
+    showToast('Nao ha responsavel unico com WhatsApp valido para este setor.', 'warning');
+    return;
+  }
+  const doc = createPdfDoc(payload);
+  downloadPdfDoc(doc, payload.filename);
+  const mensagem = [
+    `Ola, ${responsavel.nome}.`,
+    '',
+    `A escala da congregacao ${cong?.nome || ''} para ${payload.titulo.toLowerCase()} esta pronta.`,
+    'O PDF foi baixado neste aparelho para anexar nesta conversa.',
+  ].join('\n');
+  window.open(`https://wa.me/${responsavel.whatsapp.waDigits}?text=${encodeURIComponent(mensagem)}`, '_blank', 'noopener');
+  showToast('WhatsApp aberto e PDF baixado para anexar.', 'success');
+}
+
+function renderEscalaSectorActions() {
+  const el = document.getElementById('escala-sector-actions');
+  const groups = getSetorGroups();
+  if (!groups.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = groups.map(group => {
+    const disabled = group.resumo.todosFechados ? '' : 'disabled';
+    const status = group.resumo.todosFechados
+      ? '✅ setor fechado'
+      : `⏳ faltam ${group.resumo.faltando} vaga(s)`;
+    const responsavel = group.responsavel
+      ? `👤 ${group.responsavel.nome} · ${group.responsavel.whatsapp.formatted}`
+      : 'WhatsApp liberado somente com 1 responsavel do setor';
+    return `
+      <div class="escala-sector-card">
+        <div>
+          <strong>${group.nome}</strong>
+          <div class="escala-sector-meta">${group.entries.length} posto(s) · ${group.resumo.totalSlots} horario(s) · ${status}</div>
+          <div class="escala-sector-meta">${responsavel}</div>
+        </div>
+        <div class="escala-sector-buttons">
+          <button class="btn btn-outline btn-sm" onclick="exportarPdfSetor(${group.categoriaId === null ? 'null' : group.categoriaId})" ${disabled}>📄 PDF geral do setor</button>
+          ${group.categoriaId && group.responsavel ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${group.categoriaId})" ${disabled}>📱 WhatsApp do setor</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
 function escaparJs(value) {
   return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
@@ -1349,6 +2651,14 @@ function renderPostosTurnos() {
         </div>`;
     }).join('');
 
+    const entry = getEscalaEntries(item => String(item.desig.id) === String(desig.id))[0];
+    const responsavelSetor = posto.categoriaId ? getResponsavelSetor(posto.categoriaId) : null;
+    const actionsHtml = entry ? `
+      <div class="carrinho-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportarPdfPosto('${escaparJs(desig.id)}')" ${entry.completo ? '' : 'disabled'}>📄 PDF individual</button>
+        ${posto.categoriaId && responsavelSetor ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${posto.categoriaId})" ${entry.completo ? '' : 'disabled'}>📱 WhatsApp do setor</button>` : ''}
+      </div>` : '';
+
     return `
       <div class="carrinho-card">
         <div class="carrinho-header">
@@ -1363,11 +2673,13 @@ function renderPostosTurnos() {
             ⏱️ ${desig.inicio}–${desig.fim}<br>máx. ${maxSlot} por horário
           </div>
         </div>
+        ${actionsHtml}
         <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
       </div>`;
   }).join('');
   renderResumoEscala();
   renderAvisosAjuda();
+  renderEscalaSectorActions();
 }
 
 window.toggleAjudaHorario = function(desigId, slotKey) {
@@ -1481,6 +2793,8 @@ document.getElementById('btn-add-membro').addEventListener('click', () => {
   document.getElementById('membro-pode-repetir').checked = false;
   renderMembros();
   renderPostosTurnos();
+  renderLiveRequests();
+  renderLiveMemberOptions();
   showToast(`${nome} adicionado(a) como ${funcao}.`, 'success');
 });
 
@@ -1497,7 +2811,49 @@ window.removerMembro = function(nome) {
   saveCongConfig(cfg);
   renderMembros();
   renderPostosTurnos();
+  renderLiveRequests();
+  renderLiveMemberOptions();
 };
+
+document.getElementById('live-enabled-toggle').addEventListener('change', e => {
+  const live = getLiveRequestsConfig();
+  live.enabled = e.target.checked;
+  saveLiveRequestsConfig(live);
+  renderLiveRequests();
+  showToast(live.enabled ? 'Pedidos ao vivo ativados.' : 'Pedidos ao vivo desativados.', 'success');
+});
+
+document.getElementById('btn-live-add').addEventListener('click', () => {
+  const nome = document.getElementById('live-nome').value.trim();
+  const whatsapp = document.getElementById('live-whatsapp').value.trim();
+  if (!nome) { showToast('Informe o nome para criar o acesso.', 'warning'); return; }
+  if (!normalizarWhatsApp(whatsapp)) { showToast('Informe um WhatsApp valido.', 'warning'); return; }
+  const live = getLiveRequestsConfig();
+  if (live.invites.some(item => item.nome.toLowerCase() === nome.toLowerCase() && item.ativo !== false)) {
+    showToast('Ja existe um acesso ativo com esse nome.', 'warning'); return;
+  }
+  const invite = {
+    id: `live_${Date.now()}`,
+    nome,
+    whatsapp,
+    usuario: gerarUsuarioLive(nome, live.invites),
+    senha: gerarSenhaAutomatica(),
+    ativo: true,
+    criadoEm: new Date().toLocaleString('pt-BR'),
+    enviadoEm: '',
+    confirmadoEm: '',
+    escolhaResumo: '',
+    loginCount: 0,
+    ultimoAcessoEm: '',
+  };
+  live.invites.unshift(invite);
+  saveLiveRequestsConfig(live);
+  document.getElementById('live-nome').value = '';
+  document.getElementById('live-whatsapp').value = '';
+  renderLiveRequests();
+  renderLiveMemberOptions();
+  showToast('Acesso ao vivo criado. Agora voce pode enviar pelo WhatsApp.', 'success');
+});
 
 document.getElementById('btn-salvar-escala').addEventListener('click', () => {
   const cfg = getCongConfig();
@@ -1506,99 +2862,78 @@ document.getElementById('btn-salvar-escala').addEventListener('click', () => {
   showToast('Escala salva! ✅', 'success');
 });
 
-document.getElementById('btn-export-pdf').addEventListener('click', exportarEscalaPDF);
+document.getElementById('btn-export-pdf').addEventListener('click', () => {
+  exportarEscalaPDF();
+});
 
-function exportarEscalaPDF() {
-  const resumoEscala = getResumoEscala();
+window.exportarPdfPosto = async function(desigId) {
+  const entries = getEscalaEntries(entry => String(entry.desig.id) === String(desigId));
+  if (!entries.length) return;
+  if (!entries[0].completo) {
+    showToast('Feche este posto antes de baixar o PDF individual.', 'warning');
+    return;
+  }
+  const entry = entries[0];
+  showToast('Montando PDF individual com orientacoes e localizacao...', 'info');
+  const payload = await buildPdfPayload('posto', entries, { postoNome: entry.posto.nome, setorNome: entry.categoriaNome });
+  downloadPdfDoc(createPdfDoc(payload), payload.filename);
+};
+
+window.exportarPdfSetor = async function(categoriaId) {
+  const entries = categoriaId === null
+    ? getEscalaEntries(entry => !entry.posto.categoriaId)
+    : getEscalaEntries(entry => String(entry.posto.categoriaId) === String(categoriaId));
+  if (!entries.length) return;
+  const resumo = getResumoEntries(entries);
+  if (!resumo.todosFechados) {
+    showToast('Feche todos os postos deste setor antes de baixar o PDF.', 'warning');
+    return;
+  }
+  showToast('Montando PDF do setor com orientacoes e localizacao...', 'info');
+  const payload = await buildPdfPayload('setor', entries, { setorNome: entries[0].categoriaNome });
+  downloadPdfDoc(createPdfDoc(payload), payload.filename);
+};
+
+window.enviarSetorWhatsApp = async function(categoriaId) {
+  const entries = getEscalaEntries(entry => String(entry.posto.categoriaId) === String(categoriaId));
+  if (!entries.length) return;
+  const resumo = getResumoEntries(entries);
+  if (!resumo.todosFechados) {
+    showToast('Feche todos os postos deste setor antes de abrir o WhatsApp.', 'warning');
+    return;
+  }
+  const responsavel = getResponsavelSetor(categoriaId);
+  if (!responsavel) {
+    showToast('Cadastre um unico responsavel de setor com WhatsApp valido para liberar este envio.', 'warning');
+    return;
+  }
+  showToast('Preparando PDF do setor para envio no WhatsApp...', 'info');
+  const payload = await buildPdfPayload('setor', entries, { setorNome: entries[0].categoriaNome });
+  abrirWhatsAppComPdf(responsavel, payload);
+};
+
+async function exportarEscalaPDF() {
+  const entries = getEscalaEntries();
+  const resumoEscala = getResumoEntries(entries);
   if (!resumoEscala.todosFechados) {
     showToast('Feche todos os horários antes de baixar o PDF.', 'warning');
     return;
   }
-  const evento  = DB.get('evento_config', {nome:'Corrida Internacional de Praia Grande'});
-  const cfg     = getCongConfig();
-  const turnos  = cfg.turnos  || {};
-  const membros = cfg.membros || [];
-  const mapHtml = document.getElementById('mini-map')?.innerHTML || '';
-  const resumoLinhas = [];
-
-  const desigHtml = desigs.map(desig => {
-    const posto   = todosPos.find(p => p.id === desig.postoId);
-    if (!posto) return '';
-    const agendaCfg = getAgendaConfig(desig.id);
-    const duracao  = agendaCfg.duracaoTurno;
-    const maxSlot  = agendaCfg.maxPorTurno;
-    const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
-    const assigned = turnos[desig.id] || {};
-    const dataFmt  = desig.data
-      ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', {weekday:'long',day:'numeric',month:'long',year:'numeric'})
-      : '—';
-
-    const rows = slots.map(slot => {
-      const people = getPessoasDoSlot(turnos, desig.id, slot.inicio);
-      return `<tr>
-        <td style="font-weight:600;text-align:center;white-space:nowrap;">${slot.inicio}–${slot.fim}</td>
-        <td>${people.length ? people.map(p => p.nome + (p.origem === 'ajuda' && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ') : '<em style="color:#999;">vaga</em>'}</td>
-        <td style="text-align:center;">${people.length}/${maxSlot}</td>
-      </tr>`;
-    }).join('');
-
-    const totalAlocado = slots.reduce((sum, slot) => sum + getPessoasDoSlot(turnos, desig.id, slot.inicio).length, 0);
-    const totalCapacidade = slots.length * maxSlot;
-    resumoLinhas.push(`
-      <tr>
-        <td><strong>${posto.nome}</strong><br><span style="color:#666;font-size:.78rem;">${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}</span></td>
-        <td>${posto.local || 'Local não informado'}</td>
-        <td>${dataFmt}</td>
-        <td style="text-align:center;">${slots.length}</td>
-        <td style="text-align:center;">${totalAlocado}/${totalCapacidade}</td>
-      </tr>`);
-
-    return `
-      <div style="margin-bottom:1.5rem;">
-        <h3 style="background:#003D7A;color:white;padding:.6rem 1rem;border-radius:4px 4px 0 0;margin:0;">
-          🪧 ${posto.nome} &nbsp;|&nbsp; ${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}
-        </h3>
-        <p style="background:#eef4fb;padding:.5rem 1rem;margin:0;font-size:.88rem;border:1px solid #cde0f5;border-top:none;">
-          📍 ${posto.local} &nbsp;|&nbsp; 📅 ${dataFmt} &nbsp;|&nbsp; ⏱️ ${desig.inicio}–${desig.fim} &nbsp;|&nbsp; ${duracao}h/turno
-        </p>
-        <table style="border-top:none;"><thead><tr><th>Horário</th><th>Publicadores</th><th>Ocupação</th></tr></thead><tbody>${rows}</tbody></table>
-      </div>`;
-  }).join('');
-
-  const resumoGeralHtml = `
-    <div style="margin-top:1.8rem;">
-      <h3 style="color:#003D7A;margin-bottom:.6rem;">📌 Resumo geral</h3>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;">
-        <span style="background:#eef4fb;color:#003D7A;border:1px solid #cde0f5;border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">👥 ${membros.length} publicador(es) cadastrados</span>
-        <span style="background:#eef4fb;color:#003D7A;border:1px solid #cde0f5;border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">🗓️ ${resumoEscala.totalSlots} horário(s)</span>
-        <span style="background:#eef4fb;color:#003D7A;border:1px solid #cde0f5;border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">✅ ${resumoEscala.totalPessoas} escala(s) preenchidas</span>
-        <span style="background:${resumoEscala.faltando ? '#fff4de' : '#edf8ef'};color:${resumoEscala.faltando ? '#7b4f00' : '#1d6b33'};border:1px solid ${resumoEscala.faltando ? '#f1d48b' : '#b9e1c2'};border-radius:999px;padding:.28rem .75rem;font-size:.82rem;font-weight:700;">${resumoEscala.faltando ? `⏳ ${resumoEscala.faltando} vaga(s) restantes` : '✅ escala completa'}</span>
-      </div>
-      <table>
-        <thead><tr><th>Posto</th><th>Local</th><th>Data</th><th>Horários</th><th>Preenchimento</th></tr></thead>
-        <tbody>${resumoLinhas.join('') || '<tr><td colspan="5">Nenhum posto na escala.</td></tr>'}</tbody>
-      </table>
-    </div>`;
-
-  document.getElementById('print-content').innerHTML = `
-    <h1 style="color:#003D7A;">🏃 ${evento.nome}</h1>
-    <h2 style="color:#0057A8;">📋 Escala de Turnos — ${cong?.nome || ''}</h2>
-    <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
-    ${membros.length ? `<p><strong>Publicadores:</strong> ${membros.map(getLabelMembro).join(' · ')}</p>` : ''}
-    ${mapHtml ? `<div style="margin:1rem 0 1.2rem;"><h3 style="color:#003D7A;">🗺️ Mapa do posto</h3><div style="height:260px;border:1px solid #d6e5f7;border-radius:10px;overflow:hidden;">${mapHtml}</div></div>` : ''}
-    <hr/>
-    ${desigHtml || '<p>Nenhuma designação.</p>'}
-    ${resumoGeralHtml}
-    <p style="margin-top:2rem;color:#999;font-size:.82rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;
-  window.print();
+  showToast('Montando PDF geral com orientacoes e localizacao...', 'info');
+  const payload = await buildPdfPayload('geral', entries);
+  downloadPdfDoc(createPdfDoc(payload), payload.filename);
 }
 
 renderMembros();
 renderPostosTurnos();
+renderLiveRequests();
+renderLiveMemberOptions();
 
 window.addEventListener('pageshow', () => {
   renderMembros();
   renderPostosTurnos();
+  renderLiveRequests();
+  renderLiveMemberOptions();
   renderPubsSalvas();
   renderHistorico();
   renderResultado();
@@ -1609,6 +2944,8 @@ window.addEventListener('db-sync', e => {
   if (!['cong_config', 'pedidos_ajuda_escala', 'distribuicoes'].includes(key)) return;
   renderMembros();
   renderPostosTurnos();
+  renderLiveRequests();
+  renderLiveMemberOptions();
   if (key === 'cong_config') renderPubsSalvas();
   if (key === 'distribuicoes') {
     renderHistorico();
@@ -1619,148 +2956,382 @@ window.addEventListener('db-sync', e => {
 // ══════════════════════════════════════════
 //  ABA 4 — REGISTRAR
 // ══════════════════════════════════════════
-const PUB_ICONS = {'A Sentinela':'📰','Despertai!':'📗','Bíblia / NWT':'📖','Folheto':'📄','Livro':'📘','Site (card)':'🌐'};
-const TIPOS = [
-  {id:'publicacao',     icon:'📖',label:'Publicação'},
-  {id:'conversa',       icon:'💬',label:'Conversa'},
-  {id:'qrcode',         icon:'📱',label:'QR Code'},
-  {id:'contato_especial',icon:'⭐',label:'Especial'},
-];
-let selPub  = 'A Sentinela';
-let selTipo = 'publicacao';
-let qty     = 1;
+let regAssignmentId = '';
+let regExperienceImage = null;
 
-function renderPubSel() {
-  document.getElementById('pub-selector').innerHTML = PUBS.map(p => `
-    <button onclick="setSel('pub','${p.nome}')"
-      style="flex-direction:column;gap:.2rem;padding:.5rem .3rem;font-size:.7rem;cursor:pointer;
-        background:${selPub===p.nome?'var(--primary)':'white'};
-        color:${selPub===p.nome?'white':'var(--primary-dark)'};
-        border:2px solid ${selPub===p.nome?'var(--primary)':'var(--gray-light)'};
-        border-radius:var(--radius-sm);display:flex;align-items:center;transition:.2s;">
-      <span style="font-size:1.2rem;">${p.icon}</span>${p.nome}
-    </button>`).join('');
+function getRegisterConfig() {
+  const cfg = getCongConfig();
+  const raw = cfg.registroCampo && typeof cfg.registroCampo === 'object' ? cfg.registroCampo : {};
+  return {
+    publicacoesDia: Array.isArray(raw.publicacoesDia) ? raw.publicacoesDia : [],
+    experiencias: Array.isArray(raw.experiencias) ? raw.experiencias : [],
+  };
 }
 
-function renderTipoSel() {
-  document.getElementById('tipo-selector').innerHTML = TIPOS.map(t => `
-    <button onclick="setSel('tipo','${t.id}')"
-      style="flex-direction:column;gap:.2rem;padding:.5rem;font-size:.78rem;cursor:pointer;
-        background:${selTipo===t.id?'var(--accent)':'white'};
-        color:${selTipo===t.id?'white':'var(--primary-dark)'};
-        border:2px solid ${selTipo===t.id?'var(--accent)':'var(--gray-light)'};
-        border-radius:var(--radius-sm);display:flex;align-items:center;transition:.2s;">
-      <span style="font-size:1.1rem;">${t.icon}</span>${t.label}
-    </button>`).join('');
+function saveRegisterConfig(registroCampo) {
+  const cfg = getCongConfig();
+  cfg.registroCampo = {
+    publicacoesDia: Array.isArray(registroCampo.publicacoesDia) ? registroCampo.publicacoesDia : [],
+    experiencias: Array.isArray(registroCampo.experiencias) ? registroCampo.experiencias : [],
+  };
+  saveCongConfig(cfg);
 }
 
-window.setSel = function(type, val) {
-  if (type==='pub')  selPub  = val;
-  if (type==='tipo') selTipo = val;
-  renderPubSel(); renderTipoSel();
+function pad2(num) {
+  return String(num).padStart(2, '0');
+}
+
+function getDesignacaoStartDate(desig) {
+  const base = desig?.data || new Date().toISOString().split('T')[0];
+  return new Date(`${base}T${desig?.inicio || '00:00'}:00`);
+}
+
+function getDesignacaoEndDate(desig) {
+  const start = getDesignacaoStartDate(desig);
+  const [fh, fm] = String(desig?.fim || '00:00').split(':').map(Number);
+  const end = new Date(start);
+  end.setHours(fh || 0, fm || 0, 0, 0);
+  if (end <= start) end.setDate(end.getDate() + 1);
+  return end;
+}
+
+function getAssignmentStreetLabel(posto) {
+  const local = String(posto?.local || '').trim();
+  if (local) return local;
+  const parts = [];
+  if (posto?.km) parts.push(`Km ${posto.km}`);
+  if (typeof posto?.lat === 'number' && typeof posto?.lng === 'number') {
+    parts.push(`${posto.lat.toFixed(4)}, ${posto.lng.toFixed(4)}`);
+  }
+  return parts.join(' · ') || 'Ponto personalizado no mapa';
+}
+
+function buildRegisterAssignments() {
+  return desigs.map(desig => {
+    const posto = todosPos.find(item => item.id === desig.postoId) || null;
+    const categoria = getCategoriaById(posto?.categoriaId);
+    const inicio = getDesignacaoStartDate(desig);
+    const fim = getDesignacaoEndDate(desig);
+    const visualId = String(desig.id);
+    return {
+      id: visualId,
+      desigId: desig.id,
+      postoId: posto?.id || null,
+      postoNome: posto?.nome || 'Posto',
+      localLabel: getAssignmentStreetLabel(posto),
+      categoriaNome: categoria?.nome || 'Sem setor',
+      data: desig.data || '',
+      horario: `${desig.inicio}–${desig.fim}`,
+      inicio,
+      fim,
+      posto,
+      desig,
+    };
+  }).sort((a, b) => a.inicio - b.inicio);
+}
+
+function getSelectedRegisterAssignment() {
+  const assignments = buildRegisterAssignments();
+  if (!assignments.length) return null;
+  if (!assignments.some(item => item.id === regAssignmentId)) {
+    regAssignmentId = assignments[0].id;
+  }
+  return assignments.find(item => item.id === regAssignmentId) || assignments[0];
+}
+
+function getMapsUrlForAssignment(assignment) {
+  const lat = Number(assignment?.posto?.lat);
+  const lng = Number(assignment?.posto?.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}&travelmode=driving`;
+  }
+  return assignment?.localLabel ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(assignment.localLabel)}` : '';
+}
+
+function getPublicationRecordForAssignment(registroCampo, assignmentId) {
+  return (registroCampo.publicacoesDia || []).find(item => String(item.desigId) === String(assignmentId)) || null;
+}
+
+function getPendingAssignments() {
+  const now = new Date();
+  const registroCampo = getRegisterConfig();
+  return buildRegisterAssignments().filter(item => item.fim <= now && !getPublicationRecordForAssignment(registroCampo, item.desigId));
+}
+
+function renderRegisterAlert() {
+  const pending = getPendingAssignments();
+  const alert = document.getElementById('reg-alert');
+  const badge = document.getElementById('badge-reg-tab');
+  if (!alert || !badge) return;
+  if (!pending.length) {
+    alert.classList.remove('open');
+    alert.innerHTML = '';
+    badge.style.display = 'none';
+    return;
+  }
+  alert.classList.add('open');
+  alert.innerHTML = `<strong>⚠️ Fechamento pendente</strong><br>${pending.length} arranjo(s) já terminaram e ainda não receberam o total de publicações do dia.`;
+  badge.textContent = pending.length > 9 ? '9+' : String(pending.length);
+  badge.style.display = 'inline';
+}
+
+function renderAssignmentPicker() {
+  const assignments = buildRegisterAssignments();
+  const registroCampo = getRegisterConfig();
+  const pendingIds = new Set(getPendingAssignments().map(item => item.id));
+  const wrap = document.getElementById('assignment-picker');
+  if (!wrap) return;
+  if (!assignments.length) {
+    wrap.innerHTML = '<div class="reg-empty">Nenhum arranjo disponível para registrar ainda.</div>';
+    return;
+  }
+  if (!assignments.some(item => item.id === regAssignmentId)) regAssignmentId = assignments[0].id;
+  wrap.innerHTML = assignments.map(item => {
+    const report = getPublicationRecordForAssignment(registroCampo, item.desigId);
+    const pending = pendingIds.has(item.id);
+    return `
+      <button class="assignment-option ${item.id === regAssignmentId ? 'active' : ''} ${pending ? 'alert' : ''}" onclick="selecionarRegisterAssignment('${item.id}')">
+        <strong>${item.postoNome}</strong>
+        <div style="font-size:.8rem;color:var(--gray);margin-top:.25rem;">${item.localLabel}</div>
+        <div class="meta">
+          <span>📅 ${item.data || '—'}</span>
+          <span>⏱️ ${item.horario}</span>
+          <span>🧭 ${item.categoriaNome}</span>
+          <span>${report ? `📚 ${report.quantidade} registradas` : pending ? '🔴 faltando fechar' : '⏳ aguardando fechamento'}</span>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+window.selecionarRegisterAssignment = function(assignmentId) {
+  regAssignmentId = assignmentId;
+  renderAssignmentPicker();
+  renderRegisterForm();
 };
 
-function carregarSelectPostos() {
-  const ids  = [...new Set(desigs.map(d=>d.postoId))];
-  const list = ids.length ? todosPos.filter(p=>ids.includes(p.id)) : todosPos;
-  document.getElementById('my-posto').innerHTML =
-    list.map(p=>`<option value="${p.id}">${p.nome} (Km ${p.km})</option>`).join('');
+function renderRegisterForm() {
+  const assignment = getSelectedRegisterAssignment();
+  const registroCampo = getRegisterConfig();
+  const summary = document.getElementById('reg-assignment-summary');
+  const totalInput = document.getElementById('reg-total-publicacoes');
+  const mapsBtn = document.getElementById('btn-abrir-maps-reg');
+  if (!summary || !totalInput || !mapsBtn) return;
+  if (!assignment) {
+    summary.innerHTML = '<strong>Nenhum arranjo disponível</strong>';
+    totalInput.value = '0';
+    mapsBtn.style.display = 'none';
+    return;
+  }
+  const report = getPublicationRecordForAssignment(registroCampo, assignment.desigId);
+  summary.innerHTML = `
+    <strong>${assignment.postoNome}</strong>
+    📌 ${assignment.localLabel}<br>
+    📅 ${assignment.data || '—'} · ⏱️ ${assignment.horario} · 🧭 ${assignment.categoriaNome}
+    ${assignment.desig?.obs ? `<br>💬 ${assignment.desig.obs}` : ''}`;
+  totalInput.value = String(report?.quantidade || 0);
+  const mapsUrl = getMapsUrlForAssignment(assignment);
+  mapsBtn.style.display = mapsUrl ? 'inline-flex' : 'none';
+  mapsBtn.onclick = () => { if (mapsUrl) window.open(mapsUrl, '_blank', 'noopener'); };
 }
 
-document.getElementById('my-minus').addEventListener('click',()=>{
-  if(qty>1){qty--;document.getElementById('my-qty').textContent=qty;}
-});
-document.getElementById('my-plus').addEventListener('click',()=>{
-  qty++;document.getElementById('my-qty').textContent=qty;
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 1280;
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          const scale = Math.min(maxSize / width, maxSize / height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve({
+          name: file.name,
+          type: 'image/jpeg',
+          dataUrl: canvas.toDataURL('image/jpeg', 0.78),
+        });
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderExperiencePreview() {
+  const box = document.getElementById('exp-preview');
+  const img = document.getElementById('exp-preview-img');
+  const name = document.getElementById('exp-preview-name');
+  if (!box || !img || !name) return;
+  if (!regExperienceImage?.dataUrl) {
+    box.classList.remove('open');
+    img.removeAttribute('src');
+    name.textContent = 'Imagem selecionada';
+    return;
+  }
+  box.classList.add('open');
+  img.src = regExperienceImage.dataUrl;
+  name.textContent = regExperienceImage.name || 'Imagem pronta';
+}
+
+document.getElementById('btn-escolher-imagem').addEventListener('click', () => {
+  document.getElementById('exp-image-input').click();
 });
 
-document.getElementById('btn-registrar').addEventListener('click',()=>{
-  const postoId = parseInt(document.getElementById('my-posto').value);
-  const posto   = todosPos.find(p=>p.id===postoId);
-  const obs     = document.getElementById('my-obs').value.trim();
-  const dist    = DB.get('distribuicoes',[]);
-  dist.unshift({
-    id:Date.now(), postoId, postoNome:posto?.nome||'', congId:CONG_ID, congNome:cong?.nome||'',
-    pub:selPub, pubIcon:PUB_ICONS[selPub]||'📖', tipo:selTipo, qty, obs,
-    hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-    data:new Date().toISOString().split('T')[0],
+document.getElementById('exp-image-input').addEventListener('change', async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    regExperienceImage = await compressImage(file);
+    renderExperiencePreview();
+    showToast('Imagem pronta para a experiência.', 'success');
+  } catch {
+    showToast('Não foi possível preparar a imagem.', 'warning');
+  }
+});
+
+document.getElementById('btn-salvar-publicacoes').addEventListener('click', () => {
+  const assignment = getSelectedRegisterAssignment();
+  if (!assignment) { showToast('Selecione um arranjo.', 'warning'); return; }
+  const quantidade = Math.max(0, parseInt(document.getElementById('reg-total-publicacoes').value, 10) || 0);
+  const registroCampo = getRegisterConfig();
+  registroCampo.publicacoesDia = (registroCampo.publicacoesDia || []).filter(item => String(item.desigId) !== String(assignment.desigId));
+  registroCampo.publicacoesDia.unshift({
+    id: `pubdia_${Date.now()}`,
+    desigId: assignment.desigId,
+    postoId: assignment.postoId,
+    postoNome: assignment.postoNome,
+    localLabel: assignment.localLabel,
+    categoriaNome: assignment.categoriaNome,
+    dataRef: assignment.data,
+    horario: assignment.horario,
+    quantidade,
+    ts: new Date().toLocaleString('pt-BR'),
   });
-  DB.set('distribuicoes',dist);
-  // atualiza contatos no posto
-  const arr=DB.get('postos',[]);
-  const pi=arr.findIndex(p=>p.id===postoId);
-  if(pi>=0){arr[pi].contatos=(arr[pi].contatos||0)+1;DB.set('postos',arr);}
-  qty=1; document.getElementById('my-qty').textContent='1';
-  document.getElementById('my-obs').value='';
-  showToast(`${selPub} registrado! ✅`,'success');
-  renderHistorico(); renderResultado();
+  saveRegisterConfig(registroCampo);
+  renderAssignmentPicker();
+  renderRegisterForm();
+  renderRegisterAlert();
+  renderHistorico();
+  renderResultado();
+  showToast('Total de publicações do dia salvo.', 'success');
+});
+
+document.getElementById('btn-salvar-experiencia').addEventListener('click', () => {
+  const assignment = getSelectedRegisterAssignment();
+  if (!assignment) { showToast('Selecione um arranjo.', 'warning'); return; }
+  const detalhes = document.getElementById('exp-detalhes').value.trim();
+  if (!detalhes) { showToast('Descreva a experiência antes de salvar.', 'warning'); return; }
+  const registroCampo = getRegisterConfig();
+  registroCampo.experiencias.unshift({
+    id: `exp_${Date.now()}`,
+    desigId: assignment.desigId,
+    postoId: assignment.postoId,
+    postoNome: assignment.postoNome,
+    localLabel: assignment.localLabel,
+    dataRef: assignment.data,
+    horario: assignment.horario,
+    detalhes,
+    imageDataUrl: regExperienceImage?.dataUrl || '',
+    imageName: regExperienceImage?.name || '',
+    ts: new Date().toLocaleString('pt-BR'),
+  });
+  saveRegisterConfig(registroCampo);
+  document.getElementById('exp-detalhes').value = '';
+  document.getElementById('exp-image-input').value = '';
+  regExperienceImage = null;
+  renderExperiencePreview();
+  renderHistorico();
+  renderResultado();
+  showToast('Experiência salva para o administrador.', 'success');
 });
 
 function renderHistorico() {
-  const dist = DB.get('distribuicoes',[]).filter(d=>d.congId===CONG_ID);
-  const el   = document.getElementById('meu-historico');
-  if (!dist.length) {
-    el.innerHTML='<div style="color:var(--gray);font-size:.82rem;text-align:center;padding:.8rem;">Nenhum registro ainda.</div>';
+  const registroCampo = getRegisterConfig();
+  const history = []
+    .concat((registroCampo.publicacoesDia || []).map(item => ({ ...item, tipoRegistro: 'publicacao_dia' })))
+    .concat((registroCampo.experiencias || []).map(item => ({ ...item, tipoRegistro: 'experiencia' })))
+    .sort((a, b) => String(b.ts || '').localeCompare(String(a.ts || '')));
+  const el = document.getElementById('meu-historico');
+  if (!el) return;
+  if (!history.length) {
+    el.innerHTML = '<div class="reg-empty">Nenhum fechamento ou experiência registrada ainda.</div>';
     return;
   }
-  el.innerHTML = dist.slice(0,20).map(r=>`
-    <div class="hist-item">
-      <span>${r.pubIcon}</span>
-      <span style="flex:1;"><strong>${r.pub}</strong> — ${r.postoNome}</span>
-      <span style="font-weight:800;color:var(--primary);">×${r.qty}</span>
-      <span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${r.hora}</span>
-    </div>`).join('');
+  el.innerHTML = history.slice(0, 20).map(item => item.tipoRegistro === 'publicacao_dia'
+    ? `<div class="hist-item"><span>📚</span><span style="flex:1;"><strong>${item.postoNome}</strong><br><span style="color:var(--gray);font-size:.76rem;">${item.localLabel} · ${item.horario}</span></span><span style="font-weight:800;color:var(--primary);">${item.quantidade}</span><span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${item.ts}</span></div>`
+    : `<div class="hist-item exp">${item.imageDataUrl ? `<img class="exp-thumb" src="${item.imageDataUrl}" alt="Experiência" />` : '<span style="font-size:1.5rem;">✨</span>'}<span style="flex:1;"><strong>${item.postoNome}</strong><br><span style="color:var(--gray);font-size:.76rem;">${item.detalhes}</span></span><span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${item.ts}</span></div>`
+  ).join('');
 }
 
 window.limparHistorico = function() {
-  if (!confirm('Limpar todo o seu histórico?')) return;
-  DB.set('distribuicoes', DB.get('distribuicoes',[]).filter(d=>d.congId!==CONG_ID));
-  renderHistorico(); renderResultado();
-  showToast('Histórico limpo.','info');
+  if (!confirm('Limpar os fechamentos e experiências desta congregação?')) return;
+  saveRegisterConfig({ publicacoesDia: [], experiencias: [] });
+  renderAssignmentPicker();
+  renderRegisterForm();
+  renderRegisterAlert();
+  renderHistorico();
+  renderResultado();
+  showToast('Registros operacionais limpos.', 'info');
 };
 
 function renderResultado() {
-  const dist   = DB.get('distribuicoes',[]).filter(d=>d.congId===CONG_ID);
-  const total  = dist.reduce((s,r)=>s+(r.qty||1),0);
-  const porPub = {};
-  dist.forEach(r=>{porPub[r.pub]=(porPub[r.pub]||0)+(r.qty||1);});
-  const items  = Object.entries(porPub).map(([pub,q])=>`
-    <div class="resultado-item">
-      <div class="r-qty">${q}</div>
-      <div class="r-label">${PUB_ICONS[pub]||'📖'} ${pub}</div>
-    </div>`).join('');
+  const registroCampo = getRegisterConfig();
+  const totalPublicacoes = (registroCampo.publicacoesDia || []).reduce((sum, item) => sum + (item.quantidade || 0), 0);
+  const totalExperiencias = (registroCampo.experiencias || []).length;
+  const pendencias = getPendingAssignments().length;
   document.getElementById('resultado-grid').innerHTML = `
-    <div class="resultado-item">
-      <div class="r-qty">${total}</div>
-      <div class="r-label">📊 Total geral</div>
-    </div>${items}`;
+    <div class="resultado-item"><div class="r-qty">${totalPublicacoes}</div><div class="r-label">📚 Total do dia</div></div>
+    <div class="resultado-item"><div class="r-qty">${totalExperiencias}</div><div class="r-label">✨ Experiências</div></div>
+    <div class="resultado-item"><div class="r-qty">${pendencias}</div><div class="r-label">🚨 Pendentes</div></div>`;
 }
 
 window.imprimirResultado = function() {
-  const dist   = DB.get('distribuicoes',[]).filter(d=>d.congId===CONG_ID);
-  const evento = DB.get('evento_config',{nome:'Corrida Internacional de Praia Grande'});
-  const porPub = {};
-  dist.forEach(r=>{porPub[r.pub]=(porPub[r.pub]||0)+(r.qty||1);});
-  const total  = Object.values(porPub).reduce((s,v)=>s+v,0);
+  const evento = DB.get('evento_config', { nome: 'Corrida Internacional de Praia Grande' });
+  const registroCampo = getRegisterConfig();
+  const totalPublicacoes = (registroCampo.publicacoesDia || []).reduce((sum, item) => sum + (item.quantidade || 0), 0);
   document.getElementById('print-content').innerHTML = `
     <h1>🏃 ${evento.nome}</h1>
-    <h2>Relatório — ${cong?.nome}</h2>
-    <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')} &nbsp;|&nbsp; Posto: ${postoP?.nome||'—'} (Km ${postoP?.km||'?'})</p>
-    <h3>📚 Publicações distribuídas</h3>
+    <h2>Fechamento de campo — ${cong?.nome}</h2>
+    <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
+    <h3>📚 Publicações do dia</h3>
     <table>
-      <thead><tr><th>Publicação</th><th>Quantidade</th></tr></thead>
+      <thead><tr><th>Posto</th><th>Horário</th><th>Total</th></tr></thead>
       <tbody>
-        ${Object.entries(porPub).map(([p,q])=>`<tr><td>${PUB_ICONS[p]||'📖'} ${p}</td><td style="text-align:center;font-weight:700;">${q}</td></tr>`).join('')}
-        <tr style="background:#D4EDDA;"><td><strong>TOTAL</strong></td><td style="text-align:center;font-weight:800;">${total}</td></tr>
+        ${(registroCampo.publicacoesDia || []).map(item => `<tr><td>${item.postoNome}<br><small>${item.localLabel}</small></td><td>${item.dataRef || '—'} ${item.horario}</td><td style="text-align:center;font-weight:700;">${item.quantidade}</td></tr>`).join('')}
+        <tr style="background:#D4EDDA;"><td colspan="2"><strong>TOTAL GERAL</strong></td><td style="text-align:center;font-weight:800;">${totalPublicacoes}</td></tr>
       </tbody>
     </table>
+    <h3 style="margin-top:1.5rem;">✨ Experiências</h3>
+    <ul>${(registroCampo.experiencias || []).map(item => `<li><strong>${item.postoNome}</strong> — ${item.detalhes}</li>`).join('') || '<li>Nenhuma experiência registrada.</li>'}</ul>
     <p style="margin-top:2rem;color:#999;font-size:.85rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;
   window.print();
 };
 
-// Init aba registrar
-renderPubSel(); renderTipoSel(); carregarSelectPostos();
-renderHistorico(); renderResultado();
+function initRegisterTab() {
+  const assignments = buildRegisterAssignments();
+  if (!assignments.length) {
+    document.getElementById('assignment-picker').innerHTML = '<div class="reg-empty">Nenhum arranjo disponível para registrar.</div>';
+    return;
+  }
+  regAssignmentId = assignments[0].id;
+  renderAssignmentPicker();
+  renderRegisterForm();
+  renderRegisterAlert();
+  renderExperiencePreview();
+  renderHistorico();
+  renderResultado();
+}
+
+initRegisterTab();
 })();
 </script>
 </body>

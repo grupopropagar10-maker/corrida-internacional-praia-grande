@@ -144,6 +144,41 @@
       line-height: 1.5;
     }
 
+
+    @media (max-width: 640px) {
+      .hero-index {
+        min-height: 300px;
+        padding: 2rem 1rem;
+      }
+
+      .hero-index::after {
+        font-size: 7rem;
+        right: -1rem;
+        bottom: -1rem;
+      }
+
+      .hero-buttons {
+        gap: 0.75rem;
+      }
+
+      .hero-buttons .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .countdown {
+        gap: 0.75rem;
+      }
+
+      .countdown-item {
+        min-width: calc(50% - 0.75rem);
+        padding: 0.7rem 0.9rem;
+      }
+
+      .modulo-card {
+        padding: 1.2rem 1rem;
+      }
+    }
     .modulo-card .mod-badge {
       display: inline-block;
       background: var(--primary);

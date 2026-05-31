@@ -255,9 +255,101 @@
   let chartStatus = null;
   let chartCongs  = null;
 
-  function renderDashboard() {
+  function getCategoriaById(categoriaId) {
+    return DB.get('categorias', []).find(c => String(c.id) === String(categoriaId)) || null;
+  }
+
+  function normalizarPessoaEscala(pessoa) {
+    if (!pessoa) return null;
+    if (typeof pessoa === 'string') return { nome: pessoa, origem: 'local' };
+    return {
+      nome: String(pessoa.nome || '').trim(),
+      origem: pessoa.origem || 'local',
+    };
+  }
+
+  function timeToMin(t) {
+    const [h, m] = String(t || '00:00').split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  }
+
+  function minToTime(m) {
+    return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  }
+
+  function gerarSlots(inicio, fim, duracaoH) {
+    const slots = [];
+    let s = timeToMin(inicio);
+    let e = timeToMin(fim);
+    if (e <= s) e += 24 * 60;
+    while (s < e) {
+      const t = Math.min(s + duracaoH * 60, e);
+      slots.push({ inicio: minToTime(s % (24 * 60)), fim: minToTime(t % (24 * 60)) });
+      s = t;
+    }
+    return slots;
+  }
+
+  function getEscalaKey(desig, posto) {
+    if (!desig) return '';
+    if (!desig.autoGerada) return String(desig.id);
+
+    const categoria = getCategoriaById(posto?.categoriaId);
+    const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+    const dataIdx = datas.findIndex(data => String(data) === String(desig.data));
+
+    if (posto?.id != null && dataIdx >= 0) {
+      return `${posto.id}-${dataIdx}`;
+    }
+
+    return String(desig.id);
+  }
+
+  function getAgendaConfigByCong(cfg, escalaKey) {
+    const agenda = cfg?.agendaConfig?.[escalaKey] || {};
+    return {
+      duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
+      maxPorTurno: 3,
+    };
+  }
+
+  function getPessoasDoSlot(turnos, escalaKey, slotKey) {
+    return (turnos?.[escalaKey]?.[slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
+  }
+
+  function getCoberturaPosto(posto, designacoes, congCfgAll) {
+    const designacoesPosto = designacoes.filter(d => String(d.postoId) === String(posto.id));
+    let totalSlots = 0;
+    let totalPessoas = 0;
+    let faltando = 0;
+
+    designacoesPosto.forEach(desig => {
+      const cfg = congCfgAll?.[desig.congId] || {};
+      const escalaKey = getEscalaKey(desig, posto);
+      const agenda = getAgendaConfigByCong(cfg, escalaKey);
+      const turnos = cfg.turnos || {};
+      gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno).forEach(slot => {
+        totalSlots += 1;
+        const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
+        totalPessoas += pessoas.length;
+        faltando += Math.max(0, agenda.maxPorTurno - pessoas.length);
+      });
+    });
+
+    return {
+      posto,
+      designacoes: designacoesPosto.length,
+      totalSlots,
+      totalPessoas,
+      faltando,
+      completo: designacoesPosto.length > 0 && totalSlots > 0 && faltando === 0,
+    };
+  }
+
+  function collectDashboardData() {
     const postos = DB.get('postos');
     const dist   = DB.get('distribuicoes');
+    const designacoes = DB.get('designacoes', []);
     const congCfgAll = DB.get('cong_config', {});
     const participantesSet = new Set();
     const cadastradosSet = new Set();
@@ -281,13 +373,51 @@
       });
     });
 
+    const coberturaPostos = postos.map(posto => getCoberturaPosto(posto, designacoes, congCfgAll));
+    const postosComEscala = coberturaPostos.filter(item => item.designacoes > 0).length;
+    const postosProntos = coberturaPostos.filter(item => item.completo).length;
+    const postosPendentes = coberturaPostos.filter(item => item.designacoes > 0 && !item.completo).length;
+    const postosSemEscala = coberturaPostos.filter(item => item.designacoes === 0).length;
+
+    return {
+      postos,
+      dist,
+      designacoes,
+      congCfgAll,
+      participantesSet,
+      cadastradosSet,
+      coberturaPostos,
+      postosComEscala,
+      postosProntos,
+      postosPendentes,
+      postosSemEscala,
+      totalParticipantes: participantesSet.size,
+      totalCadastrados: cadastradosSet.size,
+      postosAtiv: postos.filter(p => p.status === 'ativo').length,
+    };
+  }
+
+  function renderDashboard() {
+    const {
+      postos,
+      dist,
+      congCfgAll,
+      cadastradosSet,
+      coberturaPostos,
+      postosComEscala,
+      postosProntos,
+      postosPendentes,
+      postosSemEscala,
+      totalParticipantes,
+      totalCadastrados,
+      postosAtiv,
+    } = collectDashboardData();
+    const percentualProntos = postosComEscala ? Math.round((postosProntos / postosComEscala) * 100) : 0;
+
     // ---- KPI ----
     const totalPub    = dist.reduce((s, r) => s + (r.qty || 1), 0);
     const totalCont   = dist.filter(r => r.tipo === 'conversa' || r.tipo === 'contato_especial').length;
     const totalQR     = dist.filter(r => r.tipo === 'qrcode').length;
-    const totalParticipantes = participantesSet.size;
-    const totalCadastrados = cadastradosSet.size;
-    const postosAtiv  = postos.filter(p => p.status === 'ativo').length;
 
     document.getElementById('kpi-cards').innerHTML = `
       <div class="stat-card">
@@ -306,9 +436,22 @@
         <div class="stat-icon" style="background:#7b4f00;">👥</div>
         <div class="stat-info"><h3>${totalCadastrados}</h3><p>Nomes cadastrados</p><div style="font-size:.72rem;color:var(--gray);margin-top:.2rem;">${totalParticipantes} em turnos</div></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon purple">📍</div>
-        <div class="stat-info"><h3>${postosAtiv}/${postos.length}</h3><p>Postos ativos</p></div>
+      <div class="stat-card stat-card-highlight">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-info">
+          <div class="stat-label-strong">Cobertura da escala</div>
+          <div class="stat-kpi-head">
+            <h3>${postosProntos}</h3>
+            <span class="stat-kpi-total">/ ${postosComEscala || postos.length}</span>
+          </div>
+          <p>Postos prontos</p>
+          <div class="stat-meta">
+            <span class="stat-chip stat-chip-success">${percentualProntos}% completos</span>
+            <span class="stat-chip stat-chip-warn">${postosPendentes} pendentes</span>
+            ${postosSemEscala ? `<span class="stat-chip stat-chip-neutral">${postosSemEscala} sem escala</span>` : ''}
+          </div>
+          <div class="stat-note">Pronto = todos os horarios do posto preenchidos com 3 nomes por turno.</div>
+        </div>
       </div>
     `;
 
@@ -497,13 +640,21 @@
           <th>Posto</th>
           <th>Responsável</th>
           <th>Status</th>
+          <th>Escala</th>
           <th>Publicações disp.</th>
           <th>Contatos</th>
           <th>Ação</th>
         </tr>
       </thead>
       <tbody>
-        ${postos.map(p => `
+        ${postos.map(p => {
+          const cobertura = coberturaPostos.find(item => String(item.posto.id) === String(p.id)) || { designacoes: 0, faltando: 0, completo: false };
+          const escalaHtml = cobertura.designacoes === 0
+            ? '<span class="badge badge-standby">Sem escala</span>'
+            : cobertura.completo
+              ? '<span class="badge badge-ativo">Pronto</span>'
+              : `<span class="badge badge-standby">${cobertura.faltando} faltando</span>`;
+          return `
           <tr>
             <td><strong>${p.km} km</strong></td>
             <td>${p.nome}</td>
@@ -513,36 +664,39 @@
               ${p.status === 'standby' ? '<span class="badge badge-standby">● Standby</span>' : ''}
               ${p.status === 'inativo' ? '<span class="badge badge-inativo">● Inativo</span>' : ''}
             </td>
+            <td>${escalaHtml}</td>
             <td>📖 ${p.publicacoes}</td>
             <td>🤝 ${p.contatos || 0}</td>
             <td><a href="postos.html" class="btn btn-outline btn-sm">✏️ Editar</a></td>
           </tr>
-        `).join('')}
+        `;}).join('')}
       </tbody>
     `;
   }
 
   // ---- EXPORT CSV ----
   document.getElementById('btn-export-csv').addEventListener('click', () => {
-    const postos = DB.get('postos');
-    const dist   = DB.get('distribuicoes');
-    const congCfgAll = DB.get('cong_config', {});
-    const participantes = new Set();
-    Object.values(congCfgAll).forEach(cfg => {
-      Object.values(cfg?.turnos || {}).forEach(slotMap => {
-        Object.values(slotMap || {}).forEach(pessoas => {
-          (pessoas || []).forEach(pessoa => {
-            const nome = typeof pessoa === 'string' ? pessoa : pessoa?.nome;
-            if (nome) participantes.add(nome.trim());
-          });
-        });
-      });
-    });
-    let csv = 'Posto,Responsável,Status,Publicações Disp.,Contatos\n';
+    const {
+      postos,
+      dist,
+      cadastradosSet,
+      totalParticipantes,
+      coberturaPostos,
+      postosProntos,
+      postosPendentes,
+      postosSemEscala,
+    } = collectDashboardData();
+    let csv = 'Posto,Responsável,Status,Escala,Publicações Disp.,Contatos\n';
     postos.forEach(p => {
-      csv += `"${p.nome}","${p.responsavel}","${p.status}",${p.publicacoes},${p.contatos || 0}\n`;
+      const cobertura = coberturaPostos.find(item => String(item.posto.id) === String(p.id)) || { designacoes: 0, faltando: 0, completo: false };
+      const escalaTexto = cobertura.designacoes === 0
+        ? 'Sem escala'
+        : cobertura.completo
+          ? 'Pronto'
+          : `${cobertura.faltando} faltando`;
+      csv += `"${p.nome}","${p.responsavel}","${p.status}","${escalaTexto}",${p.publicacoes},${p.contatos || 0}\n`;
     });
-    csv += `\nResumo\nNomes cadastrados únicos,${cadastradosSet.size}\nIrmãos participantes únicos,${participantes.size}\n`;
+    csv += `\nResumo\nNomes cadastrados únicos,${cadastradosSet.size}\nIrmãos participantes únicos,${totalParticipantes}\nPostos prontos,${postosProntos}\nPostos pendentes,${postosPendentes}\nPostos sem escala,${postosSemEscala}\n`;
     csv += '\nRegistros de Distribuição\nHora,Posto,Publicação,Tipo,Qty,Observação\n';
     dist.forEach(r => {
       csv += `"${r.hora}","${r.postoNome}","${r.pub}","${r.tipo}",${r.qty},"${r.obs || ''}"\n`;

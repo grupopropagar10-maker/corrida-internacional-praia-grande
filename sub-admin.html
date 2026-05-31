@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Painel Sub-Admin — Corrida PG</title>
   <link rel="stylesheet" href="css/style.css"/>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
   <style>
     .subadmin-layout {
       display: grid;
@@ -125,11 +131,150 @@
       text-transform: uppercase;
       letter-spacing: .08em;
     }
+    .setor-stat.warn {
+      background: linear-gradient(180deg, #fff8ef, #fff);
+      border-color: rgba(255, 193, 7, 0.28);
+    }
+    .setor-stat.warn strong { color: #8c6500; }
+    .setor-stat.danger {
+      background: linear-gradient(180deg, #fff1f1, #fff);
+      border-color: rgba(220, 53, 69, 0.24);
+    }
+    .setor-stat.danger strong { color: #b42333; }
+    .setor-stat.success {
+      background: linear-gradient(180deg, #f4fbf5, #fff);
+      border-color: rgba(40, 167, 69, 0.24);
+    }
+    .setor-stat.success strong { color: #1f7a35; }
     .setor-scope-note {
       font-size: .82rem;
       color: var(--gray);
       margin-bottom: 1rem;
     }
+    .setor-highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: .9rem;
+      margin-bottom: 1rem;
+    }
+    .setor-highlight {
+      border-radius: 16px;
+      padding: 1rem 1.05rem;
+      border: 1px solid rgba(123, 79, 0, 0.12);
+      background: linear-gradient(180deg, #fffaf4, #fff);
+      box-shadow: 0 10px 24px rgba(123, 79, 0, 0.06);
+    }
+    .setor-highlight strong {
+      display: block;
+      font-size: 1.4rem;
+      color: #7b4f00;
+      line-height: 1;
+      margin-bottom: .35rem;
+    }
+    .setor-highlight span {
+      display: block;
+      font-size: .78rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .4rem;
+    }
+    .setor-highlight p {
+      font-size: .8rem;
+      color: var(--gray);
+      margin: 0;
+    }
+    .setor-highlight.danger {
+      background: linear-gradient(180deg, #fff1f1, #fff);
+      border-color: rgba(220, 53, 69, 0.24);
+    }
+    .setor-highlight.danger strong { color: #b42333; }
+    .setor-highlight.warn {
+      background: linear-gradient(180deg, #fff8ef, #fff);
+      border-color: rgba(255, 193, 7, 0.28);
+    }
+    .setor-highlight.warn strong { color: #8c6500; }
+    .setor-highlight.success {
+      background: linear-gradient(180deg, #f4fbf5, #fff);
+      border-color: rgba(40, 167, 69, 0.24);
+    }
+    .setor-highlight.success strong { color: #1f7a35; }
+    .setor-map-card {
+      border: 1px solid rgba(123, 79, 0, 0.12);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,250,244,.96), #fff);
+      box-shadow: 0 10px 24px rgba(123, 79, 0, 0.06);
+      padding: 1rem 1.05rem;
+      margin-bottom: 1rem;
+    }
+    .setor-map-head {
+      display: flex;
+      justify-content: space-between;
+      gap: .8rem;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-bottom: .85rem;
+    }
+    .setor-map-head p {
+      margin: .25rem 0 0;
+      color: var(--gray);
+      font-size: .82rem;
+    }
+    .setor-map-legend {
+      display: flex;
+      gap: .45rem;
+      flex-wrap: wrap;
+      margin-top: .65rem;
+    }
+    .setor-map-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .22rem .55rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(123, 79, 0, 0.12);
+      color: var(--gray);
+      font-size: .74rem;
+      font-weight: 700;
+    }
+    .setor-map-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .setor-map-dot-ok { background: #28A745; }
+    .setor-map-dot-alerta { background: #FFC107; }
+    .setor-map-dot-critico { background: #DC3545; }
+    .setor-map-dot-sem { background: #6C757D; }
+    .setor-map-frame {
+      width: 100%;
+      height: 320px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(123, 79, 0, 0.12);
+      background: linear-gradient(180deg, #faf6ef, #fff);
+    }
+    .setor-map-empty {
+      padding: .95rem 1rem;
+      border-radius: 12px;
+      border: 1px dashed rgba(123, 79, 0, 0.20);
+      background: rgba(255,255,255,0.72);
+      color: var(--gray);
+      font-size: .84rem;
+    }
+    .setor-map-marker {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.92);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+    }
+    .setor-map-marker.ok { background: #28A745; }
+    .setor-map-marker.alerta { background: #FFC107; }
+    .setor-map-marker.critica { background: #DC3545; box-shadow: 0 0 0 5px rgba(220, 53, 69, 0.18), 0 6px 16px rgba(220, 53, 69, 0.28); }
+    .setor-map-marker.sem-escala { background: #6C757D; }
     .setor-cards {
       display: grid;
       gap: 1rem;
@@ -408,6 +553,11 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
 <script src="js/firebase-db.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
@@ -424,6 +574,8 @@
       ? session.categorias.map(Number).filter(Number.isFinite)
       : [];
   const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';
+  let setorMap = null;
+  let setorMapLayer = null;
 
   function getCategoriaById(categoriaId) {
     return DB.get('categorias', []).find(c => c.id === categoriaId) || null;
@@ -457,6 +609,22 @@
       duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
       maxPorTurno: 3,
     };
+  }
+
+  function getEscalaKey(desig, posto = null) {
+    if (!desig) return '';
+    if (!desig.autoGerada) return String(desig.id);
+
+    const currentPosto = posto || DB.get('postos', []).find(p => Number(p.id) === Number(desig.postoId));
+    const categoria = getCategoriaById(currentPosto?.categoriaId);
+    const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+    const dataIdx = datas.findIndex(data => String(data) === String(desig.data));
+
+    if (currentPosto?.id != null && dataIdx >= 0) {
+      return `${currentPosto.id}-${dataIdx}`;
+    }
+
+    return String(desig.id);
   }
 
   function getPessoasDoSlot(turnos, desigId, slotKey) {
@@ -514,12 +682,13 @@
       const posto = postoMap.get(desig.postoId);
       const cong = congs.find(c => c.id === desig.congId) || null;
       const cfg = getCongConfigById(desig.congId);
-      const agenda = getAgendaConfigByCong(cfg, desig.id);
+      const escalaKey = getEscalaKey(desig, posto);
+      const agenda = getAgendaConfigByCong(cfg, escalaKey);
       const turnos = cfg.turnos || {};
       const slots = gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno).map(slot => {
-        const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+        const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
         const faltam = Math.max(0, agenda.maxPorTurno - pessoas.length);
-        const pedidoAberto = pedidos.find(p => p.designacaoId === desig.id && p.slotKey === slot.inicio && p.status === 'aberto');
+        const pedidoAberto = pedidos.find(p => String(p.designacaoId) === escalaKey && p.slotKey === slot.inicio && p.status === 'aberto');
         return {
           ...slot,
           pessoas,
@@ -533,6 +702,7 @@
 
       return {
         desig,
+        escalaKey,
         posto,
         cong,
         agenda,
@@ -549,11 +719,125 @@
   }
 
   function getItemCobertura(desigId) {
-    return getCoberturaDoSetor().find(item => String(item.desig.id) === String(desigId)) || null;
+    const targetId = String(desigId);
+    return getCoberturaDoSetor().find(item => item.escalaKey === targetId || String(item.desig.id) === targetId) || null;
   }
 
   function getCoberturaDaCategoria(categoriaId) {
     return getCoberturaDoSetor().filter(item => Number(item.posto?.categoriaId) === Number(categoriaId));
+  }
+
+  function getResumoPostosDoSetor(cobertura = getCoberturaDoSetor(), postos = getPostosDoSetor()) {
+    const porPosto = new Map();
+
+    postos.forEach(posto => {
+      porPosto.set(String(posto.id), {
+        posto,
+        designacoes: 0,
+        faltando: 0,
+        pedidosAbertos: 0,
+        completa: false,
+        critica: false,
+      });
+    });
+
+    cobertura.forEach(item => {
+      const key = String(item.posto?.id || '');
+      if (!key) return;
+      const atual = porPosto.get(key) || {
+        posto: item.posto,
+        designacoes: 0,
+        faltando: 0,
+        pedidosAbertos: 0,
+        completa: false,
+        critica: false,
+      };
+      atual.designacoes += 1;
+      atual.faltando += item.faltando;
+      atual.pedidosAbertos += item.pedidosAbertos;
+      atual.critica = atual.critica || item.faltando >= 6;
+      atual.completa = atual.designacoes > 0 && atual.faltando === 0;
+      porPosto.set(key, atual);
+    });
+
+    const itens = Array.from(porPosto.values());
+    return {
+      itens,
+      postosComEscala: itens.filter(item => item.designacoes > 0).length,
+      postosProntos: itens.filter(item => item.designacoes > 0 && item.completa).length,
+      postosPendentes: itens.filter(item => item.designacoes > 0 && !item.completa).length,
+      postosCriticos: itens.filter(item => item.critica).length,
+      postosSemEscala: itens.filter(item => item.designacoes === 0).length,
+      postosSemPedido: itens.filter(item => item.faltando > 0 && item.pedidosAbertos === 0).length,
+    };
+  }
+
+  function getNivelPostoResumo(item) {
+    if (!item || item.designacoes === 0) return 'sem-escala';
+    if (item.completa) return 'ok';
+    if (item.critica) return 'critica';
+    return 'alerta';
+  }
+
+  function renderMapaSetor(postos, resumoPostos) {
+    const mapEl = document.getElementById('setor-map');
+    const emptyEl = document.getElementById('setor-map-empty');
+    if (!mapEl || !emptyEl) return;
+
+    const postosComCoord = resumoPostos.itens.filter(item => Number.isFinite(Number(item.posto?.lat)) && Number.isFinite(Number(item.posto?.lng)));
+    if (!postosComCoord.length) {
+      emptyEl.style.display = 'block';
+      mapEl.style.display = 'none';
+      emptyEl.textContent = 'Nenhum posto do seu setor possui coordenadas salvas para exibir no mapa.';
+      if (setorMap) {
+        setorMap.remove();
+        setorMap = null;
+        setorMapLayer = null;
+      }
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    mapEl.style.display = 'block';
+
+    if (setorMap) {
+      setorMap.remove();
+      setorMap = null;
+      setorMapLayer = null;
+    }
+
+    setorMap = L.map('setor-map', { scrollWheelZoom: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(setorMap);
+    setorMapLayer = L.layerGroup().addTo(setorMap);
+
+    const bounds = [];
+    postosComCoord.forEach(item => {
+      const lat = Number(item.posto.lat);
+      const lng = Number(item.posto.lng);
+      const nivel = getNivelPostoResumo(item);
+      bounds.push([lat, lng]);
+      const icon = L.divIcon({
+        className: '',
+        html: `<div class="setor-map-marker ${nivel}"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+        popupAnchor: [0, -8],
+      });
+      L.marker([lat, lng], { icon })
+        .bindPopup(`<strong>${item.posto.nome || 'Posto sem nome'}</strong><br>${item.posto.local || 'Local não informado'}<br>Escala: ${nivel === 'ok' ? 'Pronto' : nivel === 'critica' ? 'Crítico' : nivel === 'alerta' ? `${item.faltando} faltando` : 'Sem escala'}<br>Categoria: ${getCategoriaById(item.posto.categoriaId)?.nome || '—'}`)
+        .addTo(setorMapLayer);
+    });
+
+    if (bounds.length === 1) {
+      setorMap.setView(bounds[0], 15);
+    } else {
+      setorMap.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+    setTimeout(() => setorMap && setorMap.invalidateSize(), 0);
   }
 
   function calcularSugestaoBebidas(categoria) {
@@ -682,7 +966,7 @@
   }
 
   function getPedidoDoHorario(congId, desigId, slotKey) {
-    return getPedidosAjuda().find(p => p.congId === congId && p.designacaoId === desigId && p.slotKey === slotKey && p.status !== 'cancelado') || null;
+    return getPedidosAjuda().find(p => p.congId === congId && String(p.designacaoId) === String(desigId) && p.slotKey === slotKey && p.status !== 'cancelado') || null;
   }
 
   function fecharHorarioDoSetor(congId, desigId, slotKey, faltaQtd) {
@@ -804,6 +1088,7 @@
     const faltando = cobertura.reduce((sum, item) => sum + item.faltando, 0);
     const horarios = cobertura.reduce((sum, item) => sum + item.slots.length, 0);
     const concluidos = cobertura.filter(item => item.completa).length;
+    const resumoPostos = getResumoPostosDoSetor(cobertura, postos);
 
     if (!postos.length) {
       el.innerHTML = `
@@ -837,13 +1122,13 @@
                     <strong>${slot.inicio}–${slot.fim}</strong>
                     ${slot.pessoas.length}/3 escalados${slot.faltam > 0 ? ` · faltam ${slot.faltam}` : ' · completo'}
                     ${slot.pedidoAberto ? `<div class="mini-note">🆘 ${slot.pedidoAberto.subAdminNome || 'Pedido aberto'}</div>` : ''}
-                    ${slot.faltam > 0 ? `<div class="slot-pill-actions"><button class="btn btn-outline btn-sm" onclick="fecharHorarioDoSetor(${item.cong?.id || 0}, '${escaparJs(item.desig.id)}', '${escaparJs(slot.inicio)}', ${slot.faltam})">Completar agora</button></div>` : ''}
+                    ${slot.faltam > 0 ? `<div class="slot-pill-actions"><button class="btn btn-outline btn-sm" onclick="fecharHorarioDoSetor(${item.cong?.id || 0}, '${escaparJs(item.escalaKey)}', '${escaparJs(slot.inicio)}', ${slot.faltam})">Completar agora</button></div>` : ''}
                   </div>`).join('')}
               </div>
               <div class="setor-actions">
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('sec-designar').scrollIntoView({ behavior: 'smooth' })">Ajustar designação</button>
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('sec-ajuda').scrollIntoView({ behavior: 'smooth' })">Ver pedidos de ajuda</button>
-                ${item.completa ? `<button class="btn btn-primary btn-sm" onclick="exportarArranjoSetorPDF('${escaparJs(item.desig.id)}')">🖨️ PDF pronto</button>` : ''}
+                ${item.completa ? `<button class="btn btn-primary btn-sm" onclick="exportarArranjoSetorPDF('${escaparJs(item.escalaKey)}')">🖨️ PDF pronto</button>` : ''}
               </div>
             </div>`;
         }).join('')
@@ -851,15 +1136,51 @@
 
     el.innerHTML = `
       <div class="setor-scope-note">Categorias deste sub-admin: <strong>${categorias.map(c => c.nome).join(', ')}</strong>.</div>
+      <div class="setor-highlight-grid">
+        <div class="setor-highlight success">
+          <span>Postos prontos</span>
+          <strong>${resumoPostos.postosProntos}/${resumoPostos.postosComEscala || postos.length}</strong>
+          <p>Postos da sua area com todas as designacoes completas.</p>
+        </div>
+        <div class="setor-highlight warn">
+          <span>Postos pendentes</span>
+          <strong>${resumoPostos.postosPendentes}</strong>
+          <p>${resumoPostos.postosSemPedido} posto(s) ainda sem pedido de ajuda aberto.</p>
+        </div>
+        <div class="setor-highlight danger">
+          <span>Postos criticos</span>
+          <strong>${resumoPostos.postosCriticos}</strong>
+          <p>Critico = pelo menos um arranjo do posto com 6 ou mais nomes faltando.</p>
+        </div>
+      </div>
+      <div class="setor-map-card">
+        <div class="setor-map-head">
+          <div>
+            <strong style="font-size:1rem;color:#7b4f00;">🗺️ Mapa do setor</strong>
+            <p>Mostra apenas os postos das categorias vinculadas a este sub-admin.</p>
+            <div class="setor-map-legend">
+              <span><i class="setor-map-dot setor-map-dot-ok"></i>Pronto</span>
+              <span><i class="setor-map-dot setor-map-dot-alerta"></i>Pendente</span>
+              <span><i class="setor-map-dot setor-map-dot-critico"></i>Critico</span>
+              <span><i class="setor-map-dot setor-map-dot-sem"></i>Sem escala</span>
+            </div>
+          </div>
+        </div>
+        <div class="setor-map-empty" id="setor-map-empty"></div>
+        <div class="setor-map-frame" id="setor-map"></div>
+      </div>
       <div class="setor-summary-grid">
         <div class="setor-stat"><strong>${postos.length}</strong><span>Postos do setor</span></div>
         <div class="setor-stat"><strong>${cobertura.length}</strong><span>Designações ativas</span></div>
         <div class="setor-stat"><strong>${horarios}</strong><span>Horários monitorados</span></div>
-        <div class="setor-stat"><strong>${faltando}</strong><span>Pessoas faltando</span></div>
-        <div class="setor-stat"><strong>${pedidosAbertos}</strong><span>Pedidos abertos</span></div>
-        <div class="setor-stat"><strong>${concluidos}/${cobertura.length}</strong><span>Arranjos fechados</span></div>
+        <div class="setor-stat ${faltando ? 'warn' : 'success'}"><strong>${faltando}</strong><span>Pessoas faltando</span></div>
+        <div class="setor-stat ${pedidosAbertos ? 'danger' : ''}"><strong>${pedidosAbertos}</strong><span>Pedidos abertos</span></div>
+        <div class="setor-stat ${resumoPostos.postosSemEscala ? 'warn' : ''}"><strong>${resumoPostos.postosSemEscala}</strong><span>Postos sem escala</span></div>
+        <div class="setor-stat ${concluidos === cobertura.length && cobertura.length ? 'success' : ''}"><strong>${concluidos}/${cobertura.length}</strong><span>Arranjos fechados</span></div>
       </div>
       <div class="setor-cards">${cardsHtml}</div>`;
+
+      renderMapaSetor(postos, resumoPostos);
   }
 
   function getPedidosAjuda() {

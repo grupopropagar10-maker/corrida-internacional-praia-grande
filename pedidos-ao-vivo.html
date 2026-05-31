@@ -539,12 +539,12 @@
 
     function getResumoVirada(data, inicio, fim) {
       if (!cruzaMadrugada(inicio, fim)) return null;
-      const inicioDia = formatarDataDia(data, 'dia informado');
-      const fimBase = data ? new Date(`${data}T12:00:00`) : null;
-      if (fimBase) fimBase.setDate(fimBase.getDate() + 1);
-      const fimDia = fimBase
-        ? fimBase.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
-        : 'dia seguinte';
+      const fimDia = formatarDataDia(data, 'dia informado');
+      const inicioBase = data ? new Date(`${data}T12:00:00`) : null;
+      if (inicioBase) inicioBase.setDate(inicioBase.getDate() - 1);
+      const inicioDia = inicioBase
+        ? inicioBase.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+        : 'dia anterior';
       return {
         badge: 'Vira a madrugada',
         texto: `Comeca ${inicio} em ${inicioDia} e termina ${fim} em ${fimDia}.`,

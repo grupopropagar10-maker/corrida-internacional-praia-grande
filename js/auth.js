@@ -63,25 +63,58 @@ const Auth = {
         subAdminId: sa.id,
         permissoes: sa.permissoes,
         categorias: sa.categorias || [],
+        modoEspecial: sa.modoEspecial || '',
       });
       return true;
     }
     return false;
   },
 
+  findTapaBuracoInvite(usuario, senha) {
+    const evento = DB.get('evento_config', {});
+    const invites = Array.isArray(evento?.tapaBuraco?.invites) ? evento.tapaBuraco.invites : [];
+    const invite = invites.find(item => item && item.usuario === usuario && item.senha === senha && item.ativo !== false);
+    return invite ? { invite } : null;
+  },
+
   findLiveInvite(usuario, senha) {
+    const foundTapaBuraco = this.findTapaBuracoInvite(usuario, senha);
+    if (foundTapaBuraco) {
+      return { ...foundTapaBuraco, mode: 'tapa_buraco' };
+    }
     const all = DB.get('cong_config', {});
     return Object.entries(all).reduce((found, [congId, cfg]) => {
       if (found) return found;
       const invites = Array.isArray(cfg?.liveRequests?.invites) ? cfg.liveRequests.invites : [];
       const invite = invites.find(item => item && item.usuario === usuario && item.senha === senha && item.ativo !== false);
-      return invite ? { congId: parseInt(congId, 10), invite } : null;
+      return invite ? { congId: parseInt(congId, 10), invite, mode: 'congregacao' } : null;
     }, null);
   },
 
   loginLiveInvite(usuario, senha) {
     const found = this.findLiveInvite(usuario, senha);
     if (!found) return false;
+    if (found.mode === 'tapa_buraco') {
+      const evento = DB.get('evento_config', {});
+      evento.tapaBuraco = evento.tapaBuraco && typeof evento.tapaBuraco === 'object' ? evento.tapaBuraco : {};
+      evento.tapaBuraco.invites = Array.isArray(evento.tapaBuraco.invites) ? evento.tapaBuraco.invites : [];
+      const invite = evento.tapaBuraco.invites.find(item => item && item.id === found.invite.id);
+      if (invite) {
+        invite.loginCount = Number(invite.loginCount || 0) + 1;
+        invite.ultimoAcessoEm = new Date().toLocaleString('pt-BR');
+        DB.set('evento_config', evento);
+      }
+      this.setSession({
+        type: 'live',
+        nome: found.invite.nome,
+        congId: null,
+        liveInviteId: found.invite.id,
+        liveUsuario: found.invite.usuario,
+        liveMode: 'tapa_buraco',
+      });
+      return true;
+    }
+
     const all = DB.get('cong_config', {});
     const cfg = all[found.congId] || {};
     const invites = Array.isArray(cfg?.liveRequests?.invites) ? cfg.liveRequests.invites : [];
@@ -104,6 +137,7 @@ const Auth = {
       congId: found.congId,
       liveInviteId: found.invite.id,
       liveUsuario: found.invite.usuario,
+      liveMode: 'congregacao',
     });
     return true;
   },

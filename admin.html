@@ -485,6 +485,9 @@
               <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
                 <input type="checkbox" id="sa-perm-congs"/> ⛪ Designar Congregações
               </label>
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
+                <input type="checkbox" id="sa-modo-tapa-buraco"/> 🛠️ Admin Tapa-Buraco
+              </label>
             </div>
             <div style="margin:.8rem 0 .4rem;">
               <strong style="font-size:.85rem;color:var(--primary-dark);">Categorias que pode gerenciar:</strong>
@@ -1451,9 +1454,12 @@
     return [
       `Olá, ${sa.nome}.`,
       '',
-      'Seu acesso ao painel de setor da Corrida PG foi liberado.',
+      sa.modoEspecial === 'tapa_buraco'
+        ? 'Seu acesso especial do tapa-buraco da Corrida PG foi liberado.'
+        : 'Seu acesso ao painel de setor da Corrida PG foi liberado.',
       `Login: ${sa.usuario}`,
       `Senha: ${sa.senha}`,
+      sa.modoEspecial === 'tapa_buraco' ? 'Modo especial: tapa-buraco' : '',
       `Categorias: ${categoriasTexto}`,
       '',
       'Link de acesso:',
@@ -1484,6 +1490,7 @@
           <div>
             ${sa.permissoes?.criarPostos ? '<span class="badge badge-success" style="font-size:0.7rem;margin-right:4px;">📍 Postos</span>' : ''}
             ${sa.permissoes?.designarCongregacoes ? '<span class="badge badge-primary" style="font-size:0.7rem;">⛪ Designações</span>' : ''}
+            ${sa.modoEspecial === 'tapa_buraco' ? '<span class="badge badge-standby" style="font-size:0.7rem;margin-left:4px;">🛠️ Tapa-Buraco</span>' : ''}
             ${!sa.permissoes?.criarPostos && !sa.permissoes?.designarCongregacoes ? '<span style="color:var(--gray)">Sem permissões</span>' : ''}
           </div>
           <div style="font-size:0.75rem;color:var(--gray);">
@@ -1544,6 +1551,7 @@
     document.getElementById('sa-telefone').value = '';
     document.getElementById('sa-perm-postos').checked = false;
     document.getElementById('sa-perm-congs').checked = false;
+    document.getElementById('sa-modo-tapa-buraco').checked = false;
     popularCategoriasNoForm([]);
     document.getElementById('form-subadmin').style.display = 'block';
     document.getElementById('sa-nome').focus();
@@ -1566,6 +1574,7 @@
     const telInfo = normalizarWhatsApp(document.getElementById('sa-telefone').value);
     const pPerms  = document.getElementById('sa-perm-postos').checked;
     const pCongs  = document.getElementById('sa-perm-congs').checked;
+    const modoTapaBuraco = document.getElementById('sa-modo-tapa-buraco').checked;
     const catsSel = Array.from(document.querySelectorAll('.sa-cat-cb:checked')).map(cb => parseInt(cb.value));
 
     if (!nome || !usuario || !senha) { showToast('Preencha todos os campos!', 'error'); return; }
@@ -1586,6 +1595,7 @@
         lista[i].telefone = telInfo.formatted;
         lista[i].permissoes = { criarPostos: pPerms, designarCongregacoes: pCongs };
         lista[i].categorias = catsSel;
+        lista[i].modoEspecial = modoTapaBuraco ? 'tapa_buraco' : '';
         salvo = lista[i];
       }
     } else {
@@ -1596,6 +1606,7 @@
         telefone: telInfo.formatted,
         permissoes: { criarPostos: pPerms, designarCongregacoes: pCongs },
         categorias: catsSel,
+        modoEspecial: modoTapaBuraco ? 'tapa_buraco' : '',
         atividades: []
       };
       lista.push(salvo);
@@ -1619,6 +1630,7 @@
     document.getElementById('sa-telefone').value      = sa.telefone || '';
     document.getElementById('sa-perm-postos').checked = !!sa.permissoes?.criarPostos;
     document.getElementById('sa-perm-congs').checked  = !!sa.permissoes?.designarCongregacoes;
+    document.getElementById('sa-modo-tapa-buraco').checked = sa.modoEspecial === 'tapa_buraco';
     popularCategoriasNoForm(sa.categorias || []);
     document.getElementById('form-subadmin').style.display = 'block';
     document.getElementById('form-subadmin').scrollIntoView({ behavior: 'smooth' });

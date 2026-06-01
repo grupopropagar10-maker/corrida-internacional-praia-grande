@@ -462,6 +462,7 @@
     <a href="#sec-postos" id="nav-postos"><span>📍</span> Postos</a>
     <a href="#sec-designar" id="nav-designar"><span>⛪</span> Designar Cong.</a>
     <a href="#sec-ajuda" id="nav-ajuda"><span>🆘</span> Pedidos de Ajuda</a>
+    <a href="#sec-tapa-buraco" id="nav-tapa-buraco" style="display:none;"><span>🛠️</span> Tapa-Buraco</a>
     <a href="#sec-atividades" id="nav-atividades"><span>📋</span> Minhas Atividades</a>
   </nav>
 
@@ -521,6 +522,15 @@
       </div>
     </section>
 
+    <section id="sec-tapa-buraco" style="display:none;">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2>🛠️ Operação Tapa-Buraco</h2>
+        </div>
+        <div class="section-card-body" id="body-tapa-buraco"></div>
+      </div>
+    </section>
+
     <!-- ATIVIDADES -->
     <section id="sec-atividades">
       <div class="section-card">
@@ -568,6 +578,7 @@
 
   const subAdminAtual = DB.get('sub_admins', []).find(sa => sa.id === session?.subAdminId) || null;
   const perm = { ...(session?.permissoes || {}), ...(subAdminAtual?.permissoes || {}) };
+  const isTapaBuracoAdmin = subAdminAtual?.modoEspecial === 'tapa_buraco';
   const categoriaIds = Array.isArray(subAdminAtual?.categorias)
     ? subAdminAtual.categorias.map(Number).filter(Number.isFinite)
     : Array.isArray(session?.categorias)
@@ -1202,6 +1213,145 @@
     DB.set('cong_config', all);
   }
 
+  function getEventoConfig() {
+    return DB.get('evento_config', {});
+  }
+
+  function getTapaBuracoConfig() {
+    const evento = getEventoConfig();
+    const raw = evento.tapaBuraco && typeof evento.tapaBuraco === 'object' ? evento.tapaBuraco : {};
+    return {
+      invites: Array.isArray(raw.invites) ? raw.invites : [],
+      suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : [],
+      assignments: Array.isArray(raw.assignments) ? raw.assignments : [],
+    };
+  }
+
+  function saveTapaBuracoConfig(cfg) {
+    const evento = getEventoConfig();
+    evento.tapaBuraco = {
+      invites: Array.isArray(cfg?.invites) ? cfg.invites : [],
+      suggestions: Array.isArray(cfg?.suggestions) ? cfg.suggestions : [],
+      assignments: Array.isArray(cfg?.assignments) ? cfg.assignments : [],
+    };
+    DB.set('evento_config', evento);
+  }
+
+  function getDigits(value) {
+    return String(value || '').replace(/\D/g, '');
+  }
+
+  function formatarTelefoneBR(value) {
+    const digits = getDigits(value);
+    if (!digits) return '';
+    const ddd = digits.slice(0, 2);
+    if (digits.length <= 10) {
+      const prefixo = digits.slice(2, 6);
+      const sufixo = digits.slice(6, 10);
+      return [ddd ? `(${ddd})` : '', prefixo, sufixo ? `-${sufixo}` : ''].join(' ').trim().replace(/\s-/, '-');
+    }
+    const prefixo = digits.slice(2, 7);
+    const sufixo = digits.slice(7, 11);
+    return [ddd ? `(${ddd})` : '', prefixo, sufixo ? `-${sufixo}` : ''].join(' ').trim().replace(/\s-/, '-');
+  }
+
+  function normalizarWhatsApp(value) {
+    const digits = getDigits(value);
+    if (!digits) return { ok: false, digits: '', formatted: '', waDigits: '' };
+    if (digits.length < 10 || digits.length > 11) {
+      return { ok: false, digits, formatted: formatarTelefoneBR(digits), waDigits: '' };
+    }
+    return {
+      ok: true,
+      digits,
+      formatted: formatarTelefoneBR(digits),
+      waDigits: `55${digits}`,
+    };
+  }
+
+  function gerarSenhaAutomatica() {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let senha = '';
+    for (let i = 0; i < 6; i += 1) senha += chars[Math.floor(Math.random() * chars.length)];
+    return senha;
+  }
+
+  function gerarUsuarioTapaBuraco(nome, invites) {
+    const base = String(nome || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '')
+      .slice(0, 18) || 'tapa.buraco';
+    let tentativa = base;
+    let idx = 2;
+    const usados = new Set((invites || []).map(item => String(item.usuario || '').toLowerCase()));
+    while (usados.has(tentativa)) {
+      tentativa = `${base}.${idx}`.slice(0, 22);
+      idx += 1;
+    }
+    return tentativa;
+  }
+
+  function getTapaBuracoManagers() {
+    return DB.get('sub_admins', []).filter(sa => sa.modoEspecial === 'tapa_buraco');
+  }
+
+  function getTapaBuracoSuggestionsByPedido(cfg, pedidoId) {
+    return (cfg?.suggestions || []).filter(item => item.pedidoId === pedidoId);
+  }
+
+  function getTapaBuracoAssignmentsByPedido(cfg, pedidoId) {
+    return (cfg?.assignments || []).filter(item => item.pedidoId === pedidoId);
+  }
+
+  function getTapaBuracoPendingAssignmentsByPedido(cfg, pedidoId) {
+    return getTapaBuracoAssignmentsByPedido(cfg, pedidoId).filter(item => item.status === 'pendente');
+  }
+
+  function getVagasRestantesPedido(pedido, cfg) {
+    const atualCfg = getCongConfigById(pedido.congId);
+    const atuais = getPessoasDoSlot(atualCfg.turnos || {}, pedido.designacaoId, pedido.slotKey);
+    const faltamAgora = Math.max(0, 3 - atuais.length);
+    const pendentes = getTapaBuracoPendingAssignmentsByPedido(cfg, pedido.id).length;
+    return Math.max(0, faltamAgora - pendentes);
+  }
+
+  function getSlotFimFromPedido(pedido) {
+    const match = String(pedido?.slotLabel || '').match(/^(\d{2}:\d{2})–(\d{2}:\d{2})/);
+    return match ? match[2] : '';
+  }
+
+  function getMensagemTapaBuraco(invite, assignment) {
+    const url = `${location.origin}${location.pathname.replace(/sub-admin\.html$/i, 'login.html')}?type=live`;
+    return [
+      `Olá, ${invite.nome}.`,
+      '',
+      'Você recebeu uma designação especial de tapa-buraco na Corrida PG.',
+      'Ao entrar, confirme o local e responda se aceita a designação.',
+      '',
+      `Setor: ${assignment.categoriaNome || '—'}`,
+      `Posto: ${assignment.postoNome || '—'}`,
+      `Data: ${assignment.dataFmt || assignment.data || '—'}`,
+      `Horário: ${assignment.slotLabel || assignment.slotKey || '—'}`,
+      '',
+      `Login: ${invite.usuario}`,
+      `Senha: ${invite.senha}`,
+      `Site: ${url}`,
+    ].join('\n');
+  }
+
+  function abrirWhatsAppTapaBuraco(invite, assignment) {
+    const tel = normalizarWhatsApp(invite.whatsapp);
+    if (!tel.ok) {
+      showToast('Cadastre um WhatsApp válido para este tapa-buraco.', 'warning');
+      return;
+    }
+    const mensagem = encodeURIComponent(getMensagemTapaBuraco(invite, assignment));
+    window.open(`https://wa.me/${tel.waDigits}?text=${mensagem}`, '_blank', 'noopener');
+  }
+
   function escaparJs(value) {
     return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   }
@@ -1358,13 +1508,39 @@
     }
 
     const congs = DB.get('congregacoes', []).filter(c => c.confirmada);
+    const tbCfg = getTapaBuracoConfig();
 
     el.innerHTML = pedidos.map(pedido => {
       const classe = pedido.status === 'fechado' ? 'help-card closed' : 'help-card pending';
+      const sugestoesTb = getTapaBuracoSuggestionsByPedido(tbCfg, pedido.id);
+      const designacoesPendentesTb = getTapaBuracoPendingAssignmentsByPedido(tbCfg, pedido.id);
+      const vagasTb = getVagasRestantesPedido(pedido, tbCfg);
       const helperOptions = congs
         .filter(c => c.id !== pedido.congId)
         .map(c => `<option value="${c.id}" ${pedido.ajudanteCongId === c.id ? 'selected' : ''}>${c.nome}</option>`)
         .join('');
+
+      const sugestoesHtml = sugestoesTb.length
+        ? sugestoesTb.map(item => {
+            const podeDesignar = ['sugerido', 'recusado'].includes(item.status);
+            const checkedDisabled = !podeDesignar || vagasTb === 0 ? 'disabled' : '';
+            const statusLabel = item.status === 'designado'
+              ? `Designado por ${item.designadoPorNome || 'setor'} em ${item.designadoEm || '—'}`
+              : item.status === 'aceito'
+                ? `Aceitou em ${item.acceptedAt || '—'}`
+                : item.status === 'recusado'
+                  ? `Recusou em ${item.declinedAt || '—'}`
+                  : `Sugerido por ${item.managerNome || 'tapa-buraco'} em ${item.suggestedAt || '—'}`;
+            return `
+              <label style="display:flex;gap:.55rem;align-items:flex-start;padding:.55rem .65rem;border:1px solid var(--gray-light);border-radius:10px;background:#fafbfd;">
+                <input type="checkbox" value="${item.id}" name="tb-sug-${pedido.id}" ${checkedDisabled}/>
+                <span style="display:grid;gap:.15rem;">
+                  <strong>${item.inviteNome}</strong>
+                  <span class="mini-note">${item.whatsapp || 'Sem WhatsApp'} · ${statusLabel}</span>
+                </span>
+              </label>`;
+          }).join('')
+        : '<div class="mini-note">Nenhum nome sugerido pelo tapa-buraco ainda.</div>';
 
       const nomesResolvidos = (pedido.nomesResolvidos || []).join(', ');
       return `
@@ -1397,10 +1573,24 @@
                 <div class="mini-note">Ex.: Maria, João, Ana.</div>
               </div>
             </div>
+            <div style="margin-top:.8rem;padding:.8rem;border:1px dashed var(--gray-light);border-radius:12px;background:#fffaf1;">
+              <div style="display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:center;">
+                <strong>Reserva do tapa-buraco</strong>
+                <span class="badge ${vagasTb ? 'badge-standby' : 'badge-ativo'}">${vagasTb} vaga(s) para designar agora</span>
+              </div>
+              <div class="mini-note" style="margin:.35rem 0 .65rem;">O tapa-buraco só sugere nomes. A designação final acontece aqui, no painel do setor.</div>
+              <div style="display:grid;gap:.45rem;">${sugestoesHtml}</div>
+              ${designacoesPendentesTb.length ? `<div class="mini-note" style="margin-top:.6rem;">Aguardando resposta: ${designacoesPendentesTb.map(item => item.inviteNome).join(', ')}.</div>` : ''}
+              <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.75rem;">
+                <button class="btn btn-outline btn-sm" onclick="designarSugestoesTapaBuraco('${pedido.id}')">🛠️ Designar nomes selecionados</button>
+              </div>
+            </div>
             <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
               <button class="btn btn-primary btn-sm" onclick="fecharPedidoAjuda('${pedido.id}')">✅ Fechar arranjo</button>
+              ${getTapaBuracoManagers().length ? `<button class="btn btn-outline btn-sm" onclick="encaminharPedidoParaTapaBuraco('${pedido.id}')">🛠️ Encaminhar ao tapa-buraco</button>` : ''}
               <button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjudaSubAdmin('${pedido.id}')">Cancelar</button>
             </div>
+            ${pedido.tapaBuracoStatus === 'encaminhado' ? `<div class="mini-note" style="margin-top:.6rem;">🛠️ Encaminhado ao tapa-buraco por ${pedido.tapaBuracoEncaminhadoPorNome || session.nome} em ${pedido.tapaBuracoEncaminhadoEm || '—'}.</div>` : ''}
           `}
         </div>`;
     }).join('');
@@ -1462,6 +1652,275 @@
     showToast('Pedido cancelado.', 'info');
   };
 
+  function renderTapaBuraco() {
+    const section = document.getElementById('sec-tapa-buraco');
+    const nav = document.getElementById('nav-tapa-buraco');
+    const el = document.getElementById('body-tapa-buraco');
+    if (!section || !nav || !el) return;
+    if (!isTapaBuracoAdmin) {
+      section.style.display = 'none';
+      nav.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    nav.style.display = 'flex';
+
+    const cfg = getTapaBuracoConfig();
+    const invites = cfg.invites.slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
+    const suggestions = cfg.suggestions || [];
+    const assignments = cfg.assignments || [];
+    const pedidosEncaminhados = getPedidosAjuda().filter(p => p.status === 'aberto' && p.tapaBuracoStatus === 'encaminhado');
+
+    const convitesHtml = invites.length
+      ? invites.map(invite => {
+          const sugeridos = suggestions.filter(item => item.inviteId === invite.id && ['sugerido', 'recusado'].includes(item.status)).length;
+          const pendentes = assignments.filter(item => item.inviteId === invite.id && item.status === 'pendente').length;
+          const aceitas = assignments.filter(item => item.inviteId === invite.id && item.status === 'aceito').length;
+          return `
+            <div class="help-card" style="margin-bottom:.75rem;">
+              <div style="display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
+                <div>
+                  <strong>${invite.nome}</strong>
+                  <div class="mini-note">${invite.whatsapp || 'Sem WhatsApp'} · @${invite.usuario}</div>
+                </div>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                  <span class="badge badge-primary">${sugeridos} na reserva</span>
+                  <span class="badge badge-standby">${pendentes} pendente(s)</span>
+                  <span class="badge badge-ativo">${aceitas} aceita(s)</span>
+                  ${invite.ativo === false ? '<span class="badge badge-inativo">Inativo</span>' : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('')
+      : '<div style="color:var(--gray);font-size:.84rem;">Nenhum tapa-buraco cadastrado ainda.</div>';
+
+    const pedidosHtml = pedidosEncaminhados.length
+      ? pedidosEncaminhados.map(pedido => {
+          const sugestoes = suggestions.filter(item => item.pedidoId === pedido.id);
+          const inviteOptions = invites
+            .filter(invite => invite.ativo !== false)
+            .filter(invite => !sugestoes.some(item => item.inviteId === invite.id && ['sugerido', 'designado', 'aceito'].includes(item.status)))
+            .map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'}</option>`)
+            .join('');
+          return `
+            <div class="help-card pending">
+              <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+                <div>
+                  <strong>${pedido.congNome}</strong>
+                  <div class="mini-note">📍 ${pedido.postoNome || 'Posto'} · ${pedido.categoriaNome || 'Categoria'} · ${pedido.dataFmt || pedido.data || '—'} · ${pedido.slotLabel}</div>
+                  <div class="mini-note">Encaminhado por ${pedido.tapaBuracoEncaminhadoPorNome || pedido.subAdminNome || 'sub-admin'} em ${pedido.tapaBuracoEncaminhadoEm || pedido.criadoEm || '—'}.</div>
+                </div>
+                <span class="badge badge-standby">Faltam ${pedido.faltaQtd} pessoa(s)</span>
+              </div>
+              <div class="mini-note" style="margin-top:.5rem;">Escolha um tapa-buraco para sugerir ao setor. O voluntário receberá o login particular pelo WhatsApp e só precisará responder se aceita a designação.</div>
+              <div class="help-grid">
+                <div>
+                  <label>Tapa-buraco para sugerir</label>
+                  <select class="form-control" id="tb-invite-${pedido.id}">
+                    <option value="">Escolha quem vai receber</option>
+                    ${inviteOptions}
+                  </select>
+                </div>
+                <div>
+                  <label>Status das sugestões</label>
+                  <div style="padding:.65rem .75rem;border:1px solid var(--gray-light);border-radius:10px;background:#fafbfd;font-size:.8rem;min-height:42px;">
+                    ${sugestoes.length ? sugestoes.map(item => `${item.inviteNome} — ${item.status === 'sugerido' ? 'aguardando setor' : item.status === 'designado' ? 'designado no setor' : item.status === 'aceito' ? 'aceitou' : 'recusou'}`).join('<br>') : 'Nenhuma sugestão enviada ainda.'}
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
+                <button class="btn btn-primary btn-sm" onclick="enviarSugestaoTapaBuraco('${pedido.id}')">📲 Enviar sugestão</button>
+              </div>
+            </div>`;
+        }).join('')
+      : '<div style="color:var(--gray);font-size:.84rem;">Nenhum pedido encaminhado ao tapa-buraco no momento.</div>';
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1rem;">
+        <div class="setor-stat"><strong>${invites.length}</strong><span>Tapa-buracos ativos</span></div>
+        <div class="setor-stat warn"><strong>${pedidosEncaminhados.length}</strong><span>Pedidos encaminhados</span></div>
+        <div class="setor-stat"><strong>${suggestions.filter(item => item.status === 'sugerido').length}</strong><span>Nomes aguardando setor</span></div>
+        <div class="setor-stat success"><strong>${assignments.filter(item => item.status === 'aceito').length}</strong><span>Designações aceitas</span></div>
+      </div>
+      <div class="help-card" style="margin-bottom:1rem;">
+        <strong>Cadastrar tapa-buraco</strong>
+        <div class="help-grid" style="margin-top:.8rem;">
+          <div><label>Nome</label><input class="form-control" id="tb-nome" placeholder="Ex: Maria Souza"/></div>
+          <div><label>WhatsApp</label><input class="form-control" id="tb-whatsapp" placeholder="(13) 99718-0445"/></div>
+        </div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
+          <button class="btn btn-primary btn-sm" onclick="salvarNovoTapaBuraco()">💾 Cadastrar e gerar acesso</button>
+        </div>
+      </div>
+      <div class="help-card" style="margin-bottom:1rem;">
+        <strong>Equipe de tapa-buraco</strong>
+        <div style="margin-top:.8rem;">${convitesHtml}</div>
+      </div>
+      <div class="help-card">
+        <strong>Pedidos encaminhados pelos setores</strong>
+        <div style="margin-top:.8rem;">${pedidosHtml}</div>
+      </div>`;
+  }
+
+  window.salvarNovoTapaBuraco = function() {
+    const nome = document.getElementById('tb-nome')?.value.trim() || '';
+    const whats = normalizarWhatsApp(document.getElementById('tb-whatsapp')?.value || '');
+    if (!nome) { showToast('Informe o nome do tapa-buraco.', 'warning'); return; }
+    if (!whats.ok) { showToast('Informe um WhatsApp válido com DDD.', 'warning'); return; }
+    const cfg = getTapaBuracoConfig();
+    const invite = {
+      id: `tb_${Date.now()}`,
+      nome,
+      whatsapp: whats.formatted,
+      usuario: gerarUsuarioTapaBuraco(nome, cfg.invites),
+      senha: gerarSenhaAutomatica(),
+      ativo: true,
+      criadoEm: new Date().toLocaleString('pt-BR'),
+      criadoPorId: session.subAdminId,
+      criadoPorNome: session.nome,
+    };
+    cfg.invites.unshift(invite);
+    saveTapaBuracoConfig(cfg);
+    document.getElementById('tb-nome').value = '';
+    document.getElementById('tb-whatsapp').value = '';
+    Auth.registrarAtividade('Cadastrou tapa-buraco', invite.nome);
+    renderTapaBuraco();
+    renderAtividades();
+    showToast('Tapa-buraco cadastrado com acesso individual.', 'success');
+  };
+
+  window.enviarSugestaoTapaBuraco = function(pedidoId) {
+    const inviteId = document.getElementById(`tb-invite-${pedidoId}`)?.value;
+    if (!inviteId) { showToast('Escolha o tapa-buraco que vai receber a sugestão.', 'warning'); return; }
+    const lista = getPedidosAjuda();
+    const pedido = lista.find(item => item.id === pedidoId && item.status === 'aberto');
+    if (!pedido) { showToast('Pedido não encontrado ou já encerrado.', 'warning'); return; }
+    const cfg = getTapaBuracoConfig();
+    const invite = cfg.invites.find(item => item.id === inviteId);
+    if (!invite) { showToast('Tapa-buraco não encontrado.', 'warning'); return; }
+    const jaExiste = (cfg.suggestions || []).some(item => item.pedidoId === pedido.id && item.inviteId === invite.id && ['sugerido', 'designado', 'aceito'].includes(item.status));
+    if (jaExiste) { showToast('Esse nome já está ativo neste pedido.', 'warning'); return; }
+    const suggestion = {
+      id: `tb_sug_${Date.now()}`,
+      inviteId: invite.id,
+      inviteNome: invite.nome,
+      whatsapp: invite.whatsapp || '',
+      pedidoId: pedido.id,
+      congId: pedido.congId,
+      congNome: pedido.congNome,
+      postoId: pedido.postoId,
+      postoNome: pedido.postoNome,
+      localLabel: DB.get('postos', []).find(p => p.id === pedido.postoId)?.local || '',
+      categoriaId: pedido.categoriaId,
+      categoriaNome: pedido.categoriaNome,
+      designacaoId: pedido.designacaoId,
+      data: pedido.data || '',
+      dataFmt: pedido.dataFmt || pedido.data || '—',
+      slotKey: pedido.slotKey,
+      slotFim: getSlotFimFromPedido(pedido),
+      slotLabel: pedido.slotLabel,
+      status: 'sugerido',
+      suggestedAt: new Date().toLocaleString('pt-BR'),
+      managerId: session.subAdminId,
+      managerNome: session.nome,
+    };
+    cfg.suggestions = Array.isArray(cfg.suggestions) ? cfg.suggestions : [];
+    cfg.suggestions.unshift(suggestion);
+    saveTapaBuracoConfig(cfg);
+    pedido.tapaBuracoUltimaSugestaoEm = suggestion.suggestedAt;
+    pedido.tapaBuracoUltimaSugestaoPara = invite.nome;
+    savePedidosAjuda(lista);
+    Auth.registrarAtividade('Sugeriu nome de tapa-buraco', `${invite.nome} → ${pedido.postoNome} · ${pedido.slotLabel}`);
+    renderTapaBuraco();
+    renderPedidosAjuda();
+    renderAtividades();
+    showToast('Nome enviado para a reserva do pedido no setor.', 'success');
+  };
+
+  window.designarSugestoesTapaBuraco = function(pedidoId) {
+    const lista = getPedidosAjuda();
+    const pedido = lista.find(item => item.id === pedidoId && item.subAdminId === session.subAdminId && item.status === 'aberto');
+    if (!pedido) { showToast('Pedido não encontrado ou já encerrado.', 'warning'); return; }
+    const cfg = getTapaBuracoConfig();
+    const vagas = getVagasRestantesPedido(pedido, cfg);
+    if (!vagas) { showToast('Não há vagas livres para novas designações neste pedido.', 'warning'); return; }
+
+    const selecionados = Array.from(document.querySelectorAll(`input[name="tb-sug-${pedidoId}"]:checked`)).map(input => input.value);
+    if (!selecionados.length) { showToast('Selecione pelo menos um nome sugerido.', 'warning'); return; }
+    if (selecionados.length > vagas) { showToast(`Você só pode designar ${vagas} nome(s) agora.`, 'warning'); return; }
+
+    const sugestoes = getTapaBuracoSuggestionsByPedido(cfg, pedidoId).filter(item => selecionados.includes(item.id));
+    const indisponiveis = sugestoes.filter(item => !['sugerido', 'recusado'].includes(item.status));
+    if (indisponiveis.length) { showToast('Uma das sugestões escolhidas já não está disponível. Atualize a tela.', 'warning'); return; }
+
+    const invitesById = new Map((cfg.invites || []).map(item => [item.id, item]));
+    const agora = new Date().toLocaleString('pt-BR');
+    sugestoes.forEach(item => {
+      item.status = 'designado';
+      item.designadoEm = agora;
+      item.designadoPorId = session.subAdminId;
+      item.designadoPorNome = session.nome;
+      cfg.assignments.unshift({
+        id: `tb_assign_${Date.now()}_${item.inviteId}`,
+        inviteId: item.inviteId,
+        inviteNome: item.inviteNome,
+        pedidoId: item.pedidoId,
+        congId: item.congId,
+        congNome: item.congNome,
+        postoId: item.postoId,
+        postoNome: item.postoNome,
+        localLabel: item.localLabel,
+        categoriaId: item.categoriaId,
+        categoriaNome: item.categoriaNome,
+        designacaoId: item.designacaoId,
+        data: item.data || '',
+        dataFmt: item.dataFmt || item.data || '—',
+        slotKey: item.slotKey,
+        slotFim: item.slotFim || '',
+        slotLabel: item.slotLabel,
+        status: 'pendente',
+        suggestedAt: item.suggestedAt || agora,
+        designatedAt: agora,
+        managerId: item.managerId,
+        managerNome: item.managerNome,
+        setorSubAdminId: session.subAdminId,
+        setorSubAdminNome: session.nome,
+        suggestionId: item.id,
+      });
+      const invite = invitesById.get(item.inviteId);
+      if (invite) abrirWhatsAppTapaBuraco(invite, item);
+    });
+
+    pedido.tapaBuracoUltimaSugestaoEm = agora;
+    pedido.tapaBuracoUltimaSugestaoPara = sugestoes.map(item => item.inviteNome).join(', ');
+    saveTapaBuracoConfig(cfg);
+    savePedidosAjuda(lista);
+    Auth.registrarAtividade('Designou nomes do tapa-buraco', `${pedido.congNome} · ${pedido.slotLabel}`);
+    renderTapaBuraco();
+    renderPedidosAjuda();
+    renderAtividades();
+    showToast('Designação enviada com acesso restrito para resposta.', 'success');
+  };
+
+  window.encaminharPedidoParaTapaBuraco = function(id) {
+    const managers = getTapaBuracoManagers();
+    if (!managers.length) { showToast('Nenhum admin tapa-buraco cadastrado ainda.', 'warning'); return; }
+    const lista = getPedidosAjuda();
+    const pedido = lista.find(item => item.id === id && item.subAdminId === session.subAdminId);
+    if (!pedido || pedido.status !== 'aberto') return;
+    pedido.tapaBuracoStatus = 'encaminhado';
+    pedido.tapaBuracoEncaminhadoEm = new Date().toLocaleString('pt-BR');
+    pedido.tapaBuracoEncaminhadoPorId = session.subAdminId;
+    pedido.tapaBuracoEncaminhadoPorNome = session.nome;
+    savePedidosAjuda(lista);
+    Auth.registrarAtividade('Encaminhou pedido ao tapa-buraco', `${pedido.congNome} · ${pedido.slotLabel}`);
+    renderPedidosAjuda();
+    renderTapaBuraco();
+    renderAtividades();
+    showToast('Pedido encaminhado ao admin tapa-buraco.', 'success');
+  };
+
   // ── ATIVIDADES ──
   function renderAtividades() {
     const lista  = DB.get('sub_admins', []);
@@ -1494,13 +1953,14 @@
   });
 
   // Sincroniza em tempo real
-  window.addEventListener('db-sync', () => { renderSetor(); renderBebidasQuentes(); renderPostos(); renderDesignar(); renderPedidosAjuda(); renderAtividades(); });
+  window.addEventListener('db-sync', () => { renderSetor(); renderBebidasQuentes(); renderPostos(); renderDesignar(); renderPedidosAjuda(); renderTapaBuraco(); renderAtividades(); });
 
   renderSetor();
   renderBebidasQuentes();
   renderPostos();
   renderDesignar();
   renderPedidosAjuda();
+  renderTapaBuraco();
   renderAtividades();
 </script>
 </body>

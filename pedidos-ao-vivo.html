@@ -472,7 +472,8 @@
       return;
     }
 
-    const CONG_ID = session.congId;
+    const LIVE_MODE = session.liveMode || 'congregacao';
+    const CONG_ID = LIVE_MODE === 'tapa_buraco' ? null : session.congId;
   let assignmentMap = null;
   let assignmentMarker = null;
   let liveFocusAssignmentKey = '';
@@ -488,6 +489,7 @@
     }
 
     function getCongregacao() {
+      if (!CONG_ID) return null;
       return DB.get('congregacoes', []).find(c => c.id === CONG_ID) || null;
     }
 
@@ -511,13 +513,81 @@
       DB.set('cong_config', all);
     }
 
+    function getEventoConfig() {
+      return DB.get('evento_config', {});
+    }
+
+    function getTapaBuracoConfig() {
+      const evento = getEventoConfig();
+      const raw = evento.tapaBuraco && typeof evento.tapaBuraco === 'object' ? evento.tapaBuraco : {};
+      return {
+        invites: Array.isArray(raw.invites) ? raw.invites : [],
+        suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : [],
+        assignments: Array.isArray(raw.assignments) ? raw.assignments : [],
+      };
+    }
+
+    function saveTapaBuracoConfig(cfg) {
+      const evento = getEventoConfig();
+      evento.tapaBuraco = {
+        invites: Array.isArray(cfg?.invites) ? cfg.invites : [],
+        suggestions: Array.isArray(cfg?.suggestions) ? cfg.suggestions : [],
+        assignments: Array.isArray(cfg?.assignments) ? cfg.assignments : [],
+      };
+      DB.set('evento_config', evento);
+    }
+
     function getInvite() {
+      if (LIVE_MODE === 'tapa_buraco') {
+        const cfg = getTapaBuracoConfig();
+        return cfg.invites.find(item => item.id === session.liveInviteId) || null;
+      }
       const cfg = getCongConfigById(CONG_ID);
       return cfg.liveRequests.invites.find(item => item.id === session.liveInviteId) || null;
     }
 
+    function getPedidosAjudaEscala() {
+      return DB.get('pedidos_ajuda_escala', []);
+    }
+
+    function savePedidosAjudaEscala(lista) {
+      DB.set('pedidos_ajuda_escala', lista);
+    }
+
     function getCategoriaById(categoriaId) {
       return DB.get('categorias', []).find(c => String(c.id) === String(categoriaId)) || null;
+    }
+
+    function getTapaBuracoAssignments(inviteId) {
+      const cfg = getTapaBuracoConfig();
+      return cfg.assignments
+        .filter(item => item.inviteId === inviteId && ['pendente', 'aceito'].includes(item.status))
+        .map(item => {
+          const posto = DB.get('postos', []).find(p => p.id === item.postoId) || {
+            id: item.postoId,
+            nome: item.postoNome || 'Posto',
+            local: item.localLabel || 'Local nao informado',
+            lat: null,
+            lng: null,
+          };
+          const categoria = getCategoriaById(item.categoriaId) || { id: item.categoriaId, nome: item.categoriaNome || 'Sem setor' };
+          return {
+            ...item,
+            key: item.id,
+            source: 'tapa_buraco',
+            posto,
+            categoria,
+            desig: {
+              id: item.designacaoId,
+              data: item.data || '',
+              responsavel: item.managerNome || '',
+            },
+            slotKey: item.slotKey,
+            slotFim: item.slotFim || '',
+            resumo: `${item.postoNome || posto.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey || '—'}`,
+          };
+        })
+        .sort((a, b) => (String(a.data) + String(a.slotKey)).localeCompare(String(b.data) + String(b.slotKey)));
     }
 
     function normalizeCompareName(value) {
@@ -788,17 +858,28 @@
           selectorEl.innerHTML = '';
         }
       }
-      document.getElementById('assignment-title').textContent = lockedByManual ? 'Seu arranjo foi definido' : 'Seu posto confirmado';
-      document.getElementById('assignment-subtitle').textContent = lockedByManual
-        ? 'A congregacao ja fechou este arranjo para voce. O acesso fica somente para consulta.'
-        : 'Seu pedido ao vivo ja fechou o arranjo. Veja abaixo os detalhes do posto e horario.';
-      document.getElementById('assignment-badge').className = `badge ${lockedByManual ? 'badge-primary' : 'badge-ativo'}`;
-      document.getElementById('assignment-badge').textContent = lockedByManual ? 'Designado pela congregacao' : 'Confirmado no acesso';
+      const isTapaBuraco = LIVE_MODE === 'tapa_buraco';
+      document.getElementById('assignment-title').textContent = isTapaBuraco
+        ? 'Designacao recebida'
+        : lockedByManual ? 'Seu arranjo foi definido' : 'Seu posto confirmado';
+      document.getElementById('assignment-subtitle').textContent = isTapaBuraco
+        ? 'Confirme abaixo se voce aceita esta designacao especial e confira com atencao onde fica o local.'
+        : lockedByManual
+          ? 'A congregacao ja fechou este arranjo para voce. O acesso fica somente para consulta.'
+          : 'Seu pedido ao vivo ja fechou o arranjo. Veja abaixo os detalhes do posto e horario.';
+      document.getElementById('assignment-badge').className = `badge ${lockedByManual ? 'badge-primary' : assignment.status === 'aceito' ? 'badge-ativo' : 'badge-primary'}`;
+      document.getElementById('assignment-badge').textContent = isTapaBuraco
+        ? assignment.status === 'aceito' ? 'Aceita' : 'Aguardando resposta'
+        : lockedByManual ? 'Designado pela congregacao' : 'Confirmado no acesso';
       const noteEl = document.getElementById('assignment-note');
       noteEl.className = `live-assignment-note${lockedByManual ? ' locked' : ''}`;
-      noteEl.textContent = lockedByManual
-        ? `A congregacao/administracao ja designou voce neste arranjo: ${assignment.resumo}.`
-        : `Seu horario atual e ${assignment.resumo}. Se a congregacao ainda estiver aceitando trocas, voce pode alterar abaixo.`;
+      noteEl.textContent = isTapaBuraco
+        ? assignment.status === 'aceito'
+          ? `Voce aceitou esta designacao: ${assignment.resumo}. Use a rota e confira o local antes de sair.`
+          : `Voce recebeu esta designacao: ${assignment.resumo}. Confirme o local e responda se aceita.`
+        : lockedByManual
+          ? `A congregacao/administracao ja designou voce neste arranjo: ${assignment.resumo}.`
+          : `Seu horario atual e ${assignment.resumo}. Se a congregacao ainda estiver aceitando trocas, voce pode alterar abaixo.`;
       const overnightInfo = getResumoVirada(assignment.desig?.data, assignment.slotKey, assignment.slotFim || assignment.slotKey);
       document.getElementById('assignment-chips').innerHTML = [
         `📍 ${assignment.posto?.nome || 'Posto'}`,
@@ -809,9 +890,17 @@
         `📌 ${assignment.posto?.local || 'Local nao informado'}`,
       ].filter(Boolean).map(item => `<span>${item}</span>`).join('');
       const mapsUrl = getGoogleMapsUrl(assignment);
-      document.getElementById('assignment-actions').innerHTML = mapsUrl
-        ? `<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota da designacao ${String((assignments || []).findIndex(item => item.key === assignment.key) + 1).padStart(2, '0')} no Google Maps</a>`
-        : '';
+      const actionButtons = [];
+      if (mapsUrl) {
+        actionButtons.push(`<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota da designacao ${String((assignments || []).findIndex(item => item.key === assignment.key) + 1).padStart(2, '0')} no Google Maps</a>`);
+      }
+      if (isTapaBuraco && assignment.status !== 'aceito') {
+        actionButtons.push(`<button class="btn btn-primary" onclick="responderTapaBuraco('${assignment.key}', true)">✅ Eu aceito a designacao</button>`);
+      }
+      if (isTapaBuraco && assignment.status !== 'aceito') {
+        actionButtons.push(`<button class="btn btn-outline" onclick="responderTapaBuraco('${assignment.key}', false)">❌ Nao consigo aceitar</button>`);
+      }
+      document.getElementById('assignment-actions').innerHTML = actionButtons.join('');
       const guidance = getAssignmentGuidance(assignment);
       const guidanceRoot = document.getElementById('assignment-guidance');
       const guidanceList = document.getElementById('assignment-guidance-list');
@@ -867,11 +956,156 @@
       return `${posto?.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey}${item.overnightNote ? ` · ${item.overnightNote}` : ''}`;
     }
 
+    function atualizarPedidoTapaBuraco(pedidoId, inviteNome) {
+      const pedidos = getPedidosAjudaEscala();
+      const pedido = pedidos.find(item => item.id === pedidoId);
+      if (!pedido) return;
+      const cfgCong = getCongConfigById(pedido.congId);
+      const atuais = getPessoasDoSlot(cfgCong.turnos || {}, pedido.designacaoId, pedido.slotKey);
+      const faltamAgora = Math.max(0, 3 - atuais.length);
+      const nomesConfirmados = getTapaBuracoAssignments(session.liveInviteId)
+        .filter(item => item.pedidoId === pedidoId && item.status === 'aceito')
+        .map(item => item.inviteNome);
+      pedido.faltaQtd = faltamAgora;
+      pedido.nomesResolvidos = nomesConfirmados;
+      if (faltamAgora === 0) {
+        pedido.status = 'fechado';
+        pedido.resolvidoPor = inviteNome || 'Tapa-buraco';
+        pedido.resolvidoEm = new Date().toLocaleString('pt-BR');
+      }
+      savePedidosAjudaEscala(pedidos);
+    }
+
+    window.responderTapaBuraco = function(assignmentId, aceitar) {
+      const invite = getInvite();
+      if (!invite) return;
+      const cfg = getTapaBuracoConfig();
+      const assignment = cfg.assignments.find(item => item.id === assignmentId && item.inviteId === invite.id);
+      const suggestion = (cfg.suggestions || []).find(item => item.id === assignment?.suggestionId);
+      if (!assignment) {
+        showToast('Essa designacao nao esta mais disponivel.', 'warning');
+        render();
+        return;
+      }
+
+      if (!aceitar) {
+        assignment.status = 'recusado';
+        assignment.declinedAt = new Date().toLocaleString('pt-BR');
+        if (suggestion) {
+          suggestion.status = 'recusado';
+          suggestion.declinedAt = assignment.declinedAt;
+        }
+        saveTapaBuracoConfig(cfg);
+        showToast('Resposta registrada. Seu acesso desta designacao foi encerrado.', 'info');
+        render();
+        return;
+      }
+
+      const cfgCong = getCongConfigById(assignment.congId);
+      cfgCong.turnos = cfgCong.turnos || {};
+      if (!cfgCong.turnos[assignment.designacaoId]) cfgCong.turnos[assignment.designacaoId] = {};
+      const atuais = getPessoasDoSlot(cfgCong.turnos, assignment.designacaoId, assignment.slotKey);
+      if (!atuais.some(pessoa => pessoa.liveInviteId === invite.id) && atuais.length >= 3) {
+        assignment.status = 'cancelado';
+        assignment.cancelReason = 'Horario preenchido antes da confirmacao.';
+        if (suggestion) {
+          suggestion.status = 'sugerido';
+          suggestion.reabertoEm = new Date().toLocaleString('pt-BR');
+        }
+        saveTapaBuracoConfig(cfg);
+        showToast('Esse horario ja foi preenchido antes da sua resposta.', 'warning');
+        render();
+        return;
+      }
+
+      const atualizados = atuais.some(pessoa => pessoa.liveInviteId === invite.id)
+        ? atuais
+        : atuais.concat([{ nome: invite.nome, origem: 'tapa_buraco', liveInviteId: invite.id, helperRequestId: assignment.pedidoId }]);
+      cfgCong.turnos[assignment.designacaoId][assignment.slotKey] = atualizados;
+      saveCongConfigById(assignment.congId, cfgCong);
+
+      assignment.status = 'aceito';
+      assignment.acceptedAt = new Date().toLocaleString('pt-BR');
+      if (suggestion) {
+        suggestion.status = 'aceito';
+        suggestion.acceptedAt = assignment.acceptedAt;
+      }
+      saveTapaBuracoConfig(cfg);
+      atualizarPedidoTapaBuraco(assignment.pedidoId, invite.nome);
+      showToast('Designacao aceita com sucesso.', 'success');
+      render();
+    };
+
     function render() {
+      const invite = getInvite();
+      if (!invite) {
+        showStatus('❌', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
+        return;
+      }
+      if (LIVE_MODE === 'tapa_buraco') {
+        const assignments = getTapaBuracoAssignments(invite.id);
+        const assignment = getFocusedAssignment(assignments);
+        const pendentes = assignments.filter(item => item.status === 'pendente').length;
+        const aceitas = assignments.filter(item => item.status === 'aceito').length;
+
+        document.getElementById('status-root').style.display = 'none';
+        document.getElementById('live-root').style.display = 'grid';
+        document.getElementById('live-title').textContent = `Ola, ${invite.nome}`;
+        document.getElementById('live-subtitle').textContent = 'Voce recebeu designacoes especiais de tapa-buraco. Confira o local e responda se aceita cada uma delas.';
+        document.getElementById('invite-name').textContent = invite.nome;
+        document.getElementById('invite-cong').textContent = 'Modo especial: tapa-buraco';
+        document.getElementById('invite-status').className = `badge ${aceitas ? 'badge-ativo' : pendentes ? 'badge-primary' : 'badge-standby'}`;
+        document.getElementById('invite-status').textContent = aceitas ? 'Com designacao aceita' : pendentes ? 'Aguardando sua resposta' : 'Sem pendencias';
+        const choiceBox = document.getElementById('current-choice-box');
+        choiceBox.className = 'live-choice-summary';
+        choiceBox.textContent = assignments.length
+          ? `Voce tem ${assignments.length} designacao(oes) no fluxo tapa-buraco. Abra cada uma abaixo e confirme se aceita.`
+          : 'Nenhuma designacao enviada para voce no momento.';
+        renderAssignmentFocus(assignments, false);
+
+        document.getElementById('live-stats').innerHTML = `
+          <div class="live-stat"><strong>${assignments.length}</strong><span>designacoes recebidas</span></div>
+          <div class="live-stat"><strong>${pendentes}</strong><span>aguardando resposta</span></div>
+          <div class="live-stat"><strong>${aceitas}</strong><span>aceitas</span></div>
+          <div class="live-stat"><strong>${Math.max(0, assignments.length - aceitas)}</strong><span>em aberto</span></div>
+        `;
+
+        const listEl = document.getElementById('slots-list');
+        const sectionText = document.querySelector('#live-root .card p');
+        if (sectionText) {
+          sectionText.textContent = 'Nesta area voce nao escolhe vagas. O operador tapa-buraco envia a designacao e voce so precisa confirmar se aceita, verificando antes onde fica o local.';
+        }
+        if (!assignments.length) {
+          listEl.innerHTML = '<div class="card"><p style="color:var(--gray);font-size:.88rem;">Ainda nao existe designacao especial enviada para voce.</p></div>';
+          return;
+        }
+        listEl.innerHTML = assignments.map((item, index) => `
+          <div class="live-slot-card">
+            <div class="live-slot-head">
+              <div>
+                <strong>Designacao ${String(index + 1).padStart(2, '0')} · ${item.postoNome || item.posto?.nome || 'Posto'}</strong>
+                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.localLabel || item.posto?.local || 'Local nao informado'}</div>
+                <div class="live-slot-meta">
+                  <span>📅 ${item.dataFmt || item.data || '—'}</span>
+                  <span>🧭 ${item.categoriaNome || item.categoria?.nome || 'Sem setor'}</span>
+                  <span>⏱️ ${item.slotLabel || item.slotKey || '—'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="live-slot-grid" style="grid-template-columns:1fr;">
+              <div class="live-slot-option ${item.key === assignment?.key ? 'current' : ''}">
+                <strong>${item.status === 'aceito' ? 'Aceita' : 'Aguardando resposta'}</strong>
+                <div class="meta">${item.key === assignment?.key ? 'Esta designacao esta aberta acima para voce responder.' : 'Clique para abrir os detalhes desta designacao.'}</div>
+                <button class="btn btn-outline btn-sm" onclick="selecionarEscolhaConfirmada('${item.key}')">Abrir detalhes</button>
+              </div>
+            </div>
+          </div>`).join('');
+        return;
+      }
+
       const cong = getCongregacao();
       const cfg = getCongConfigById(CONG_ID);
-      const invite = getInvite();
-      if (!cong || !invite) {
+      if (!cong) {
         showStatus('❌', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
         return;
       }

@@ -1352,6 +1352,37 @@
     window.open(`https://wa.me/${tel.waDigits}?text=${mensagem}`, '_blank', 'noopener');
   }
 
+  function getMensagemAcessoTapaBuraco(invite) {
+    const url = `${location.origin}${location.pathname.replace(/sub-admin\.html$/i, 'login.html')}?type=live`;
+    return [
+      `Olá, ${invite.nome}.`,
+      '',
+      'Seu acesso à equipe de tapa-buraco da Corrida PG foi cadastrado.',
+      'Use o link abaixo para acompanhar e responder as designações em tempo real.',
+      '',
+      `Login: ${invite.usuario}`,
+      `Senha: ${invite.senha}`,
+      `Site: ${url}`,
+    ].join('\n');
+  }
+
+  function abrirWhatsAppAcessoTapaBuraco(invite) {
+    const tel = normalizarWhatsApp(invite.whatsapp);
+    if (!tel.ok) {
+      showToast('Cadastre um WhatsApp válido para este tapa-buraco.', 'warning');
+      return;
+    }
+    const mensagem = encodeURIComponent(getMensagemAcessoTapaBuraco(invite));
+    window.open(`https://wa.me/${tel.waDigits}?text=${mensagem}`, '_blank', 'noopener');
+  }
+
+  window.enviarAcessoTapaBuracoWhatsApp = function(inviteId) {
+    const cfg = getTapaBuracoConfig();
+    const invite = cfg.invites.find(item => item.id === inviteId);
+    if (!invite) { showToast('Tapa-buraco não encontrado.', 'warning'); return; }
+    abrirWhatsAppAcessoTapaBuraco(invite);
+  };
+
   function escaparJs(value) {
     return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   }
@@ -1684,11 +1715,12 @@
                   <strong>${invite.nome}</strong>
                   <div class="mini-note">${invite.whatsapp || 'Sem WhatsApp'} · @${invite.usuario}</div>
                 </div>
-                <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
                   <span class="badge badge-primary">${sugeridos} na reserva</span>
                   <span class="badge badge-standby">${pendentes} pendente(s)</span>
                   <span class="badge badge-ativo">${aceitas} aceita(s)</span>
                   ${invite.ativo === false ? '<span class="badge badge-inativo">Inativo</span>' : ''}
+                  ${invite.whatsapp ? `<button class="btn btn-sm" style="background:#25D366;color:white;padding:.2rem .55rem;font-size:.78rem;" onclick="enviarAcessoTapaBuracoWhatsApp('${escaparJs(invite.id)}')" title="Enviar login e senha por WhatsApp">📱</button>` : ''}
                 </div>
               </div>
             </div>`;
@@ -1788,6 +1820,7 @@
     renderTapaBuraco();
     renderAtividades();
     showToast('Tapa-buraco cadastrado com acesso individual.', 'success');
+    setTimeout(() => abrirWhatsAppAcessoTapaBuraco(invite), 250);
   };
 
   window.enviarSugestaoTapaBuraco = function(pedidoId) {

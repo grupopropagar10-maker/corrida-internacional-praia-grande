@@ -50,6 +50,30 @@
       box-shadow: 0 18px 34px rgba(220, 53, 69, 0.12);
     }
 
+    .posto-card.tempo-quase {
+      border-left-color: #ff6b00;
+      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(255,245,234,0.98));
+      box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.18), 0 16px 30px rgba(255, 107, 0, 0.22);
+      animation: pulseQuaseTermino 1.8s ease-in-out infinite;
+    }
+
+    .posto-card.tempo-finalizada {
+      border-left-color: #28A745;
+      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(238, 252, 241, 0.98));
+    }
+
+    @keyframes pulseQuaseTermino {
+      0% {
+        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.14), 0 14px 26px rgba(255, 107, 0, 0.18);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.24), 0 20px 36px rgba(255, 107, 0, 0.28);
+      }
+      100% {
+        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.14), 0 14px 26px rgba(255, 107, 0, 0.18);
+      }
+    }
+
     .posto-card:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-lg);
@@ -406,6 +430,8 @@
         <button class="filter-btn" data-filter="ativo">✅ Ativos</button>
         <button class="filter-btn" data-filter="standby">⏳ Standby</button>
         <button class="filter-btn" data-filter="inativo">❌ Inativos</button>
+        <button class="filter-btn" data-filter="escala-quase">⚠️ Quase terminando</button>
+        <button class="filter-btn" data-filter="escala-finalizada">🏁 Já finalizaram</button>
       </div>
       <button class="btn btn-primary" id="btn-novo-posto">➕ Novo Posto</button>
     </div>
@@ -545,6 +571,7 @@
   let postosMap = null;
   let postosMapLayer = null;
   let postosMarkers = new Map();
+  const LIMITE_QUASE_TERMINO_MIN = 90;
 
   function getCongregacaoNome(congId, congregacoes = DB.get('congregacoes', [])) {
     const item = congregacoes.find(cong => String(cong.id) === String(congId));
@@ -656,13 +683,109 @@
   function getPostosFiltrados() {
     const postos = DB.get('postos');
     const busca  = document.getElementById('search-posto').value.toLowerCase();
+    const designacoes = DB.get('designacoes', []);
 
     return postos.filter(p => {
-      const matchFiltro = filtroAtual === 'todos' || p.status === filtroAtual;
+      let matchFiltro = false;
+      if (filtroAtual === 'todos') {
+        matchFiltro = true;
+      } else if (['ativo', 'standby', 'inativo'].includes(filtroAtual)) {
+        matchFiltro = p.status === filtroAtual;
+      } else if (filtroAtual === 'escala-quase' || filtroAtual === 'escala-finalizada') {
+        const tempoEscala = getTempoEscalaPosto(p, designacoes);
+        matchFiltro = filtroAtual === 'escala-quase'
+          ? tempoEscala.status === 'quase'
+          : tempoEscala.status === 'finalizada';
+      }
       const matchBusca  = !busca || p.nome.toLowerCase().includes(busca) || p.responsavel.toLowerCase().includes(busca);
       const matchCong   = !congregacaoAtual || String(p.congId) === String(congregacaoAtual);
       return matchFiltro && matchBusca && matchCong;
     });
+  }
+
+  function startOfToday() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  function toDateTimeLocal(baseDate, hhmm) {
+    const [h, m] = String(hhmm || '00:00').split(':').map(Number);
+    const dt = new Date(baseDate);
+    dt.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+    return dt;
+  }
+
+  function parseDataISO(dataISO) {
+    if (!dataISO || typeof dataISO !== 'string') return null;
+    const [y, mo, d] = dataISO.split('-').map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+    return new Date(y, mo - 1, d);
+  }
+
+  function getJanelaDesignacao(desig) {
+    const base = parseDataISO(desig?.data);
+    if (!base) return null;
+    const inicio = toDateTimeLocal(base, desig?.inicio);
+    let fim = toDateTimeLocal(base, desig?.fim);
+    if (fim <= inicio) fim.setDate(fim.getDate() + 1);
+    return { inicio, fim };
+  }
+
+  function getTempoEscalaPosto(posto, designacoes = DB.get('designacoes', [])) {
+    const now = new Date();
+    const inicioHoje = startOfToday();
+    const fimHoje = new Date(inicioHoje);
+    fimHoje.setDate(fimHoje.getDate() + 1);
+
+    const janelas = designacoes
+      .filter(desig => String(desig.postoId) === String(posto.id))
+      .map(getJanelaDesignacao)
+      .filter(Boolean)
+      .filter(janela => janela.fim > inicioHoje && janela.inicio < fimHoje);
+
+    if (!janelas.length) {
+      return { status: 'sem-periodo-hoje', minutosRestantes: null };
+    }
+
+    const emAndamento = janelas.find(janela => now >= janela.inicio && now < janela.fim);
+    if (emAndamento) {
+      const minutosRestantes = Math.max(0, Math.ceil((emAndamento.fim.getTime() - now.getTime()) / 60000));
+      if (minutosRestantes <= LIMITE_QUASE_TERMINO_MIN) {
+        return { status: 'quase', minutosRestantes };
+      }
+      return { status: 'em-andamento', minutosRestantes };
+    }
+
+    const algumFuturo = janelas.some(janela => now < janela.inicio);
+    if (algumFuturo) {
+      return { status: 'programada', minutosRestantes: null };
+    }
+
+    return { status: 'finalizada', minutosRestantes: 0 };
+  }
+
+  function getBadgeTempoEscala(posto, designacoes = DB.get('designacoes', [])) {
+    const tempo = getTempoEscalaPosto(posto, designacoes);
+    if (tempo.status === 'quase') {
+      return `<span class="badge badge-standby">⚠️ Quase encerrando (${tempo.minutosRestantes} min)</span>`;
+    }
+    if (tempo.status === 'finalizada') {
+      return '<span class="badge badge-ativo">🏁 Escala finalizada hoje</span>';
+    }
+    if (tempo.status === 'em-andamento') {
+      return `<span class="badge badge-primary">🕒 Em andamento (${tempo.minutosRestantes} min)</span>`;
+    }
+    if (tempo.status === 'programada') {
+      return '<span class="badge badge-primary">📅 Escala programada hoje</span>';
+    }
+    return '<span class="badge badge-standby">Sem escala hoje</span>';
+  }
+
+  function getTempoCardClass(posto, designacoes = DB.get('designacoes', [])) {
+    const tempo = getTempoEscalaPosto(posto, designacoes);
+    if (tempo.status === 'quase') return 'tempo-quase';
+    if (tempo.status === 'finalizada') return 'tempo-finalizada';
+    return '';
   }
 
   function ensurePostosMap() {
@@ -851,8 +974,10 @@
     const postos = getPostosFiltrados();
     const ativos   = postos.filter(p => p.status === 'ativo').length;
     const standby  = postos.filter(p => p.status === 'standby').length;
-    const inativos = postos.filter(p => p.status === 'inativo').length;
+    const designacoes = DB.get('designacoes', []);
     const totalPub = postos.reduce((s, p) => s + (parseInt(p.publicacoes) || 0), 0);
+    const quaseFinalizando = postos.filter(p => getTempoEscalaPosto(p, designacoes).status === 'quase').length;
+    const finalizadas = postos.filter(p => getTempoEscalaPosto(p, designacoes).status === 'finalizada').length;
 
     document.getElementById('stats-postos').innerHTML = `
       <div class="stat-card">
@@ -869,7 +994,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon purple">📖</div>
-        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações disp.</p></div>
+        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações disp.</p><small style="color:var(--gray);">🏁 ${finalizadas} finalizadas · ⚠️ ${quaseFinalizando} quase</small></div>
       </div>
     `;
   }
@@ -878,6 +1003,7 @@
   function renderPostos() {
     const filtrado = getPostosFiltrados();
     const escalaResumo = getEscalaResumo(filtrado);
+    const designacoes = DB.get('designacoes', []);
 
     const grid = document.getElementById('postos-grid');
     renderMapaCongregacao(filtrado);
@@ -900,8 +1026,9 @@
     grid.innerHTML = filtrado.map(p => {
       const cobertura = escalaResumo.coberturaPorPosto[String(p.id)];
       const criticidade = getEscalaCriticidade(cobertura);
+      const tempoCardClass = getTempoCardClass(p, designacoes);
       return `
-      <div class="posto-card ${p.status} ${criticidade.cardClass}">
+      <div class="posto-card ${p.status} ${criticidade.cardClass} ${tempoCardClass}">
         <div class="posto-top">
           <div>
             <div class="posto-nome">${p.nome}</div>
@@ -915,6 +1042,10 @@
           <div class="meta-item">
             <span class="meta-label">Escala</span>
             <span class="meta-value">${getEscalaBadge(cobertura)}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Andamento hoje</span>
+            <span class="meta-value">${getBadgeTempoEscala(p, designacoes)}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Responsável</span>

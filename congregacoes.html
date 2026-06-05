@@ -285,7 +285,7 @@
   <button class="hamburger" aria-label="Menu">☰</button>
   <ul class="navbar-nav">
     <li><a href="index.html">🏠 Início</a></li>
-    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="congregacoes.html">🏢 Congregações</a></li>
     <li><a href="postos.html">📍 Postos</a></li>
     <li><a href="distribuicao.html">📖 Distribuição</a></li>
     <li><a href="dashboard.html">📊 Dashboard</a></li>
@@ -294,7 +294,7 @@
 
 <!-- HEADER -->
 <div class="page-header">
-  <h1>⛪ Mapa de Designação de Congregações</h1>
+  <h1>🏢 Mapa de Designação de Congregações</h1>
   <p>Clique em um posto no mapa para designar uma congregação, horário e data</p>
 </div>
 
@@ -335,7 +335,7 @@
     <div class="card" style="padding:1rem;">
       <div class="tabs" id="tabs">
         <button class="tab-btn active" data-tab="designar">📌 Designar</button>
-        <button class="tab-btn" data-tab="congregacoes">⛪ Congregações</button>
+        <button class="tab-btn" data-tab="congregacoes">🏢 Congregações</button>
         <button class="tab-btn" data-tab="agenda">🗓️ Agenda</button>
       </div>
     </div>
@@ -1307,7 +1307,7 @@ function renderCongList() {
     congs.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
 
   if (!congs.length) {
-    list.innerHTML = '<div class="empty-sm"><span class="e-icon">⛪</span>Nenhuma congregação confirmada.</div>';
+    list.innerHTML = '<div class="empty-sm"><span class="e-icon">🏢</span>Nenhuma congregação confirmada.</div>';
     return;
   }
   list.innerHTML = congs.map(c => {
@@ -1382,7 +1382,7 @@ function renderKPI() {
 
   document.getElementById('kpi-strip').innerHTML = `
     <div class="stat-card">
-      <div class="stat-icon blue">⛪</div>
+      <div class="stat-icon blue">🏢</div>
       <div class="stat-info"><h3>${congsD}</h3><p>Congregações designadas</p></div>
     </div>
     <div class="stat-card">

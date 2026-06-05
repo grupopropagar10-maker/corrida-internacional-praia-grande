@@ -460,7 +460,7 @@
     <a href="#sec-setor" id="nav-setor"><span>📡</span> Meu Setor</a>
     <a href="#sec-bebidas" id="nav-bebidas"><span>☕</span> Bebidas</a>
     <a href="#sec-postos" id="nav-postos"><span>📍</span> Postos</a>
-    <a href="#sec-designar" id="nav-designar"><span>⛪</span> Designar Cong.</a>
+    <a href="#sec-designar" id="nav-designar"><span>🏢</span> Designar Cong.</a>
     <a href="#sec-ajuda" id="nav-ajuda"><span>🆘</span> Pedidos de Ajuda</a>
     <a href="#sec-tapa-buraco" id="nav-tapa-buraco" style="display:none;"><span>🛠️</span> Tapa-Buraco</a>
     <a href="#sec-atividades" id="nav-atividades"><span>📋</span> Minhas Atividades</a>
@@ -504,7 +504,7 @@
     <section id="sec-designar">
       <div class="section-card">
         <div class="section-card-header">
-          <h2>⛪ Designar Congregações Confirmadas</h2>
+          <h2>🏢 Designar Congregações Confirmadas</h2>
         </div>
         <div class="section-card-body" id="body-designar">
           <div class="locked-msg"><div class="lock-icon">🔒</div>Sem permissão para designar congregações.</div>
@@ -592,6 +592,25 @@
     return DB.get('categorias', []).find(c => c.id === categoriaId) || null;
   }
 
+  function getCategoriaDatas(categoria) {
+    return Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  }
+
+  function buildAutoDesignacoesForPosto(posto) {
+    const categoria = getCategoriaById(posto?.categoriaId);
+    const datas = getCategoriaDatas(categoria);
+    if (!posto?.congId || !categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+    return datas.map((data, idx) => ({
+      id: `${posto.id}-${idx}`,
+      postoId: posto.id,
+      congId: posto.congId,
+      data,
+      inicio: categoria.horario,
+      fim: categoria.horarioFim,
+      autoGerada: true,
+    }));
+  }
+
   function timeToMin(t) {
     const [h, m] = String(t || '00:00').split(':').map(Number);
     return (h || 0) * 60 + (m || 0);
@@ -663,8 +682,38 @@
   }
 
   function getDesignacoesDoSetor() {
-    const postoIds = new Set(getPostosDoSetor().map(p => p.id));
-    return DB.get('designacoes', []).filter(d => postoIds.has(d.postoId));
+    const postosSetor = getPostosDoSetor();
+    const postoIds = new Set(postosSetor.map(p => p.id));
+    const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada && postoIds.has(d.postoId));
+    const automaticas = postosSetor
+      .filter(p => p.congId && p.categoriaId)
+      .flatMap(buildAutoDesignacoesForPosto);
+    return manuais.concat(automaticas);
+  }
+
+  function parseDataISO(dataISO) {
+    if (!dataISO || typeof dataISO !== 'string') return null;
+    const [y, mo, d] = dataISO.split('-').map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null;
+    return new Date(y, mo - 1, d);
+  }
+
+  function getTempoDesignacaoStatus(desig) {
+    const base = parseDataISO(desig?.data);
+    if (!base) return { status: 'sem-data' };
+    const inicio = new Date(base);
+    const [ih, im] = String(desig?.inicio || '00:00').split(':').map(Number);
+    inicio.setHours(Number.isFinite(ih) ? ih : 0, Number.isFinite(im) ? im : 0, 0, 0);
+
+    const fim = new Date(base);
+    const [fh, fm] = String(desig?.fim || '00:00').split(':').map(Number);
+    fim.setHours(Number.isFinite(fh) ? fh : 0, Number.isFinite(fm) ? fm : 0, 0, 0);
+    if (fim <= inicio) fim.setDate(fim.getDate() + 1);
+
+    const now = new Date();
+    if (now >= fim) return { status: 'finalizada' };
+    if (now >= inicio) return { status: 'em-andamento' };
+    return { status: 'programada' };
   }
 
   function getPedidosDoSetor() {
@@ -1099,6 +1148,7 @@
     const faltando = cobertura.reduce((sum, item) => sum + item.faltando, 0);
     const horarios = cobertura.reduce((sum, item) => sum + item.slots.length, 0);
     const concluidos = cobertura.filter(item => item.completa).length;
+    const finalizadosHoje = cobertura.filter(item => getTempoDesignacaoStatus(item.desig).status === 'finalizada').length;
     const resumoPostos = getResumoPostosDoSetor(cobertura, postos);
 
     if (!postos.length) {
@@ -1124,7 +1174,10 @@
                     <span>${item.agenda.duracaoTurno}h por turno</span>
                   </div>
                 </div>
-                <span class="badge ${item.completa ? 'badge-ativo' : item.pedidosAbertos ? 'badge-standby' : 'badge-perigo'}">${item.completa ? 'Fechado' : item.pedidosAbertos ? 'Com pedido aberto' : 'Precisa ação'}</span>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end;">
+                  <span class="badge ${item.completa ? 'badge-ativo' : item.pedidosAbertos ? 'badge-standby' : 'badge-perigo'}">${item.completa ? 'Fechado' : item.pedidosAbertos ? 'Com pedido aberto' : 'Precisa ação'}</span>
+                  ${getTempoDesignacaoStatus(item.desig).status === 'finalizada' ? '<span class="badge badge-ativo">🏁 Finalizado hoje</span>' : ''}
+                </div>
               </div>
               <div class="setor-contact">Responsável/contato: <strong>${contato}</strong>${item.faltando > 0 && !item.pedidosAbertos ? ' · ainda sem pedido de ajuda aberto' : ''}</div>
               <div class="setor-slots">
@@ -1187,6 +1240,7 @@
         <div class="setor-stat ${faltando ? 'warn' : 'success'}"><strong>${faltando}</strong><span>Pessoas faltando</span></div>
         <div class="setor-stat ${pedidosAbertos ? 'danger' : ''}"><strong>${pedidosAbertos}</strong><span>Pedidos abertos</span></div>
         <div class="setor-stat ${resumoPostos.postosSemEscala ? 'warn' : ''}"><strong>${resumoPostos.postosSemEscala}</strong><span>Postos sem escala</span></div>
+        <div class="setor-stat ${finalizadosHoje ? 'success' : ''}"><strong>${finalizadosHoje}</strong><span>Arranjos finalizados hoje</span></div>
         <div class="setor-stat ${concluidos === cobertura.length && cobertura.length ? 'success' : ''}"><strong>${concluidos}/${cobertura.length}</strong><span>Arranjos fechados</span></div>
       </div>
       <div class="setor-cards">${cardsHtml}</div>`;

@@ -399,7 +399,7 @@
   <button class="hamburger" aria-label="Menu">☰</button>
   <ul class="navbar-nav">
     <li><a href="index.html">🏠 Início</a></li>
-    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="congregacoes.html">🏢 Congregações</a></li>
     <li><a href="postos.html">📍 Postos</a></li>
     <li><a href="distribuicao.html">📖 Distribuição</a></li>
     <li><a href="dashboard.html">📊 Dashboard</a></li>
@@ -424,7 +424,7 @@
       <div class="filter-bar">
         <input class="form-control search-input" id="search-posto" placeholder="🔍 Buscar posto..." type="text"/>
         <select class="form-control congregacao-select" id="filter-congregacao">
-          <option value="">⛪ Selecionar congregação...</option>
+          <option value="">🏢 Selecionar congregação...</option>
         </select>
         <button class="filter-btn active" data-filter="todos">Todos</button>
         <button class="filter-btn" data-filter="ativo">✅ Ativos</button>
@@ -582,6 +582,33 @@
     return DB.get('categorias', []).find(c => String(c.id) === String(categoriaId)) || null;
   }
 
+  function getCategoriaDatas(categoria) {
+    return Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  }
+
+  function buildAutoDesignacoesForPosto(posto) {
+    const categoria = getCategoriaById(posto?.categoriaId);
+    const datas = getCategoriaDatas(categoria);
+    if (!posto?.congId || !categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+    return datas.map((data, idx) => ({
+      id: `${posto.id}-${idx}`,
+      postoId: posto.id,
+      congId: posto.congId,
+      data,
+      inicio: categoria.horario,
+      fim: categoria.horarioFim,
+      autoGerada: true,
+    }));
+  }
+
+  function getDesignacoesEfetivas() {
+    const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada);
+    const automaticas = DB.get('postos', [])
+      .filter(p => p.congId && p.categoriaId)
+      .flatMap(buildAutoDesignacoesForPosto);
+    return manuais.concat(automaticas);
+  }
+
   function timeToMin(t) {
     const [h, m] = String(t || '00:00').split(':').map(Number);
     return (h || 0) * 60 + (m || 0);
@@ -626,7 +653,7 @@
     return turnos?.[escalaKey]?.[slotKey] || [];
   }
 
-  function getCoberturaPosto(posto, designacoes = DB.get('designacoes', []), congCfgAll = DB.get('cong_config', {})) {
+  function getCoberturaPosto(posto, designacoes = getDesignacoesEfetivas(), congCfgAll = DB.get('cong_config', {})) {
     const designacoesPosto = designacoes.filter(d => String(d.postoId) === String(posto.id));
     let totalSlots = 0;
     let faltando = 0;
@@ -650,7 +677,7 @@
   }
 
   function getEscalaResumo(postosFiltrados) {
-    const designacoes = DB.get('designacoes', []);
+    const designacoes = getDesignacoesEfetivas();
     const congCfgAll = DB.get('cong_config', {});
     const cobertura = postosFiltrados.map(posto => ({ posto, ...getCoberturaPosto(posto, designacoes, congCfgAll) }));
     return {
@@ -675,7 +702,7 @@
     const select = document.getElementById('filter-congregacao');
     const atual = congregacaoAtual;
     const options = getCongregacoesDisponiveis();
-    select.innerHTML = '<option value="">⛪ Selecionar congregação...</option>' +
+    select.innerHTML = '<option value="">🏢 Selecionar congregação...</option>' +
       options.map(item => `<option value="${item.id}">${item.nome}</option>`).join('');
     select.value = atual;
   }
@@ -683,7 +710,8 @@
   function getPostosFiltrados() {
     const postos = DB.get('postos');
     const busca  = document.getElementById('search-posto').value.toLowerCase();
-    const designacoes = DB.get('designacoes', []);
+    const designacoes = getDesignacoesEfetivas();
+    const congCfgAll = DB.get('cong_config', {});
 
     return postos.filter(p => {
       let matchFiltro = false;
@@ -693,9 +721,10 @@
         matchFiltro = p.status === filtroAtual;
       } else if (filtroAtual === 'escala-quase' || filtroAtual === 'escala-finalizada') {
         const tempoEscala = getTempoEscalaPosto(p, designacoes);
+        const cobertura = getCoberturaPosto(p, designacoes, congCfgAll);
         matchFiltro = filtroAtual === 'escala-quase'
           ? tempoEscala.status === 'quase'
-          : tempoEscala.status === 'finalizada';
+          : cobertura.completo || tempoEscala.status === 'finalizada';
       }
       const matchBusca  = !busca || p.nome.toLowerCase().includes(busca) || p.responsavel.toLowerCase().includes(busca);
       const matchCong   = !congregacaoAtual || String(p.congId) === String(congregacaoAtual);
@@ -731,7 +760,7 @@
     return { inicio, fim };
   }
 
-  function getTempoEscalaPosto(posto, designacoes = DB.get('designacoes', [])) {
+  function getTempoEscalaPosto(posto, designacoes = getDesignacoesEfetivas()) {
     const now = new Date();
     const inicioHoje = startOfToday();
     const fimHoje = new Date(inicioHoje);
@@ -764,7 +793,7 @@
     return { status: 'finalizada', minutosRestantes: 0 };
   }
 
-  function getBadgeTempoEscala(posto, designacoes = DB.get('designacoes', [])) {
+  function getBadgeTempoEscala(posto, designacoes = getDesignacoesEfetivas()) {
     const tempo = getTempoEscalaPosto(posto, designacoes);
     if (tempo.status === 'quase') {
       return `<span class="badge badge-standby">⚠️ Quase encerrando (${tempo.minutosRestantes} min)</span>`;
@@ -781,7 +810,7 @@
     return '<span class="badge badge-standby">Sem escala hoje</span>';
   }
 
-  function getTempoCardClass(posto, designacoes = DB.get('designacoes', [])) {
+  function getTempoCardClass(posto, designacoes = getDesignacoesEfetivas()) {
     const tempo = getTempoEscalaPosto(posto, designacoes);
     if (tempo.status === 'quase') return 'tempo-quase';
     if (tempo.status === 'finalizada') return 'tempo-finalizada';
@@ -974,10 +1003,11 @@
     const postos = getPostosFiltrados();
     const ativos   = postos.filter(p => p.status === 'ativo').length;
     const standby  = postos.filter(p => p.status === 'standby').length;
-    const designacoes = DB.get('designacoes', []);
+    const designacoes = getDesignacoesEfetivas();
+    const escalaResumo = getEscalaResumo(postos);
     const totalPub = postos.reduce((s, p) => s + (parseInt(p.publicacoes) || 0), 0);
     const quaseFinalizando = postos.filter(p => getTempoEscalaPosto(p, designacoes).status === 'quase').length;
-    const finalizadas = postos.filter(p => getTempoEscalaPosto(p, designacoes).status === 'finalizada').length;
+    const finalizadas = escalaResumo.postosProntos;
 
     document.getElementById('stats-postos').innerHTML = `
       <div class="stat-card">
@@ -994,7 +1024,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon purple">📖</div>
-        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações disp.</p><small style="color:var(--gray);">🏁 ${finalizadas} finalizadas · ⚠️ ${quaseFinalizando} quase</small></div>
+        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações disp.</p><small style="color:var(--gray);">🏁 ${finalizadas} com tudo designado · ⚠️ ${quaseFinalizando} quase</small></div>
       </div>
     `;
   }
@@ -1003,7 +1033,7 @@
   function renderPostos() {
     const filtrado = getPostosFiltrados();
     const escalaResumo = getEscalaResumo(filtrado);
-    const designacoes = DB.get('designacoes', []);
+    const designacoes = getDesignacoesEfetivas();
 
     const grid = document.getElementById('postos-grid');
     renderMapaCongregacao(filtrado);

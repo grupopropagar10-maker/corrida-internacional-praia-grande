@@ -274,7 +274,7 @@
   <button class="hamburger" aria-label="Menu">☰</button>
   <ul class="navbar-nav">
     <li><a href="index.html">🏠 Início</a></li>
-    <li><a href="congregacoes.html">⛪ Congregações</a></li>
+    <li><a href="congregacoes.html">🏢 Congregações</a></li>
     <li><a href="postos.html">📍 Postos</a></li>
     <li><a href="distribuicao.html">📖 Distribuição</a></li>
     <li><a href="dashboard.html">📊 Dashboard</a></li>
@@ -288,7 +288,7 @@
   <nav class="sidebar">
     <div class="sidebar-title">Painel</div>
     <a href="#sec-overview" class="active"><span class="s-icon">📊</span> Visão Geral</a>
-    <a href="#sec-congs"><span class="s-icon">⛪</span> Congregações</a>
+    <a href="#sec-congs"><span class="s-icon">🏢</span> Congregações</a>
     <a href="#sec-pub-prev"><span class="s-icon">📚</span> Pub. Previstas</a>
     <a href="#sec-pdf"><span class="s-icon">📄</span> Gerar PDF</a>
     <a href="#sec-settings"><span class="s-icon">⚙️</span> Configurações</a>
@@ -326,7 +326,7 @@
     <section id="sec-congs">
       <div class="section-card">
         <div class="section-card-header">
-          <h2>⛪ Gerenciar Congregações</h2>
+          <h2>🏢 Gerenciar Congregações</h2>
           <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
             <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;" id="btn-abrir-form-cong">➕ Nova Congregação</button>
             <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;" id="btn-marcar-todas">✅ Confirmar Todas</button>
@@ -483,7 +483,7 @@
                 <input type="checkbox" id="sa-perm-postos"/> 📍 Criar Postos
               </label>
               <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
-                <input type="checkbox" id="sa-perm-congs"/> ⛪ Designar Congregações
+                <input type="checkbox" id="sa-perm-congs"/> 🏢 Designar Congregações
               </label>
               <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;cursor:pointer;">
                 <input type="checkbox" id="sa-modo-tapa-buraco"/> 🛠️ Admin Tapa-Buraco
@@ -758,7 +758,7 @@
 
     document.getElementById('kpi-admin').innerHTML = `
       <div class="stat-card">
-        <div class="stat-icon blue">⛪</div>
+        <div class="stat-icon blue">🏢</div>
         <div class="stat-info"><h3>${congs.length}</h3><p>Congregações cadastradas</p></div>
       </div>
       <div class="stat-card">
@@ -1132,10 +1132,17 @@
   }
 
   function getAdminDesignacaoEnd(desig) {
-    const start = new Date(`${desig?.data || new Date().toISOString().split('T')[0]}T${desig?.inicio || '00:00'}:00`);
+    const [y, mo, d] = String(desig?.data || '').split('-').map(Number);
+    const today = new Date();
+    const base = Number.isFinite(y) && Number.isFinite(mo) && Number.isFinite(d)
+      ? new Date(y, mo - 1, d)
+      : new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const start = new Date(base);
+    const [sh, sm] = String(desig?.inicio || '00:00').split(':').map(Number);
+    start.setHours(Number.isFinite(sh) ? sh : 0, Number.isFinite(sm) ? sm : 0, 0, 0);
     const end = new Date(start);
     const [fh, fm] = String(desig?.fim || '00:00').split(':').map(Number);
-    end.setHours(fh || 0, fm || 0, 0, 0);
+    end.setHours(Number.isFinite(fh) ? fh : 0, Number.isFinite(fm) ? fm : 0, 0, 0);
     if (end <= start) end.setDate(end.getDate() + 1);
     return end;
   }
@@ -1489,7 +1496,7 @@
           <div><strong>${sa.nome}</strong><div style="font-size:0.75rem;color:var(--gray);">@${sa.usuario}</div><div style="font-size:0.75rem;color:var(--gray);">${sa.telefone || 'Sem WhatsApp'}</div></div>
           <div>
             ${sa.permissoes?.criarPostos ? '<span class="badge badge-success" style="font-size:0.7rem;margin-right:4px;">📍 Postos</span>' : ''}
-            ${sa.permissoes?.designarCongregacoes ? '<span class="badge badge-primary" style="font-size:0.7rem;">⛪ Designações</span>' : ''}
+            ${sa.permissoes?.designarCongregacoes ? '<span class="badge badge-primary" style="font-size:0.7rem;">🏢 Designações</span>' : ''}
             ${sa.modoEspecial === 'tapa_buraco' ? '<span class="badge badge-standby" style="font-size:0.7rem;margin-left:4px;">🛠️ Tapa-Buraco</span>' : ''}
             ${!sa.permissoes?.criarPostos && !sa.permissoes?.designarCongregacoes ? '<span style="color:var(--gray)">Sem permissões</span>' : ''}
           </div>

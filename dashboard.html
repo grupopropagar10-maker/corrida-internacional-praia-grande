@@ -259,6 +259,33 @@
     return DB.get('categorias', []).find(c => String(c.id) === String(categoriaId)) || null;
   }
 
+  function getCategoriaDatas(categoria) {
+    return Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  }
+
+  function buildAutoDesignacoesForPosto(posto) {
+    const categoria = getCategoriaById(posto?.categoriaId);
+    const datas = getCategoriaDatas(categoria);
+    if (!posto?.congId || !categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
+    return datas.map((data, idx) => ({
+      id: `${posto.id}-${idx}`,
+      postoId: posto.id,
+      congId: posto.congId,
+      data,
+      inicio: categoria.horario,
+      fim: categoria.horarioFim,
+      autoGerada: true,
+    }));
+  }
+
+  function getDesignacoesEfetivas() {
+    const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada);
+    const automaticas = DB.get('postos', [])
+      .filter(p => p.congId && p.categoriaId)
+      .flatMap(buildAutoDesignacoesForPosto);
+    return manuais.concat(automaticas);
+  }
+
   function normalizarPessoaEscala(pessoa) {
     if (!pessoa) return null;
     if (typeof pessoa === 'string') return { nome: pessoa, origem: 'local' };
@@ -349,7 +376,7 @@
   function collectDashboardData() {
     const postos = DB.get('postos');
     const dist   = DB.get('distribuicoes');
-    const designacoes = DB.get('designacoes', []);
+    const designacoes = getDesignacoesEfetivas();
     const congCfgAll = DB.get('cong_config', {});
     const participantesSet = new Set();
     const cadastradosSet = new Set();

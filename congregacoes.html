@@ -714,6 +714,77 @@ function getDesignacoesEfetivas() {
   return manuais.concat(autoAtuais);
 }
 
+function normalizarPessoaEscala(pessoa) {
+  if (!pessoa) return null;
+  if (typeof pessoa === 'string') return { nome: pessoa.trim() };
+  return { nome: String(pessoa.nome || '').trim() };
+}
+
+function timeToMin(t) {
+  const [h, m] = String(t || '00:00').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function minToTime(m) {
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
+function gerarSlots(inicio, fim, duracaoH) {
+  const slots = [];
+  let s = timeToMin(inicio);
+  let e = timeToMin(fim);
+  if (e <= s) e += 24 * 60;
+  while (s < e) {
+    const t = Math.min(s + duracaoH * 60, e);
+    slots.push({ inicio: minToTime(s % (24 * 60)), fim: minToTime(t % (24 * 60)) });
+    s = t;
+  }
+  return slots;
+}
+
+function getEscalaKey(desig, posto) {
+  if (!desig) return '';
+  if (!desig.autoGerada) return String(desig.id);
+
+  const categoria = getCategoriaById(posto?.categoriaId);
+  const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  const dataIdx = datas.findIndex(data => String(data) === String(desig.data));
+
+  if (posto?.id != null && dataIdx >= 0) {
+    return `${posto.id}-${dataIdx}`;
+  }
+
+  return String(desig.id);
+}
+
+function getAgendaConfigByCong(cfg, escalaKey) {
+  const agenda = cfg?.agendaConfig?.[escalaKey] || {};
+  return {
+    duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
+  };
+}
+
+function getNomesEscaladosDesignacao(desig, posto, congCfgAll = DB.get('cong_config', {})) {
+  const cfg = congCfgAll?.[desig.congId] || {};
+  const escalaKey = getEscalaKey(desig, posto);
+  const turnos = cfg.turnos || {};
+  const agenda = getAgendaConfigByCong(cfg, escalaKey);
+  const slots = Array.isArray(desig.slots) && desig.slots.length
+    ? desig.slots
+    : gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno);
+
+  const nomes = [];
+  slots.forEach(slot => {
+    const pessoas = (turnos?.[escalaKey]?.[slot.inicio] || [])
+      .map(normalizarPessoaEscala)
+      .filter(p => p?.nome)
+      .map(p => p.nome);
+    nomes.push(...pessoas);
+  });
+
+  return nomes;
+}
+
 function makeMarker(posto, idx) {
   const cor = getCongColor(posto.id);
   const isEndpoint = posto.km === '0' || posto.km === '21';
@@ -1377,8 +1448,14 @@ function renderKPI() {
   const congsD  = [...new Set(desigs.map(d => d.congId))].length;
   const postosC = [...new Set(desigs.map(d => d.postoId))].length;
   const totalP  = DB.get('postos').length;
-  const irmaos  = desigs.reduce((s, d) => s + (d.irmaos || 0), 0);
-  const datas   = [...new Set(desigs.map(d => d.data))].length;
+  const postosPorId = Object.fromEntries(DB.get('postos').map(p => [String(p.id), p]));
+  const nomesUnicos = new Set();
+  desigs.forEach(desig => {
+    const posto = postosPorId[String(desig.postoId)] || null;
+    getNomesEscaladosDesignacao(desig, posto).forEach(nome => nomesUnicos.add(nome.toLowerCase()));
+  });
+  const irmaosEscalados = nomesUnicos.size || desigs.reduce((s, d) => s + (d.irmaos || 0), 0);
+  const subAdminsAtivos = DB.get('sub_admins', []).filter(sa => sa && sa.ativo !== false).length;
 
   document.getElementById('kpi-strip').innerHTML = `
     <div class="stat-card">
@@ -1391,11 +1468,11 @@ function renderKPI() {
     </div>
     <div class="stat-card">
       <div class="stat-icon orange">👥</div>
-      <div class="stat-info"><h3>${irmaos}</h3><p>Irmãos escalados</p></div>
+      <div class="stat-info"><h3>${irmaosEscalados}</h3><p>Irmãos escalados</p></div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon purple">📅</div>
-      <div class="stat-info"><h3>${datas}</h3><p>Datas com cobertura</p></div>
+      <div class="stat-icon purple">🛡️</div>
+      <div class="stat-info"><h3>${subAdminsAtivos}</h3><p>Sub-admins ativos</p></div>
     </div>
   `;
 }
@@ -1407,6 +1484,7 @@ function renderCronograma() {
   const desigs = getDesignacoesEfetivas();
   const congs  = DB.get('congregacoes');
   const postos = DB.get('postos');
+  const congCfgAll = DB.get('cong_config', {});
   const el     = document.getElementById('cronograma-full');
 
   if (!desigs.length) {
@@ -1427,6 +1505,9 @@ function renderCronograma() {
     const rows  = lista.map(d => {
       const cong  = congs.find(c => c.id === d.congId);
       const posto = postos.find(p => p.id === d.postoId);
+      const nomesEscalados = getNomesEscaladosDesignacao(d, posto, congCfgAll);
+      const irmaosEscalados = nomesEscalados.length || (d.irmaos || 0);
+      const responsavelGeral = posto?.responsavel || d.responsavel || 'Sem contato';
       return `
         <tr>
           <td><strong>${posto?.km ? `${posto.km} km` : '—'}</strong></td>
@@ -1438,7 +1519,8 @@ function renderCronograma() {
             </span>
           </td>
           <td>🕐 ${d.inicio} – ${d.fim}</td>
-          <td>👥 ${d.irmaos}</td>
+          <td>👥 ${irmaosEscalados}</td>
+          <td>👤 ${responsavelGeral}</td>
           <td>${d.obs || '<span style="color:#aaa;">—</span>'}</td>
           <td><button class="btn btn-danger btn-sm" onclick="${d.autoPostoId ? `deletarPostoMapa(${d.postoId})` : `deletarDesignacao(${d.id})`}">🗑️</button></td>
         </tr>`;
@@ -1456,6 +1538,7 @@ function renderCronograma() {
                 <th>Congregação</th>
                 <th>Horário</th>
                 <th>Irmãos</th>
+                <th>Responsável geral</th>
                 <th>Observação</th>
                 <th></th>
               </tr>
@@ -1474,11 +1557,15 @@ document.getElementById('btn-export-cronograma').addEventListener('click', () =>
   const desigs = getDesignacoesEfetivas();
   const congs  = DB.get('congregacoes');
   const postos = DB.get('postos');
-  let csv = '\uFEFFData,Km,Posto,Congregação,Hora Início,Hora Fim,Irmãos,Observação\n';
+  const congCfgAll = DB.get('cong_config', {});
+  let csv = '\uFEFFData,Km,Posto,Congregação,Hora Início,Hora Fim,Irmãos,Responsável geral,Observação\n';
   desigs.sort((a,b) => (a.data+a.inicio).localeCompare(b.data+b.inicio)).forEach(d => {
     const cong  = congs.find(c => c.id === d.congId);
     const posto = postos.find(p => p.id === d.postoId);
-    csv += `"${formatarData(d.data)}","${posto?.km||''}","${posto?.nome||''}","${cong?.nome||''}","${d.inicio}","${d.fim}","${d.irmaos}","${d.obs||''}"\n`;
+    const nomesEscalados = getNomesEscaladosDesignacao(d, posto, congCfgAll);
+    const irmaosEscalados = nomesEscalados.length || (d.irmaos || 0);
+    const responsavelGeral = posto?.responsavel || d.responsavel || '';
+    csv += `"${formatarData(d.data)}","${posto?.km||''}","${posto?.nome||''}","${cong?.nome||''}","${d.inicio}","${d.fim}","${irmaosEscalados}","${responsavelGeral}","${d.obs||''}"\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);

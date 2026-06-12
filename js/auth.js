@@ -104,8 +104,8 @@ const Auth = {
   // Retorna true | false | 'rate_limited'
   async loginAdmin(senha) {
     if (!checkRateLimit('admin')) return 'rate_limited';
-    const creds = DB.get('admin_creds', {});
-    if (!creds.senha) return false; // Sem credenciais cadastradas
+    // Fallback: se admin_creds nunca foi gravado no Firebase usa a senha padrão
+    const creds = DB.get('admin_creds', { senha: 'corrida2026' });
 
     let ok = false;
     if (creds._hashed) {

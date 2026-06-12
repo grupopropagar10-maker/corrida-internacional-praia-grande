@@ -93,6 +93,17 @@
       color: var(--primary-dark);
     }
 
+    .posto-numero {
+      display: inline-block;
+      background: var(--primary, #0057A8);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.05rem 0.4rem;
+      border-radius: 6px;
+      vertical-align: middle;
+    }
+
     .posto-km {
       font-size: 0.8rem;
       color: var(--gray);
@@ -324,6 +335,18 @@
       border-radius: 50%;
       border: 3px solid rgba(255,255,255,0.92);
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .posto-marker-num {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
     }
 
     .posto-marker-carrinho { background: #0057A8; }
@@ -993,15 +1016,16 @@
       const cobertura = escalaResumo.coberturaPorPosto[String(p.id)];
       const criticidade = getEscalaCriticidade(cobertura);
       bounds.push([lat, lng]);
+      const numeroPosto = getPostoNumero(p);
       const icon = L.divIcon({
         className: '',
-        html: `<div class="posto-marker ${criticidade.nivel === 'critica' ? 'posto-marker-critico' : getMarkerClass(p.recursoTipo)}"></div>`,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -8],
+        html: `<div class="posto-marker posto-marker-num ${criticidade.nivel === 'critica' ? 'posto-marker-critico' : getMarkerClass(p.recursoTipo)}">${numeroPosto || ''}</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12],
       });
       const marker = L.marker([lat, lng], { icon })
-        .bindPopup(`<strong>${p.nome}</strong><br>${p.local}<br>Responsável: ${p.responsavel}<br>Escala: ${criticidade.nivel === 'critica' ? 'Critica' : cobertura?.completo ? 'Pronta' : cobertura?.designacoes ? `${cobertura.faltando} faltando` : 'Sem escala'}`)
+        .bindPopup(`<strong>${numeroPosto ? `Nº ${numeroPosto} — ` : ''}${p.nome}</strong><br>${p.local}<br>Responsável: ${p.responsavel}<br>Escala: ${criticidade.nivel === 'critica' ? 'Critica' : cobertura?.completo ? 'Pronta' : cobertura?.designacoes ? `${cobertura.faltando} faltando` : 'Sem escala'}`)
         .addTo(postosMapLayer);
       postosMarkers.set(String(p.id), marker);
     });
@@ -1112,7 +1136,7 @@
       <div class="posto-card ${p.status} ${criticidade.cardClass} ${tempoCardClass}">
         <div class="posto-top">
           <div>
-            <div class="posto-nome">${p.nome}</div>
+            <div class="posto-nome">${getPostoNumero(p) ? `<span class="posto-numero">Nº ${getPostoNumero(p)}</span> ` : ''}${p.nome}</div>
             <div class="posto-km">📏 Km ${p.km}</div>
           </div>
           ${badgeMap[p.status] || ''}
@@ -1264,6 +1288,9 @@
       }
     } else {
       dados.id = Date.now();
+      let maxNum = 0;
+      postos.forEach(p => { const n = Number(p.numero); if (Number.isFinite(n) && n > maxNum) maxNum = n; });
+      dados.numero = maxNum + 1;
       postos.push(dados);
       showToast('Novo posto cadastrado!', 'success');
     }
@@ -1330,6 +1357,16 @@
   renderFiltroCongregacao();
   renderStats();
   renderPostos();
+
+  // Garante numeração fixa dos postos após o Firebase carregar os dados completos.
+  if (window.DB_SYNC_READY) {
+    window.DB_SYNC_READY.then(() => {
+      ensurePostoNumeros();
+      renderFiltroCongregacao();
+      renderStats();
+      renderPostos();
+    });
+  }
 </script>
 </body>
 </html>

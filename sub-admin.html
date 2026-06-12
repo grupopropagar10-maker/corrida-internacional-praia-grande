@@ -1585,7 +1585,7 @@
       ${postos.map(p => `
         <div class="cong-row">
           <div class="cor-dot" style="background:${p.status==='ativo'?'var(--success)':'var(--warning)'};"></div>
-          <div><strong>${p.nome}</strong></div>
+          <div><strong>${getPostoNumero(p) ? `Nº ${getPostoNumero(p)} — ` : ''}${escapeHtml(p.nome)}</strong></div>
           <div style="font-size:0.78rem;color:var(--gray);">${p.local}</div>
           <div>${p.km} km</div>
           <div><button class="btn btn-danger btn-sm" onclick="deletarPosto(${p.id})">🗑️</button></div>
@@ -1667,11 +1667,15 @@
   window.abrirDesig = function(congId) {
     const postos = getPostosDoSetor();
     if (!postos.length) { showToast('Não há postos cadastrados no seu setor.', 'warning'); return; }
-    const opcoes = postos.map(p => `${p.id}: ${p.nome}`).join('\n');
-    const escolha = prompt(`Escolha o ID do posto para esta congregação:\n\n${opcoes}`);
+    const opcoes = postos.slice()
+      .sort((a, b) => (getPostoNumero(a) || 1e9) - (getPostoNumero(b) || 1e9))
+      .map(p => `${getPostoNumero(p) ? `Nº ${getPostoNumero(p)}` : `id ${p.id}`}: ${p.nome}`).join('\n');
+    const escolha = prompt(`Digite o Nº do posto para esta congregação:\n\n${opcoes}`);
     if (!escolha) return;
-    const postoId = parseInt(escolha);
-    if (!postos.find(p => p.id === postoId)) { showToast('Posto não encontrado!', 'error'); return; }
+    const escolhaNum = parseInt(escolha, 10);
+    const postoSel = postos.find(p => getPostoNumero(p) === escolhaNum) || postos.find(p => p.id === escolhaNum);
+    if (!postoSel) { showToast('Posto não encontrado!', 'error'); return; }
+    const postoId = postoSel.id;
     const data = prompt('Data da designação (ex: 2026-07-12):') || '';
     const desigs = DB.get('designacoes', []).filter(x => x.congId !== congId);
     desigs.push({ id: Date.now(), congId, postoId, data, inicio: '07:00', fim: '09:00', irmaos: 0 });
@@ -2179,6 +2183,15 @@
   renderPedidosAjuda();
   renderTapaBuraco();
   renderAtividades();
+
+  // Garante numeração fixa dos postos após o Firebase carregar os dados completos.
+  if (window.DB_SYNC_READY) {
+    window.DB_SYNC_READY.then(() => {
+      ensurePostoNumeros();
+      renderPostos();
+      renderSetor();
+    });
+  }
 </script>
 </body>
 </html>

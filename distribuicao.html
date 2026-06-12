@@ -318,10 +318,13 @@
 
   // ---- RENDER POSTOS ----
   function renderPostosSelect() {
-    const postos = DB.get('postos');
+    const postos = (DB.get('postos') || []).slice()
+      .sort((a, b) => (getPostoNumero(a) || 1e9) - (getPostoNumero(b) || 1e9));
     const sel = document.getElementById('reg-posto');
+    const atual = sel.value;
     sel.innerHTML = '<option value="">-- Selecione o posto --</option>' +
-      postos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+      postos.map(p => `<option value="${p.id}">${getPostoNumero(p) ? `Nº ${getPostoNumero(p)} — ` : ''}${escapeHtml(p.nome)}</option>`).join('');
+    if (atual) sel.value = atual;
   }
 
   // ---- CONTADOR ----
@@ -469,6 +472,17 @@
   renderPostosSelect();
   renderHistorico();
   renderStats();
+
+  // Recarrega a lista de postos (com número) quando o Firebase terminar de sincronizar.
+  if (window.DB_SYNC_READY) {
+    window.DB_SYNC_READY.then(() => {
+      ensurePostoNumeros();
+      renderPostosSelect();
+    });
+  }
+  window.addEventListener('db-sync', e => {
+    if (e.detail?.key === 'postos') renderPostosSelect();
+  });
 </script>
 </body>
 </html>

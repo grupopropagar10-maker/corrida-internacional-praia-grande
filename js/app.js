@@ -13,6 +13,43 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+// Número amigável e fixo de cada posto (atribuído por ordem de criação).
+function getPostoNumero(posto) {
+  const n = Number(posto?.numero);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+// Rótulo "Nº X — Nome" (texto puro; escape fica a cargo de quem usa em HTML).
+function formatPostoLabel(posto) {
+  const n = getPostoNumero(posto);
+  const nome = posto?.nome || 'Posto';
+  return n ? `Nº ${n} — ${nome}` : nome;
+}
+
+// Garante que todo posto tenha um número fixo. Atribui aos que faltam,
+// na ordem de criação (id ascendente), continuando do maior já usado.
+// Idempotente: só grava se algo mudou. Não renumera nem altera os existentes.
+function ensurePostoNumeros() {
+  const postos = DB.get('postos', []);
+  if (!Array.isArray(postos) || !postos.length) return postos;
+  let maxNum = 0;
+  postos.forEach(p => {
+    const n = Number(p?.numero);
+    if (Number.isFinite(n) && n > maxNum) maxNum = n;
+  });
+  const semNumero = postos
+    .filter(p => !(Number.isFinite(Number(p?.numero)) && Number(p?.numero) > 0))
+    .sort((a, b) => Number(a?.id) - Number(b?.id));
+  if (!semNumero.length) return postos;
+  semNumero.forEach(p => { maxNum += 1; p.numero = maxNum; });
+  DB.set('postos', postos);
+  return postos;
+}
+
+window.getPostoNumero = getPostoNumero;
+window.formatPostoLabel = formatPostoLabel;
+window.ensurePostoNumeros = ensurePostoNumeros;
+
 const DB = {
   get(key, def = []) {
     try { return JSON.parse(localStorage.getItem(key)) ?? def; }

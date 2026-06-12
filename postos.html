@@ -432,6 +432,7 @@
         <button class="filter-btn" data-filter="inativo">❌ Inativos</button>
         <button class="filter-btn" data-filter="escala-quase">⚠️ Quase terminando</button>
         <button class="filter-btn" data-filter="escala-finalizada">🏁 Já finalizaram</button>
+        <button class="filter-btn" data-filter="escala-pronto">✅ Prontos</button>
       </div>
       <button class="btn btn-primary" id="btn-novo-posto">➕ Novo Posto</button>
     </div>
@@ -725,6 +726,9 @@
         matchFiltro = filtroAtual === 'escala-quase'
           ? tempoEscala.status === 'quase'
           : cobertura.completo || tempoEscala.status === 'finalizada';
+      } else if (filtroAtual === 'escala-pronto') {
+        const cobertura = getCoberturaPosto(p, designacoes, congCfgAll);
+        matchFiltro = cobertura.completo;
       }
       const matchBusca  = !busca || p.nome.toLowerCase().includes(busca) || p.responsavel.toLowerCase().includes(busca);
       const matchCong   = !congregacaoAtual || String(p.congId) === String(congregacaoAtual);
@@ -1004,10 +1008,14 @@
     const ativos   = postos.filter(p => p.status === 'ativo').length;
     const standby  = postos.filter(p => p.status === 'standby').length;
     const designacoes = getDesignacoesEfetivas();
+    const congCfgAll = DB.get('cong_config', {});
     const escalaResumo = getEscalaResumo(postos);
-    const totalPub = postos.reduce((s, p) => s + (parseInt(p.publicacoes) || 0), 0);
-    const quaseFinalizando = postos.filter(p => getTempoEscalaPosto(p, designacoes).status === 'quase').length;
     const finalizadas = escalaResumo.postosProntos;
+
+    const coberturaAll = postos.map(p => getCoberturaPosto(p, designacoes, congCfgAll));
+    const totalVagas    = coberturaAll.reduce((s, c) => s + c.totalSlots, 0);
+    const vagasOcupadas = coberturaAll.reduce((s, c) => s + (c.totalSlots - c.faltando), 0);
+    const vagasFaltando = totalVagas - vagasOcupadas;
 
     document.getElementById('stats-postos').innerHTML = `
       <div class="stat-card">
@@ -1022,9 +1030,13 @@
         <div class="stat-icon orange">⏳</div>
         <div class="stat-info"><h3>${standby}</h3><p>Standby</p></div>
       </div>
+      <div class="stat-card" style="cursor:pointer;" onclick="document.querySelector('[data-filter=escala-pronto]').click()" title="Clique para filtrar postos prontos">
+        <div class="stat-icon green">🏁</div>
+        <div class="stat-info"><h3>${finalizadas}</h3><p>Prontos</p><small style="color:var(--gray);">designação completa</small></div>
+      </div>
       <div class="stat-card">
-        <div class="stat-icon purple">📖</div>
-        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações disp.</p><small style="color:var(--gray);">🏁 ${finalizadas} com tudo designado · ⚠️ ${quaseFinalizando} quase</small></div>
+        <div class="stat-icon purple">👥</div>
+        <div class="stat-info"><h3>${totalVagas}</h3><p>Total de Vagas</p><small style="color:var(--gray);">${vagasOcupadas} preenchidas · ${vagasFaltando} faltando</small></div>
       </div>
     `;
   }

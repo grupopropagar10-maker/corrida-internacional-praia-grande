@@ -5,3 +5,9 @@ out/
 .DS_Store
 Thumbs.db
 .vercel
+
+# Pastas de backup (locais / disco D:) - nunca versionar
+pre-deploy-backups/
+pre-fix-security-backup/
+firebase-incident-backups/
+restore_congregacoes_20260527.json

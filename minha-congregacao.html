@@ -2617,7 +2617,7 @@ function createPdfDoc(payload) {
       body: entry.slots.map(slot => ([
         `${slot.inicio}–${slot.fim}`,
         slot.pessoas.length
-          ? slot.pessoas.map(p => p.nome + (p.origem === 'ajuda' && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')
+          ? slot.pessoas.map(p => p.nome + ((p.origem === 'ajuda' || p.origem === 'tapa_buraco') && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')
           : 'vaga',
         slot.ocupacao,
       ])),
@@ -2803,7 +2803,7 @@ function renderPostosTurnos() {
 
       const peopleHtml = people.map(pessoa => `
         <div class="turno-pessoa">
-          👤 ${pessoa.nome}${pessoa.origem === 'ajuda' ? `<span class="helper-badge">ajuda${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}
+          👤 ${pessoa.nome}${pessoa.origem === 'ajuda' ? `<span class="helper-badge">ajuda${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}${pessoa.origem === 'tapa_buraco' ? `<span class="helper-badge">tapa-buraco${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}
           <button onclick="removeFromSlot('${escaparJs(desig.id)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">✕</button>
         </div>`).join('');
 

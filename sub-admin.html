@@ -544,6 +544,33 @@
   </main>
 </div>
 
+<!-- MODAL: Completar horário (dar nomes) -->
+<div class="modal-overlay" id="modal-completar">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="completar-titulo">Completar horário</h3>
+      <button class="modal-close" onclick="fecharModalCompletar()">&times;</button>
+    </div>
+    <p class="mini-note" id="completar-sub" style="margin-top:-.5rem;margin-bottom:1rem;"></p>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-weight:600;font-size:.85rem;margin-bottom:.35rem;">Congregação ajudante</label>
+      <select class="form-control" id="completar-cong" onchange="atualizarMembrosCompletar()">
+        <option value="">Escolha a congregação ajudante…</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-weight:600;font-size:.85rem;margin-bottom:.35rem;">Nomes</label>
+      <div id="completar-nomes"></div>
+      <datalist id="completar-membros"></datalist>
+      <div class="mini-note">Escolha nomes do cadastro da congregação ou digite manualmente.</div>
+    </div>
+    <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.2rem;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="fecharModalCompletar()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmarCompletarHorario()">✅ Completar horário</button>
+    </div>
+  </div>
+</div>
+
 <div id="print-area" style="display:none;"><div id="print-content"></div></div>
 
 <style>
@@ -1052,6 +1079,8 @@
     return getPedidosAjuda().find(p => p.congId === congId && String(p.designacaoId) === String(desigId) && p.slotKey === slotKey && p.status !== 'cancelado') || null;
   }
 
+  let completarCtx = null;
+
   function fecharHorarioDoSetor(congId, desigId, slotKey, faltaQtd) {
     const item = getItemCobertura(desigId);
     if (!item) { showToast('Arranjo não encontrado neste setor.', 'error'); return; }
@@ -1061,14 +1090,59 @@
     const ajudantes = DB.get('congregacoes', []).filter(c => c.confirmada && c.id !== congId);
     if (!ajudantes.length) { showToast('Nenhuma congregação ajudante disponível.', 'warning'); return; }
 
-    const ajudanteCongId = parseInt(prompt(`ID da congregação ajudante para ${slot.inicio}–${slot.fim}:\n\n${ajudantes.map(c => `${c.id}: ${c.nome}`).join('\n')}`), 10);
-    if (!ajudanteCongId) return;
-    const ajudanteCong = ajudantes.find(c => c.id === ajudanteCongId);
+    completarCtx = { congId, desigId, slotKey, faltaQtd, slotLabel: `${slot.inicio}–${slot.fim}` };
+
+    document.getElementById('completar-titulo').textContent = `Completar ${slot.inicio}–${slot.fim}`;
+    document.getElementById('completar-sub').textContent =
+      `${item.cong?.nome || 'Congregação'} · ${item.posto?.nome || 'Posto'} · faltam ${faltaQtd} nome(s)`;
+
+    const sel = document.getElementById('completar-cong');
+    sel.innerHTML = '<option value="">Escolha a congregação ajudante…</option>' +
+      ajudantes.map(c => `<option value="${c.id}">${escapeHtml(c.nome || '')}</option>`).join('');
+
+    const wrap = document.getElementById('completar-nomes');
+    wrap.innerHTML = Array.from({ length: faltaQtd }, (_, i) =>
+      `<input class="form-control" id="completar-nome-${i}" list="completar-membros" placeholder="Nome ${i + 1}" autocomplete="off" style="margin-bottom:.5rem;"/>`
+    ).join('');
+
+    document.getElementById('completar-membros').innerHTML = '';
+    document.getElementById('modal-completar').classList.add('open');
+  }
+
+  window.atualizarMembrosCompletar = function() {
+    const ajudanteCongId = parseInt(document.getElementById('completar-cong').value, 10);
+    const dl = document.getElementById('completar-membros');
+    if (!ajudanteCongId) { dl.innerHTML = ''; return; }
+    const cfg = getCongConfigById(ajudanteCongId);
+    const membros = Array.isArray(cfg?.membros) ? cfg.membros : [];
+    dl.innerHTML = membros
+      .map(m => `<option value="${escapeHtml(m.nome || '')}"></option>`)
+      .join('');
+  };
+
+  window.fecharModalCompletar = function() {
+    document.getElementById('modal-completar').classList.remove('open');
+    completarCtx = null;
+  };
+
+  window.confirmarCompletarHorario = function() {
+    if (!completarCtx) return;
+    const { congId, desigId, slotKey, faltaQtd } = completarCtx;
+
+    const ajudanteCongId = parseInt(document.getElementById('completar-cong').value, 10);
+    if (!ajudanteCongId) { showToast('Escolha a congregação ajudante.', 'warning'); return; }
+    const ajudanteCong = DB.get('congregacoes', []).find(c => c.id === ajudanteCongId);
     if (!ajudanteCong) { showToast('Congregação ajudante inválida.', 'error'); return; }
 
-    const nomesRaw = prompt(`Informe exatamente ${faltaQtd} nome(s) para completar ${slot.inicio}–${slot.fim}.\n\nSepare por vírgula.`) || '';
-    const nomes = nomesRaw.split(',').map(nome => nome.trim()).filter(Boolean);
+    const nomes = Array.from({ length: faltaQtd }, (_, i) =>
+      document.getElementById(`completar-nome-${i}`)?.value.trim() || ''
+    ).filter(Boolean);
     if (nomes.length !== faltaQtd) { showToast(`Informe exatamente ${faltaQtd} nome(s).`, 'warning'); return; }
+
+    const item = getItemCobertura(desigId);
+    if (!item) { showToast('Arranjo não encontrado neste setor.', 'error'); return; }
+    const slot = item.slots.find(s => s.inicio === slotKey);
+    if (!slot) { showToast('Horário não encontrado. Atualize a tela.', 'warning'); return; }
 
     const cfg = getCongConfigById(congId);
     cfg.turnos = cfg.turnos || {};
@@ -1121,11 +1195,12 @@
     savePedidosAjuda(lista);
 
     Auth.registrarAtividade('Fechou arranjo proativamente', `${item.cong?.nome || 'Congregação'} · ${item.posto?.nome || 'Posto'} · ${slot.inicio}–${slot.fim}`);
+    fecharModalCompletar();
     renderSetor();
     renderPedidosAjuda();
     renderAtividades();
     showToast('Horário fechado pelo sub-admin.', 'success');
-  }
+  };
 
   function exportarArranjoSetorPDF(desigId) {
     const item = getItemCobertura(desigId);
@@ -1136,7 +1211,7 @@
     const rows = item.slots.map(slot => `
       <tr>
         <td style="font-weight:600;text-align:center;white-space:nowrap;">${slot.inicio}–${slot.fim}</td>
-        <td>${slot.pessoas.map(p => p.nome + (p.origem === 'ajuda' && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')}</td>
+        <td>${slot.pessoas.map(p => p.nome + ((p.origem === 'ajuda' || p.origem === 'tapa_buraco') && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')}</td>
         <td style="text-align:center;">${slot.pessoas.length}/3</td>
       </tr>`).join('');
 
@@ -1786,6 +1861,11 @@
     const suggestions = cfg.suggestions || [];
     const assignments = cfg.assignments || [];
     const pedidosEncaminhados = getPedidosAjuda().filter(p => p.status === 'aberto' && p.tapaBuracoStatus === 'encaminhado');
+    const congsOptionsHtml = DB.get('congregacoes', [])
+      .slice()
+      .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
+      .map(c => `<option value="${escapeHtml(c.nome || '')}"></option>`)
+      .join('');
 
     const convitesHtml = invites.length
       ? invites.map(invite => {
@@ -1797,6 +1877,7 @@
               <div style="display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
                 <div>
                   <strong>${invite.nome}</strong>
+                  ${invite.congNome ? `<div class="mini-note">🏢 ${escapeHtml(invite.congNome)}</div>` : ''}
                   <div class="mini-note">${invite.whatsapp || 'Sem WhatsApp'} · @${invite.usuario}</div>
                 </div>
                 <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
@@ -1864,7 +1945,13 @@
         <div class="help-grid" style="margin-top:.8rem;">
           <div><label>Nome</label><input class="form-control" id="tb-nome" placeholder="Ex: Maria Souza"/></div>
           <div><label>WhatsApp</label><input class="form-control" id="tb-whatsapp" placeholder="(13) 99718-0445"/></div>
+          <div>
+            <label>Congregação</label>
+            <input class="form-control" id="tb-cong" list="tb-congs-list" placeholder="Escolha ou digite a congregação" autocomplete="off"/>
+            <datalist id="tb-congs-list">${congsOptionsHtml}</datalist>
+          </div>
         </div>
+        <div class="mini-note" style="margin-top:.4rem;">Escolha uma congregação da lista ou digite uma nova. O nome fica vinculado ao tapa-buraco e aparece na escala.</div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
           <button class="btn btn-primary btn-sm" onclick="salvarNovoTapaBuraco()">💾 Cadastrar e gerar acesso</button>
         </div>
@@ -1882,13 +1969,20 @@
   window.salvarNovoTapaBuraco = function() {
     const nome = document.getElementById('tb-nome')?.value.trim() || '';
     const whats = normalizarWhatsApp(document.getElementById('tb-whatsapp')?.value || '');
+    const congNomeDigitado = document.getElementById('tb-cong')?.value.trim() || '';
     if (!nome) { showToast('Informe o nome do tapa-buraco.', 'warning'); return; }
     if (!whats.ok) { showToast('Informe um WhatsApp válido com DDD.', 'warning'); return; }
+    if (!congNomeDigitado) { showToast('Informe a congregação do tapa-buraco.', 'warning'); return; }
+    // Casa com uma congregação existente (sem diferenciar maiúsculas/acentos triviais); se não existir, guarda só o nome digitado.
+    const congExistente = DB.get('congregacoes', [])
+      .find(c => String(c.nome || '').trim().toLowerCase() === congNomeDigitado.toLowerCase());
     const cfg = getTapaBuracoConfig();
     const invite = {
       id: `tb_${Date.now()}`,
       nome,
       whatsapp: whats.formatted,
+      congNome: congExistente?.nome || congNomeDigitado,
+      congId: congExistente?.id ?? null,
       usuario: gerarUsuarioTapaBuraco(nome, cfg.invites),
       senha: gerarSenhaAutomatica(),
       ativo: true,
@@ -1900,7 +1994,9 @@
     saveTapaBuracoConfig(cfg);
     document.getElementById('tb-nome').value = '';
     document.getElementById('tb-whatsapp').value = '';
-    Auth.registrarAtividade('Cadastrou tapa-buraco', invite.nome);
+    const congInput = document.getElementById('tb-cong');
+    if (congInput) congInput.value = '';
+    Auth.registrarAtividade('Cadastrou tapa-buraco', `${invite.nome}${invite.congNome ? ` · ${invite.congNome}` : ''}`);
     renderTapaBuraco();
     renderAtividades();
     showToast('Tapa-buraco cadastrado com acesso individual.', 'success');
@@ -1922,6 +2018,8 @@
       id: `tb_sug_${Date.now()}`,
       inviteId: invite.id,
       inviteNome: invite.nome,
+      inviteCongNome: invite.congNome || '',
+      inviteCongId: invite.congId ?? null,
       whatsapp: invite.whatsapp || '',
       pedidoId: pedido.id,
       congId: pedido.congId,
@@ -1982,6 +2080,8 @@
         id: `tb_assign_${Date.now()}_${item.inviteId}`,
         inviteId: item.inviteId,
         inviteNome: item.inviteNome,
+        inviteCongNome: item.inviteCongNome || '',
+        inviteCongId: item.inviteCongId ?? null,
         pedidoId: item.pedidoId,
         congId: item.congId,
         congNome: item.congNome,

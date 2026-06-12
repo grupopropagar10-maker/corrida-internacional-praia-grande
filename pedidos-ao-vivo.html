@@ -1020,7 +1020,14 @@
 
       const atualizados = atuais.some(pessoa => pessoa.liveInviteId === invite.id)
         ? atuais
-        : atuais.concat([{ nome: invite.nome, origem: 'tapa_buraco', liveInviteId: invite.id, helperRequestId: assignment.pedidoId }]);
+        : atuais.concat([{
+            nome: invite.nome,
+            origem: 'tapa_buraco',
+            liveInviteId: invite.id,
+            helperRequestId: assignment.pedidoId,
+            ajudanteCongNome: invite.congNome || assignment.inviteCongNome || '',
+            ajudanteCongId: invite.congId ?? assignment.inviteCongId ?? null,
+          }]);
       cfgCong.turnos[assignment.designacaoId][assignment.slotKey] = atualizados;
       saveCongConfigById(assignment.congId, cfgCong);
 

@@ -827,17 +827,17 @@
       const nomePostos  = postosDesig.map(pid => postos.find(p=>p.id===pid)?.km + 'km').join(', ') || '—';
       html += `
         <div class="cong-row">
-          <div class="cor-dot" style="background:${c.cor||'#0057A8'};"></div>
+          <div class="cor-dot" style="background:${escapeHtml(c.cor)||'#0057A8'};"></div>
           <div>
-            <strong style="color:var(--primary-dark);">${c.nome}</strong>
-            <div style="font-size:0.75rem;color:var(--gray);">📍 ${c.cidade}</div>
+            <strong style="color:var(--primary-dark);">${escapeHtml(c.nome)}</strong>
+            <div style="font-size:0.75rem;color:var(--gray);">📍 ${escapeHtml(c.cidade)}</div>
           </div>
           <div>
-            <div>${c.contato || '<span style="color:var(--gray);">—</span>'}</div>
-            <div style="font-size:0.75rem;color:var(--gray);">${c.telefone || ''}</div>
+            <div>${c.contato ? escapeHtml(c.contato) : '<span style="color:var(--gray);">—</span>'}</div>
+            <div style="font-size:0.75rem;color:var(--gray);">${escapeHtml(c.telefone || '')}</div>
           </div>
           <div class="senha-cell">
-            <code>${c.senha || '(não definida)'}</code>
+            <code>${c.senha ? escapeHtml(c.senha) : '(não definida)'}</code>
           </div>
           <div style="font-size:0.8rem;">${nomePostos}</div>
           <div>
@@ -1064,16 +1064,26 @@
   // ================================================================
   //  CONFIGURAÇÕES
   // ================================================================
-  // Trocar senha admin
-  document.getElementById('btn-trocar-senha').addEventListener('click', () => {
+  // Trocar senha admin (com suporte a hash)
+  document.getElementById('btn-trocar-senha').addEventListener('click', async () => {
     const atual = document.getElementById('s-senha-atual').value;
     const nova  = document.getElementById('s-senha-nova').value;
     const conf  = document.getElementById('s-senha-conf').value;
-    const creds = DB.get('admin_creds', { senha: 'corrida2026' });
-    if (atual !== creds.senha) { showToast('Senha atual incorreta!', 'error'); return; }
-    if (nova.length < 6)       { showToast('Nova senha precisa ter ao menos 6 caracteres!', 'error'); return; }
-    if (nova !== conf)         { showToast('As senhas não coincidem!', 'error'); return; }
-    DB.set('admin_creds', { senha: nova });
+    const creds = DB.get('admin_creds', {});
+    if (!creds.senha) { showToast('Nenhuma senha cadastrada. Use o Firebase Console.', 'error'); return; }
+
+    let senhaCorreta = false;
+    if (creds._hashed) {
+      senhaCorreta = (await Auth.hashPassword(atual)) === creds.senha;
+    } else {
+      senhaCorreta = atual === creds.senha;
+    }
+    if (!senhaCorreta) { showToast('Senha atual incorreta!', 'error'); return; }
+    if (nova.length < 6) { showToast('Nova senha precisa ter ao menos 6 caracteres!', 'error'); return; }
+    if (nova !== conf)   { showToast('As senhas não coincidem!', 'error'); return; }
+
+    const hash = await Auth.hashPassword(nova);
+    DB.set('admin_creds', { senha: hash, _hashed: true });
     document.getElementById('s-senha-atual').value = '';
     document.getElementById('s-senha-nova').value  = '';
     document.getElementById('s-senha-conf').value  = '';
@@ -1573,7 +1583,7 @@
     document.getElementById('form-subadmin').style.display = 'none';
   });
 
-  document.getElementById('btn-salvar-sa').addEventListener('click', () => {
+  document.getElementById('btn-salvar-sa').addEventListener('click', async () => {
     const id      = document.getElementById('sa-edit-id').value;
     const nome    = document.getElementById('sa-nome').value.trim();
     const usuario = document.getElementById('sa-usuario').value.trim();
@@ -1584,32 +1594,52 @@
     const modoTapaBuraco = document.getElementById('sa-modo-tapa-buraco').checked;
     const catsSel = Array.from(document.querySelectorAll('.sa-cat-cb:checked')).map(cb => parseInt(cb.value));
 
-    if (!nome || !usuario || !senha) { showToast('Preencha todos os campos!', 'error'); return; }
-    if (senha.length < 4) { showToast('Senha mínima de 4 caracteres!', 'error'); return; }
+    if (!nome || !usuario) { showToast('Preencha nome e usuário!', 'error'); return; }
+    if (!id && !senha) { showToast('Defina uma senha para o novo sub-admin!', 'error'); return; }
+    if (senha && senha.length < 4) { showToast('Senha mínima de 4 caracteres!', 'error'); return; }
     if (catsSel.length && !telInfo.ok) {
       showToast('Informe um WhatsApp válido com DDD para o responsável do setor.', 'error');
       return;
     }
 
     const lista = DB.get('sub_admins', []);
+    let senhaFinal = null;
+    let hashed     = false;
+
+    if (senha) {
+      // Nova senha fornecida: sempre hashear
+      senhaFinal = await Auth.hashPassword(senha);
+      hashed     = true;
+    } else if (id) {
+      // Edição sem alterar senha: mantém a existente
+      const existente = lista.find(x => x.id === id);
+      senhaFinal = existente?.senha   || '';
+      hashed     = !!existente?._hashed;
+    }
+
     let salvo = null;
     if (id) {
       const i = lista.findIndex(x => x.id === id);
       if (i >= 0) {
-        lista[i].nome    = nome;
-        lista[i].usuario = usuario;
-        lista[i].senha   = senha;
-        lista[i].telefone = telInfo.formatted;
-        lista[i].permissoes = { criarPostos: pPerms, designarCongregacoes: pCongs };
-        lista[i].categorias = catsSel;
-        lista[i].modoEspecial = modoTapaBuraco ? 'tapa_buraco' : '';
+        lista[i] = {
+          ...lista[i],
+          nome, usuario,
+          senha: senhaFinal,
+          _hashed: hashed,
+          telefone: telInfo.formatted,
+          permissoes: { criarPostos: pPerms, designarCongregacoes: pCongs },
+          categorias: catsSel,
+          modoEspecial: modoTapaBuraco ? 'tapa_buraco' : '',
+        };
         salvo = lista[i];
       }
     } else {
       if (lista.find(x => x.usuario === usuario)) { showToast('Usuário já existe!', 'error'); return; }
       salvo = {
         id: 'sa_' + Date.now(),
-        nome, usuario, senha,
+        nome, usuario,
+        senha: senhaFinal,
+        _hashed: hashed,
         telefone: telInfo.formatted,
         permissoes: { criarPostos: pPerms, designarCongregacoes: pCongs },
         categorias: catsSel,
@@ -1630,11 +1660,14 @@
   window.editarSA = function(id) {
     const sa = DB.get('sub_admins', []).find(x => x.id === id);
     if (!sa) return;
-    document.getElementById('sa-edit-id').value       = sa.id;
-    document.getElementById('sa-nome').value          = sa.nome;
-    document.getElementById('sa-usuario').value       = sa.usuario;
-    document.getElementById('sa-senha').value         = sa.senha;
-    document.getElementById('sa-telefone').value      = sa.telefone || '';
+    document.getElementById('sa-edit-id').value   = sa.id;
+    document.getElementById('sa-nome').value      = sa.nome;
+    document.getElementById('sa-usuario').value   = sa.usuario;
+    // Campo de senha: vazio ao editar (não exibe hash); preenchido = troca a senha
+    const senhaInput = document.getElementById('sa-senha');
+    senhaInput.value       = sa._hashed ? '' : (sa.senha || '');
+    senhaInput.placeholder = sa._hashed ? 'Deixe vazio para não alterar' : 'Mín. 4 caracteres';
+    document.getElementById('sa-telefone').value  = sa.telefone || '';
     document.getElementById('sa-perm-postos').checked = !!sa.permissoes?.criarPostos;
     document.getElementById('sa-perm-congs').checked  = !!sa.permissoes?.designarCongregacoes;
     document.getElementById('sa-modo-tapa-buraco').checked = sa.modoEspecial === 'tapa_buraco';
@@ -1781,27 +1814,47 @@
     if (!nome) { showToast('Informe o nome da categoria!', 'error'); return; }
 
     const cats = DB.get('categorias', []);
+    let impactoDatas = null;
     if (id) {
       const idx = cats.findIndex(c => c.id === id);
-      if (idx >= 0) cats[idx] = {
-        ...cats[idx],
-        nome, cor, horario, horarioFim, descricao, datas,
-        operacaoBebidas: {
-          ...operacaoBebidas,
-          equipes: {
-            cozinha: cats[idx].operacaoBebidas?.equipes?.cozinha || [],
-            levarAoLocal: cats[idx].operacaoBebidas?.equipes?.levarAoLocal || [],
-            receberNoLocal: cats[idx].operacaoBebidas?.equipes?.receberNoLocal || [],
-            entregadores: cats[idx].operacaoBebidas?.equipes?.entregadores || [],
+      if (idx >= 0) {
+        const oldDatas = Array.isArray(cats[idx].datas) ? cats[idx].datas.filter(Boolean) : [];
+        cats[idx] = {
+          ...cats[idx],
+          nome, cor, horario, horarioFim, descricao, datas,
+          operacaoBebidas: {
+            ...operacaoBebidas,
+            equipes: {
+              cozinha: cats[idx].operacaoBebidas?.equipes?.cozinha || [],
+              levarAoLocal: cats[idx].operacaoBebidas?.equipes?.levarAoLocal || [],
+              receberNoLocal: cats[idx].operacaoBebidas?.equipes?.receberNoLocal || [],
+              entregadores: cats[idx].operacaoBebidas?.equipes?.entregadores || [],
+            },
           },
-        },
-      };
+        };
+        if (typeof window.applyCategoriaDateChanges === 'function') {
+          impactoDatas = window.applyCategoriaDateChanges({
+            categoriaId: id,
+            categoriaNome: nome,
+            oldDatas,
+            newDatas: datas,
+            actorName: 'Administrador',
+          });
+        }
+      }
       showToast('Categoria atualizada! ✅', 'success');
     } else {
       cats.push({ id: Date.now(), nome, cor, horario, horarioFim, descricao, datas, operacaoBebidas });
       showToast('Categoria criada! ✅', 'success');
     }
     DB.set('categorias', cats);
+    if (impactoDatas?.removedDates?.length) {
+      const datasFmt = impactoDatas.removedDates.map(d => d.split('-').reverse().join('/')).join(', ');
+      showToast(
+        `Data(s) removida(s): ${datasFmt}. Atualizado em ${impactoDatas.impactedCongregacoes} congregação(ões).`,
+        'info'
+      );
+    }
     document.getElementById('form-categoria').style.display = 'none';
     renderCategorias();
   });

@@ -418,39 +418,43 @@
   });
 
   // ── LOGIN ADMIN ──
-  function loginAdmin() {
+  async function loginAdmin() {
     const btn   = document.getElementById('btn-login-admin');
     const senha = document.getElementById('admin-senha').value;
     if (!senha) { mostrarErro('Informe a senha!'); return; }
     btn.innerHTML = '<span class="spin"></span>';
-    setTimeout(() => {
-      if (Auth.loginAdmin(senha)) {
-        window.location.href = 'admin.html';
-      } else {
-        btn.innerHTML = '<span>Entrar como Admin</span>';
-        mostrarErro('Senha incorreta!');
-      }
-    }, 600);
+    const resultado = await Auth.loginAdmin(senha);
+    if (resultado === true) {
+      window.location.href = 'admin.html';
+    } else if (resultado === 'rate_limited') {
+      btn.innerHTML = '<span>Entrar como Admin</span>';
+      mostrarErro('Muitas tentativas. Aguarde 5 minutos.');
+    } else {
+      btn.innerHTML = '<span>Entrar como Admin</span>';
+      mostrarErro('Senha incorreta!');
+    }
   }
 
   document.getElementById('btn-login-admin').addEventListener('click', loginAdmin);
   document.getElementById('admin-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginAdmin(); });
 
   // ── LOGIN SUB-ADMIN ──
-  function loginSubAdmin() {
+  async function loginSubAdmin() {
     const btn     = document.getElementById('btn-login-subadmin');
     const usuario = document.getElementById('subadmin-usuario').value.trim();
     const senha   = document.getElementById('subadmin-senha').value;
     if (!usuario || !senha) { mostrarErro('Informe usuário e senha!'); return; }
     btn.innerHTML = '<span class="spin"></span>';
-    setTimeout(() => {
-      if (Auth.loginSubAdmin(usuario, senha)) {
-        window.location.href = 'sub-admin.html';
-      } else {
-        btn.innerHTML = '<span>Entrar como Sub-Admin</span>';
-        mostrarErro('Usuário ou senha incorretos!');
-      }
-    }, 600);
+    const resultado = await Auth.loginSubAdmin(usuario, senha);
+    if (resultado === true) {
+      window.location.href = 'sub-admin.html';
+    } else if (resultado === 'rate_limited') {
+      btn.innerHTML = '<span>Entrar como Sub-Admin</span>';
+      mostrarErro('Muitas tentativas. Aguarde 5 minutos.');
+    } else {
+      btn.innerHTML = '<span>Entrar como Sub-Admin</span>';
+      mostrarErro('Usuário ou senha incorretos!');
+    }
   }
 
   document.getElementById('btn-login-subadmin').addEventListener('click', loginSubAdmin);
@@ -500,7 +504,9 @@
   if (params.get('type') === 'live') {
     setTab('live');
     document.getElementById('live-usuario').value = params.get('user') || '';
-    document.getElementById('live-senha').value = params.get('pass') || '';
+    document.getElementById('live-senha').value   = params.get('pass') || '';
+    // Remove credenciais do histórico do navegador imediatamente após leitura (#4)
+    history.replaceState({}, '', window.location.pathname);
   }
 
   // ── UTILITÁRIOS ──

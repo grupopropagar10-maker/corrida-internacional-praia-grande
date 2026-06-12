@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reunião de Alinhamento — Corrida Internacional PG 2026</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #0057A8;
+      --primary-dark: #003D7A;
+      --primary-light: #4A90D9;
+      --accent: #FF6B00;
+      --success: #28A745;
+      --warning: #FFC107;
+      --danger: #DC3545;
+      --dark: #1A1A2E;
+      --gray: #6C757D;
+      --gray-light: #E9ECEF;
+      --radius: 18px;
+      --radius-sm: 12px;
+      --shadow: 0 14px 32px rgba(8,45,89,0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #f0f6ff 0%, #e4eef9 100%);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    /* ---- HEADER ---- */
+    .page-header {
+      background: linear-gradient(135deg, #003D7A 0%, #0057A8 60%, #1A6FC4 100%);
+      padding: 2.5rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::after {
+      content: '🏃';
+      position: absolute;
+      font-size: 14rem;
+      right: -3rem;
+      bottom: -3rem;
+      opacity: 0.05;
+    }
+    .page-header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border-radius: 99px;
+      border: 1px solid rgba(255,255,255,0.25);
+      margin-bottom: 1rem;
+    }
+    .page-header h1 {
+      color: #fff;
+      font-size: clamp(1.5rem, 4vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .page-header p {
+      color: rgba(255,255,255,0.75);
+      margin-top: 0.6rem;
+      font-size: 1rem;
+    }
+    .header-meta {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .header-meta span {
+      color: rgba(255,255,255,0.8);
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* ---- LAYOUT ---- */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* ---- SEÇÃO ---- */
+    .section {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(0,61,122,0.08);
+    }
+    .section-header {
+      padding: 1.2rem 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      border-bottom: 1px solid rgba(0,61,122,0.08);
+    }
+    .section-num {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .section-header h2 small {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--gray);
+      margin-top: 0.1rem;
+    }
+    .section-body {
+      padding: 1.8rem;
+    }
+
+    /* ---- BIG NUMBERS ---- */
+    .big-numbers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 1.8rem;
+    }
+    .big-card {
+      background: linear-gradient(135deg, #f0f6ff, #e4eef9);
+      border-radius: var(--radius-sm);
+      padding: 1.4rem 1rem;
+      text-align: center;
+      border: 1px solid rgba(0,87,168,0.12);
+    }
+    .big-card .num {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .big-card .num.accent { color: var(--accent); }
+    .big-card .num.success { color: var(--success); }
+    .big-card label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--gray);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+
+    /* ---- CHART WRAP ---- */
+    .chart-wrap {
+      background: rgba(0,61,122,0.02);
+      border-radius: var(--radius-sm);
+      padding: 1.4rem;
+      border: 1px solid rgba(0,61,122,0.07);
+    }
+    .chart-wrap h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    canvas { max-height: 240px; }
+
+    /* ---- GRID 2 COLS ---- */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+    @media (max-width: 620px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ---- CHECKLIST ---- */
+    .checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding: 0.9rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(0,61,122,0.08);
+      background: #fafcff;
+      transition: box-shadow 0.2s;
+    }
+    .check-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .check-icon.blue   { background: rgba(0,87,168,0.10); }
+    .check-icon.orange { background: rgba(255,107,0,0.12); }
+    .check-icon.green  { background: rgba(40,167,69,0.12); }
+    .check-icon.yellow { background: rgba(255,193,7,0.15); }
+    .check-icon.purple { background: rgba(111,66,193,0.10); }
+    .check-text strong { font-size: 0.92rem; color: var(--primary-dark); }
+    .check-text p { font-size: 0.82rem; color: var(--gray); margin-top: 0.15rem; }
+
+    /* ---- DESTAQUE / ALERT ---- */
+    .alert {
+      padding: 1rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      margin-top: 1.2rem;
+    }
+    .alert.info    { background: rgba(0,87,168,0.08); border-left: 4px solid var(--primary); color: var(--primary-dark); }
+    .alert.success { background: rgba(40,167,69,0.09); border-left: 4px solid var(--success); color: #155724; }
+    .alert.warning { background: rgba(255,193,7,0.15); border-left: 4px solid var(--warning); color: #856404; }
+    .alert.orange  { background: rgba(255,107,0,0.09); border-left: 4px solid var(--accent); color: #7a3500; }
+    .alert strong { font-weight: 700; }
+
+    /* ---- STEPS SS ---- */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      counter-reset: step;
+    }
+    .step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem 1.1rem;
+      background: #fafcff;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(0,61,122,0.08);
+    }
+    .step-num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .step-content strong { font-size: 0.9rem; color: var(--primary-dark); }
+    .step-content p { font-size: 0.82rem; color: var(--gray); margin-top: 0.15rem; }
+
+    /* ---- ZOOM CTA ---- */
+    .zoom-cta {
+      background: linear-gradient(135deg, #003D7A, #0057A8);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      color: #fff;
+    }
+    .zoom-cta h3 { font-size: 1.15rem; font-weight: 800; }
+    .zoom-cta p  { color: rgba(255,255,255,0.78); font-size: 0.9rem; margin-top: 0.4rem; }
+    .zoom-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 99px;
+      padding: 0.5rem 1.2rem;
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+
+    /* ---- FOOTER ---- */
+    .page-footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--gray);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="badge">Reunião de Alinhamento · Voluntários 2026</div>
+  <h1>Corrida Internacional de Praia Grande</h1>
+  <p>Pauta oficial para coordenadores e publicadores designados</p>
+  <div class="header-meta">
+    <span>📅 Junho 2026</span>
+    <span>📍 Praia Grande, SP</span>
+    <span>🏃 8 Postos de Apoio</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== SEÇÃO 1 — AGRADECIMENTO ===== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>Agradecimento aos Irmãos
+        <small>Reconhecimento ao comprometimento de cada voluntário</small>
+      </h2>
+    </div>
+    <div class="section-body">
+
+      <div class="big-numbers">
+        <div class="big-card">
+          <div class="num">550<span style="font-size:1.4rem">+</span></div>
+          <label>Voluntários confirmados</label>
+        </div>
+        <div class="big-card">
+          <div class="num accent">8</div>
+          <label>Postos de apoio</label>
+        </div>
+        <div class="big-card">
+          <div class="num success">100<span style="font-size:1.4rem">%</span></div>
+          <label>Dedicação voluntária</label>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-wrap">
+          <h3>Distribuição por turno (estimativa)</h3>
+          <canvas id="chartTurnos"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <h3>Voluntários por posto</h3>
+          <canvas id="chartPostos"></canvas>
+        </div>
+      </div>
+
+      <div class="alert success" style="margin-top:1.2rem">
+        <span>🙏</span>
+        <div><strong>Gratidão genuína!</strong> Cada irmão que se colocou à disposição reflete o espírito de cooperação que torna esse evento possível. Obrigado a todos!</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SEÇÃO 2 — OBJETIVOS ===== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>Objetivos da Reunião
+        <small>Pontos que cada voluntário precisa ter claro antes do evento</small>
+      </h2>
+    </div>
+    <div class="section-body">
+
+      <div class="checklist">
+        <div class="check-item">
+          <div class="check-icon blue">👔</div>
+          <div class="check-text">
+            <strong>Vestimenta adequada</strong>
+            <p>Use o uniforme ou roupa definida para o evento. Apareça apresentável e identificável como parte da equipe de apoio.</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon orange">🛡️</div>
+          <div class="check-text">
+            <strong>Segurança em primeiro lugar</strong>
+            <p>Siga as orientações do responsável do posto. Nunca aja por conta própria em situações de risco ou emergência.</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon green">⏰</div>
+          <div class="check-text">
+            <strong>Pontualidade</strong>
+            <p>Esteja no posto antes do horário combinado. A chegada tardia compromete toda a equipe e a cobertura do posto.</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon yellow">📞</div>
+          <div class="check-text">
+            <strong>Ligue para o responsável da sua congregação</strong>
+            <p>Antes do evento confirme presença e horário com o responsável da sua congregação. A comunicação evita falhas de cobertura.</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon purple">📤</div>
+          <div class="check-text">
+            <strong>Saídas de publicações — sempre alinhe com o responsável</strong>
+            <p>Qualquer saída de publicação deve ser informada e aprovada pelo responsável do posto antes de acontecer.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert info">
+        <span>💡</span>
+        <div><strong>Sugestões para o próximo ano:</strong> Após o evento disponibilizaremos um link para cada publicador responder perguntas e dar sugestões de melhoria. Fique atento ao comunicado!</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SEÇÃO 3 — AGENDA SS ===== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num" style="background:var(--accent)">3</div>
+      <h2>Agenda dos Superintendentes de Serviço
+        <small>Para os SS que se juntaram na parte final — pauta específica</small>
+      </h2>
+    </div>
+    <div class="section-body">
+
+      <div class="big-numbers">
+        <div class="big-card">
+          <div class="num accent" id="numPublicacoesDisp">—</div>
+          <label>Publicações disponíveis</label>
+        </div>
+        <div class="big-card">
+          <div class="num success" id="numPublicacoesSaidas">—</div>
+          <label>Publicações distribuídas</label>
+        </div>
+        <div class="big-card">
+          <div class="num" id="numRelatorio">—</div>
+          <label>Registros p/ relatório</label>
+        </div>
+      </div>
+
+      <div class="chart-wrap" style="margin-bottom:1.2rem">
+        <h3>Publicações: disponibilizadas × distribuídas por posto</h3>
+        <canvas id="chartPublicacoes"></canvas>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Como registrar as publicações disponíveis</strong>
+            <p>Informe ao administrador a quantidade de cada tipo de publicação que estará no seu posto antes do início do evento.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Como contabilizar as publicações distribuídas</strong>
+            <p>Ao final do evento, registre a quantidade que foi realmente entregue ao público. A diferença = estoque não utilizado.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Relatório realista para a Betel</strong>
+            <p>Apenas publicações efetivamente entregues entram no relatório. Não infle os números — precisão garante credibilidade perante a Betel.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert warning">
+        <span>⚠️</span>
+        <div><strong>Atenção SS:</strong> O relatório enviado à Betel deve refletir a realidade. Contabilize somente o que foi distribuído, não o que estava disponível.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SEÇÃO 4 — DÚVIDAS / ZOOM ===== -->
+  <div class="zoom-cta">
+    <h3>Dúvidas? Sub-sala do Zoom após a oração</h3>
+    <p>As dúvidas serão tratadas exclusivamente com os Superintendentes de Serviço<br>na sub-sala do Zoom, logo após o encerramento com oração.</p>
+    <div class="zoom-pill">
+      <span>🎙️</span> Sub-sala exclusiva · Apenas SS
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Corrida Internacional de Praia Grande 2026 · Sistema de Gestão de Voluntários
+</div>
+
+<script>
+  // --- Gráfico 1: Turnos ---
+  new Chart(document.getElementById('chartTurnos'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Manhã', 'Tarde', 'Integral'],
+      datasets: [{
+        data: [230, 210, 110],
+        backgroundColor: ['#0057A8', '#4A90D9', '#FF6B00'],
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 14 } }
+      },
+      cutout: '62%'
+    }
+  });
+
+  // --- Gráfico 2: Voluntários por posto ---
+  new Chart(document.getElementById('chartPostos'), {
+    type: 'bar',
+    data: {
+      labels: ['P1','P2','P3','P4','P5','P6','P7','P8'],
+      datasets: [{
+        label: 'Voluntários',
+        data: [72, 65, 80, 58, 71, 69, 63, 72],
+        backgroundColor: 'rgba(0,87,168,0.75)',
+        borderRadius: 7,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // --- Gráfico 3: Publicações por posto ---
+  new Chart(document.getElementById('chartPublicacoes'), {
+    type: 'bar',
+    data: {
+      labels: ['P1','P2','P3','P4','P5','P6','P7','P8'],
+      datasets: [
+        {
+          label: 'Disponibilizadas',
+          data: [120, 100, 140, 90, 110, 105, 95, 120],
+          backgroundColor: 'rgba(0,87,168,0.55)',
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+        {
+          label: 'Distribuídas',
+          data: [98, 87, 122, 74, 95, 89, 80, 102],
+          backgroundColor: 'rgba(255,107,0,0.75)',
+          borderRadius: 6,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 14 } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Big numbers SS (valores de exemplo — substitua pelos reais)
+  document.getElementById('numPublicacoesDisp').textContent  = '880';
+  document.getElementById('numPublicacoesSaidas').textContent = '747';
+  document.getElementById('numRelatorio').textContent         = '747';
+</script>
+</body>
+</html>

@@ -253,6 +253,32 @@
       font-weight: 600;
       width: 100%;
     }
+    .manual-ajuste-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.48);
+      z-index: 5000;
+      padding: 1rem;
+    }
+    .manual-ajuste-modal.open { display: flex; }
+    .manual-ajuste-card {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 18px 44px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+    .manual-ajuste-head {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      padding: 1rem 1.1rem;
+    }
+    .manual-ajuste-body { padding: 1rem 1.1rem 1.1rem; }
+    .manual-ajuste-actions { display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; margin-top: 1rem; }
 
     /* ── EMPTY STATE ── */
     .empty-sm { text-align: center; padding: 1.5rem; color: var(--gray); font-size: 0.85rem; }
@@ -864,10 +890,16 @@ function buildPopup(posto) {
       <small style="color:#6C757D;">${detalhesPosto}</small>
       <div style="margin-top:0.6rem;">${desigHtml}</div>
       ${posto.congId
-        ? `<div style="display:flex;gap:.4rem;margin-top:.6rem;">
-            <button class="popup-btn" style="flex:1;" onclick="selecionarPostoPopup(${posto.id})">👁️ Ver responsável</button>
-            <button class="popup-btn" style="background:#fff3cd;color:#856404;border:1px solid #f5d97b;" onclick="editarPostoMapa(${posto.id})">✏️ Editar</button>
-            <button class="popup-btn" style="background:#fde;color:#b42318;border:1px solid #f5c2c7;" onclick="deletarPostoMapa(${posto.id})">🗑️</button>
+        ? `<div style="display:grid;gap:.45rem;margin-top:.6rem;">
+            <div style="display:flex;gap:.4rem;">
+              <button class="popup-btn" style="flex:1;" onclick="selecionarPostoPopup(${posto.id})">👁️ Ver responsável</button>
+              <button class="popup-btn" style="background:#fff3cd;color:#856404;border:1px solid #f5d97b;" onclick="editarPostoMapa(${posto.id})">✏️ Editar</button>
+              <button class="popup-btn" style="background:#fde;color:#b42318;border:1px solid #f5c2c7;" onclick="deletarPostoMapa(${posto.id})">🗑️</button>
+            </div>
+            <div style="display:grid;gap:.4rem;">
+              <button class="popup-btn" style="background:#0B5CAD;" onclick="abrirSolicitacaoManualEscala(${posto.id}, 'dobrar_dia')">🔁 Dobrar outro dia</button>
+              <button class="popup-btn" style="background:#1B8A5A;" onclick="abrirSolicitacaoManualEscala(${posto.id}, 'horario_extra')">➕ Adicionar horário extra em outro dia</button>
+            </div>
           </div>`
         : `<button class="popup-btn" onclick="selecionarPostoPopup(${posto.id})">📌 Designar congregação</button>`}
     </div>`;
@@ -1587,6 +1619,93 @@ document.getElementById('tabs').addEventListener('click', e => {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+});
+
+const manualAjusteModal = document.createElement('div');
+manualAjusteModal.id = 'manual-ajuste-modal';
+manualAjusteModal.className = 'manual-ajuste-modal';
+manualAjusteModal.innerHTML = `
+  <div class="manual-ajuste-card">
+    <div class="manual-ajuste-head">
+      <strong id="manual-ajuste-titulo">Solicitação manual</strong>
+      <div id="manual-ajuste-subtitulo" style="font-size:.82rem;opacity:.9;margin-top:.2rem;"></div>
+    </div>
+    <div class="manual-ajuste-body">
+      <div class="form-group">
+        <label for="manual-ajuste-data">Escolha a data</label>
+        <input id="manual-ajuste-data" class="form-control" type="date" />
+      </div>
+      <div class="form-group">
+        <label for="manual-ajuste-nota">Mensagem opcional</label>
+        <textarea id="manual-ajuste-nota" class="form-control" rows="3" placeholder="Ex.: precisamos cobrir um evento especial neste dia."></textarea>
+      </div>
+      <div class="manual-ajuste-actions">
+        <button class="btn btn-outline btn-sm" type="button" id="manual-ajuste-cancelar">Cancelar</button>
+        <button class="btn btn-primary btn-sm" type="button" id="manual-ajuste-enviar">Enviar solicitação</button>
+      </div>
+    </div>
+  </div>`;
+document.body.appendChild(manualAjusteModal);
+
+let manualAjusteSelecionado = null;
+
+function fecharSolicitacaoManualEscala() {
+  manualAjusteSelecionado = null;
+  manualAjusteModal.classList.remove('open');
+}
+
+window.abrirSolicitacaoManualEscala = function(postoId, tipo) {
+  const posto = DB.get('postos', []).find(item => item.id === postoId);
+  const categoria = DB.get('categorias', []).find(item => item.id === posto?.categoriaId);
+  if (!posto || !posto.congId || !categoria) {
+    showToast('Nao foi possivel abrir essa solicitacao.', 'warning');
+    return;
+  }
+  manualAjusteSelecionado = { postoId, tipo };
+  document.getElementById('manual-ajuste-titulo').textContent = tipo === 'horario_extra'
+    ? 'Adicionar horário extra em outro dia'
+    : 'Dobrar outro dia';
+  document.getElementById('manual-ajuste-subtitulo').textContent = `${posto.nome} · ${categoria.nome} · congregação vinculada`;
+  const dataInput = document.getElementById('manual-ajuste-data');
+  const proxData = new Date();
+  proxData.setDate(proxData.getDate() + 1);
+  dataInput.value = proxData.toISOString().split('T')[0];
+  document.getElementById('manual-ajuste-nota').value = '';
+  manualAjusteModal.classList.add('open');
+};
+
+document.getElementById('manual-ajuste-cancelar').addEventListener('click', fecharSolicitacaoManualEscala);
+manualAjusteModal.addEventListener('click', e => {
+  if (e.target === manualAjusteModal) fecharSolicitacaoManualEscala();
+});
+document.getElementById('manual-ajuste-enviar').addEventListener('click', () => {
+  if (!manualAjusteSelecionado) return;
+  const dataAlvo = document.getElementById('manual-ajuste-data').value;
+  if (!dataAlvo) {
+    showToast('Escolha a data da solicitação.', 'warning');
+    return;
+  }
+  const nota = document.getElementById('manual-ajuste-nota').value.trim();
+  const resultado = window.criarSolicitacaoManualEscala({
+    ...manualAjusteSelecionado,
+    dataAlvo,
+    nota,
+    actorName: 'Administrador',
+  });
+  if (!resultado?.ok) {
+    const motivos = {
+      dados_invalidos: 'Informe a data corretamente.',
+      posto_sem_congregacao: 'Esse posto ainda não tem congregação vinculada.',
+      categoria_indisponivel: 'Categoria não encontrada para esse posto.',
+      data_ja_existe: 'Já existe escala nesse posto para essa mesma data.',
+      solicitacao_duplicada: 'Já existe uma solicitação pendente igual para esse dia.',
+    };
+    showToast(motivos[resultado?.reason] || 'Não foi possível criar a solicitação.', 'warning');
+    return;
+  }
+  fecharSolicitacaoManualEscala();
+  map.closePopup();
+  showToast(`Solicitação enviada: ${resultado.request.tipoLabel} para ${resultado.request.dataAlvoFmt}.`, 'success');
 });
 
 // ================================================================

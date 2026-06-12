@@ -18,7 +18,7 @@ const rtdb = firebase.database();
 const IS_LOCAL_FILE = location.protocol === 'file:';
 
 // Chaves que devem ser sincronizadas com o Firebase
-const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config', 'evento_config', 'pedidos_ajuda_escala'];
+const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config', 'evento_config', 'pedidos_ajuda_escala', 'ajustes_manuais_escala'];
 const CRITICAL_KEYS = ['congregacoes', 'postos', 'designacoes', 'cong_config'];
 const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
 const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';
@@ -74,12 +74,13 @@ function getLatestRestoreSnapshot() {
 function isSuspiciousWrite(key, nextValue) {
   if (!CRITICAL_KEYS.includes(key)) return false;
   const latest = getLatestSafeBackup();
+  if (!latest) return false; // Sem backup ainda — 1ª inicialização, libera
   const prevValue = latest?.payload?.[key];
-  const prevSize = getCollectionSize(prevValue);
-  const nextSize = getCollectionSize(nextValue);
+  const prevSize  = getCollectionSize(prevValue);
+  const nextSize  = getCollectionSize(nextValue);
 
-  if (prevSize === 0) return false;
-  if (nextSize === 0 && prevSize > 0) return true;
+  if (prevSize === 0) return false; // Baseline vazio — não há referência confiável
+  if (nextSize === 0) return true;  // Tentativa de zerar dados existentes
   if (prevSize >= 3 && nextSize <= 1) return true;
   if (prevSize >= 5 && nextSize / prevSize <= 0.35) return true;
   return false;
@@ -194,8 +195,12 @@ window.FirebaseBackup = {
   }
 };
 
+let _syncStarted = false; // Garante que listeners só são registrados uma vez (#10)
+
 // Escuta mudanças em tempo real e atualiza localStorage automaticamente
 function startSync() {
+  if (_syncStarted) return;
+  _syncStarted = true;
   SYNC_KEYS.forEach(key => {
     rtdb.ref(key).on('value', snapshot => {
       const val = snapshot.val();
@@ -211,11 +216,33 @@ function startSync() {
         }
         localStorage.setItem(key, JSON.stringify(val));
         saveLocalBackup('pull', key);
-        // Dispara evento para páginas atualizarem a UI sem recarregar
         window.dispatchEvent(new CustomEvent('db-sync', { detail: { key } }));
+      } else {
+        // Chave removida do Firebase — mantém dado local (pode ser escrita pendente)
+        console.warn(`[Firebase] Chave "${key}" retornou null — dado local preservado.`);
       }
     });
   });
+}
+
+// Salva snapshot completo no Firebase (até 5 cópias rotativas) — #13
+function saveFirebaseBackup() {
+  if (IS_LOCAL_FILE) return;
+  const ts      = new Date().toISOString().replace(/[:.]/g, '-');
+  const payload = getBackupPayload();
+  rtdb.ref(`system_backups/${ts}`).set({ ts: new Date().toISOString(), payload })
+    .catch(err => console.warn('[Firebase] Backup remoto falhou:', err));
+  // Mantém apenas as 5 últimas cópias
+  rtdb.ref('system_backups').once('value').then(snap => {
+    const bks = snap.val();
+    if (!bks) return;
+    const keys = Object.keys(bks).sort();
+    if (keys.length > 5) {
+      keys.slice(0, keys.length - 5).forEach(k =>
+        rtdb.ref(`system_backups/${k}`).remove().catch(() => {})
+      );
+    }
+  }).catch(() => {});
 }
 
 // Envia dado ao Firebase (chamado pelo DB.set)
@@ -229,10 +256,16 @@ function pushToFirebase(key, value, options = {}) {
     return;
   }
   const writeTs = markPendingWrite(key, value);
+  // Evento de status: salvando — #14
+  window.dispatchEvent(new CustomEvent('db-sync-status', { detail: { state: 'pending', key } }));
   rtdb.ref(key).set(value)
-    .then(() => clearPendingWrite(key, writeTs))
+    .then(() => {
+      clearPendingWrite(key, writeTs);
+      window.dispatchEvent(new CustomEvent('db-sync-status', { detail: { state: 'saved', key } }));
+    })
     .catch(err => {
       console.warn('[Firebase] Erro ao salvar:', err);
+      window.dispatchEvent(new CustomEvent('db-sync-status', { detail: { state: 'error', key } }));
       restoreFullBackup('write-error');
     });
 }
@@ -253,9 +286,14 @@ function pullFromFirebase() {
   });
 }
 
-window.DB_SYNC_READY = pullFromFirebase().catch(err => {
-  console.warn('[Firebase] Erro ao carregar dados iniciais:', err);
-});
+window.DB_SYNC_READY = pullFromFirebase()
+  .then(() => {
+    // Salva backup remoto uma vez por sessão após dados carregados — #13
+    saveFirebaseBackup();
+  })
+  .catch(err => {
+    console.warn('[Firebase] Erro ao carregar dados iniciais:', err);
+  });
 
 // Inicia sincronização assim que o Firebase estiver pronto
 startSync();

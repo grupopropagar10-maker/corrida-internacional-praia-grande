@@ -673,6 +673,29 @@
     return DB.get('categorias', []).filter(cat => pertenceAoSetor(cat.id));
   }
 
+  function getAvisosRemocaoDatasDoSetor() {
+    const categoriaSet = new Set(getCategoriasDoSetor().map(cat => String(cat.id)));
+    const avisos = DB.get('notificacoes_congregacoes', [])
+      .filter(item => item?.tipo === 'categoria_data_removida' && categoriaSet.has(String(item?.categoriaId)));
+    const resumidos = new Map();
+    avisos.forEach(item => {
+      const key = `${item.categoriaId}__${item.dataRemovida}`;
+      if (!resumidos.has(key)) {
+        resumidos.set(key, {
+          categoriaId: item.categoriaId,
+          categoriaNome: item.categoriaNome || 'Categoria',
+          dataRemovida: item.dataRemovida,
+          congs: new Set(),
+          criadoEm: item.criadoEm || '',
+        });
+      }
+      resumidos.get(key).congs.add(String(item.congId || ''));
+    });
+    return Array.from(resumidos.values())
+      .sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
+      .map(item => ({ ...item, impactadas: item.congs.size }));
+  }
+
   function getCategoriasBebidasAtivas() {
     return getCategoriasDoSetor().filter(cat => cat.operacaoBebidas?.ativa);
   }
@@ -1142,6 +1165,7 @@
     }
 
     const categorias = getCategoriasDoSetor();
+    const avisosDatas = getAvisosRemocaoDatasDoSetor();
     const cobertura = getCoberturaDoSetor();
     const postos = getPostosDoSetor();
     const pedidosAbertos = getPedidosDoSetor().filter(p => p.status === 'aberto').length;
@@ -1154,9 +1178,14 @@
     if (!postos.length) {
       el.innerHTML = `
         <div class="setor-scope-note">Categorias deste sub-admin: <strong>${categorias.map(c => c.nome).join(', ')}</strong>.</div>
+        ${avisosDatas.length ? `<div style="margin-bottom:1rem;display:grid;gap:.55rem;">${avisosDatas.slice(0, 6).map(item => `<div style="border:1px solid rgba(220,53,69,.28);background:#fff6f6;border-radius:12px;padding:.75rem .9rem;font-size:.8rem;"><strong>⚠️ Ajuste de data no setor</strong><br>${item.categoriaNome} · ${String(item.dataRemovida || '').split('-').reverse().join('/')}<br><span style="color:var(--gray);">${item.impactadas} congregação(ões) impactadas · ${item.criadoEm || '—'}.</span></div>`).join('')}</div>` : ''}
         <div class="locked-msg"><div class="lock-icon">📍</div>Nenhum posto está vinculado a essas categorias ainda.</div>`;
       return;
     }
+
+    const avisosHtml = avisosDatas.length
+      ? `<div style="margin-bottom:1rem;display:grid;gap:.55rem;">${avisosDatas.slice(0, 6).map(item => `<div style="border:1px solid rgba(220,53,69,.28);background:#fff6f6;border-radius:12px;padding:.75rem .9rem;font-size:.8rem;"><strong>⚠️ Ajuste de data no setor</strong><br>${item.categoriaNome} · ${String(item.dataRemovida || '').split('-').reverse().join('/')}<br><span style="color:var(--gray);">${item.impactadas} congregação(ões) impactadas · ${item.criadoEm || '—'}.</span></div>`).join('')}</div>`
+      : '';
 
     const cardsHtml = cobertura.length
       ? cobertura.map(item => {
@@ -1200,6 +1229,7 @@
 
     el.innerHTML = `
       <div class="setor-scope-note">Categorias deste sub-admin: <strong>${categorias.map(c => c.nome).join(', ')}</strong>.</div>
+      ${avisosHtml}
       <div class="setor-highlight-grid">
         <div class="setor-highlight success">
           <span>Postos prontos</span>

@@ -186,6 +186,28 @@
       border-color: #b9e1c2;
       color: #1d6b33;
     }
+    .manual-request-card {
+      border-radius: 12px;
+      padding: .9rem 1rem;
+      margin-bottom: .8rem;
+      border: 1px solid #d6e5f7;
+      background: #f7fbff;
+      color: var(--primary-dark);
+      font-size: .82rem;
+    }
+    .manual-request-card.pending {
+      background: #fff7e5;
+      border-color: #f1d48b;
+    }
+    .manual-request-card.accepted {
+      background: #eefaf1;
+      border-color: #bfe3c7;
+    }
+    .manual-request-card.declined {
+      background: #f7f8fa;
+      border-color: #d9dde3;
+      color: #55606b;
+    }
     .slot-help-box {
       margin-top: .55rem;
       padding: .65rem;
@@ -999,6 +1021,8 @@
 
       <!-- Carrinhos / Postos com turnos -->
       <div id="escala-status-resumo" class="escala-status-box warning"></div>
+      <div id="manual-requests-box"></div>
+      <div id="escala-avisos-admin"></div>
       <div id="escala-avisos-ajuda"></div>
       <div id="escala-sector-actions" class="escala-sector-actions"></div>
       <div id="postos-turnos"></div>
@@ -1772,6 +1796,99 @@ function renderAvisosAjuda() {
   }).join('');
 }
 
+function getAvisosAdminDaCongregacao() {
+  return DB.get('notificacoes_congregacoes', [])
+    .filter(item => String(item?.congId) === String(CONG_ID))
+    .sort((a, b) => String(b?.criadoEm || '').localeCompare(String(a?.criadoEm || '')));
+}
+
+window.marcarAvisoAdminComoLido = function(avisoId) {
+  const avisos = DB.get('notificacoes_congregacoes', []);
+  const idx = avisos.findIndex(item => String(item?.id) === String(avisoId) && String(item?.congId) === String(CONG_ID));
+  if (idx < 0) return;
+  avisos[idx] = { ...avisos[idx], lida: true, lidaEm: now() };
+  DB.set('notificacoes_congregacoes', avisos);
+  renderAvisosAdministrativos();
+};
+
+function renderAvisosAdministrativos() {
+  const el = document.getElementById('escala-avisos-admin');
+  if (!el) return;
+  const avisos = getAvisosAdminDaCongregacao();
+  if (!avisos.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = avisos.slice(0, 8).map(aviso => {
+    const lida = !!aviso.lida;
+    const msg = aviso.mensagem || `O administrador removeu a data ${String(aviso.dataRemovida || '').split('-').reverse().join('/')} da categoria ${aviso.categoriaNome || 'Categoria'}.`;
+    return `
+      <div class="help-alert ${lida ? 'closed' : 'pending'}" style="border-left-color:${lida ? '#6C757D' : '#DC3545'};background:${lida ? '#f7f8fa' : '#fff6f6'};">
+        <strong>${lida ? '📌 Aviso administrativo (lido)' : '⚠️ Aviso administrativo'}</strong><br>
+        ${msg}<br>
+        <span style="opacity:.85;">Registrado em ${aviso.criadoEm || '—'}${aviso.origem ? ` por ${aviso.origem}` : ''}.</span>
+        ${lida ? '' : `<div style="margin-top:.45rem;"><button class="btn btn-outline btn-sm" onclick="marcarAvisoAdminComoLido('${String(aviso.id).replace(/'/g, "\\'")}')">Marcar como lido</button></div>`}
+      </div>`;
+  }).join('');
+}
+
+function getManualRequestsDaCongregacao() {
+  return DB.get('ajustes_manuais_escala', [])
+    .filter(item => String(item?.congId) === String(CONG_ID))
+    .sort((a, b) => String(b?.criadoEm || '').localeCompare(String(a?.criadoEm || '')));
+}
+
+function renderSolicitacoesManuais() {
+  const el = document.getElementById('manual-requests-box');
+  if (!el) return;
+  const requests = getManualRequestsDaCongregacao();
+  if (!requests.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = requests.map(request => {
+    const stateClass = request.status === 'aceito' ? 'accepted' : request.status === 'recusado' ? 'declined' : 'pending';
+    const titulo = request.status === 'aceito'
+      ? 'Solicitação aceita'
+      : request.status === 'recusado'
+        ? 'Solicitação recusada'
+        : 'Solicitação pendente';
+    const texto = request.aviso || `Sua congregação foi escolhida para ${request.tipoLabel || 'ajuste manual'} em ${request.dataAlvoFmt || request.dataAlvo || '—'}. Você aceita?`;
+    const idSafe = String(request.id).replace(/'/g, "\\'");
+    const acoes = request.status === 'pendente'
+      ? `<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.65rem;"><button class="btn btn-primary btn-sm" onclick="responderManualCongregacao('${idSafe}', true)">✅ Aceitar</button><button class="btn btn-outline btn-sm" onclick="responderManualCongregacao('${idSafe}', false)">❌ Recusar</button></div>`
+      : '';
+    const detalheExtra = request.status === 'aceito' && request.designacaoCriadaId
+      ? `<br><span style="opacity:.8;">Escala criada para o dia escolhido.</span>`
+      : request.respondidoEm
+        ? `<br><span style="opacity:.8;">Respondido em ${request.respondidoEm}.</span>`
+        : '';
+    return `<div class="manual-request-card ${stateClass}"><strong>${titulo}</strong><br>${texto}<br><span style="opacity:.85;">${request.postoNome} · ${request.categoriaNome} · ${request.dataAlvoFmt || request.dataAlvo || '—'} · ${request.tipoLabel || 'Ajuste manual'}</span>${detalheExtra}${acoes}</div>`;
+  }).join('');
+}
+
+window.responderManualCongregacao = function(requestId, aceitar) {
+  const request = getManualRequestsDaCongregacao().find(item => String(item.id) === String(requestId));
+  if (!request) return;
+  if (aceitar && !confirm(`Sua congregação foi escolhida para ${request.tipoLabel || 'este ajuste'} em ${request.dataAlvoFmt || request.dataAlvo || 'essa data'}. Aceitar?`)) {
+    return;
+  }
+  const resultado = window.responderSolicitacaoManualEscala ? window.responderSolicitacaoManualEscala(requestId, aceitar) : null;
+  if (!resultado?.ok) {
+    const motivos = {
+      nao_encontrado: 'Solicitação não encontrada.',
+      ja_processada: 'Essa solicitação já foi respondida.',
+      nao_pode_criar_designacao: 'Não foi possível criar a escala para esse dia.',
+      designacao_ja_existe: 'Já existe uma escala igual para essa data.',
+    };
+    showToast(motivos[resultado?.reason] || 'Não foi possível processar a solicitação.', 'warning');
+    return;
+  }
+  renderSolicitacoesManuais();
+  renderAvisosAdministrativos();
+  showToast(aceitar ? 'Solicitação aceita. A escala extra foi criada.' : 'Solicitação recusada.', aceitar ? 'success' : 'info');
+};
+
 function renderResumoEscala() {
   const resumo = getResumoEscala();
   const el = document.getElementById('escala-status-resumo');
@@ -1939,17 +2056,24 @@ function renderLiveMemberOptions() {
   const btn = document.getElementById('btn-live-add');
   if (!select || !note || !btn) return;
   const membros = getMembros();
+  const live = getLiveRequestsConfig();
+  const nomesComAcessoAtivo = new Set(
+    (live.invites || [])
+      .filter(invite => invite && invite.ativo !== false)
+      .map(invite => String(invite.nome || '').trim().toLowerCase())
+  );
+  const membrosDisponiveis = membros.filter(membro => !nomesComAcessoAtivo.has(String(membro.nome || '').trim().toLowerCase()));
   const current = select.value;
   select.innerHTML = '<option value="">Selecione um nome ja cadastrado</option>' +
-    membros.map(membro => `<option value="${membro.nome.replace(/"/g, '&quot;')}">${membro.nome} · ${membro.funcao}</option>`).join('');
-  if (membros.some(membro => membro.nome === current)) {
+    membrosDisponiveis.map(membro => `<option value="${membro.nome.replace(/"/g, '&quot;')}">${membro.nome} · ${membro.funcao}</option>`).join('');
+  if (membrosDisponiveis.some(membro => membro.nome === current)) {
     select.value = current;
   }
-  btn.disabled = !membros.length;
-  note.className = `live-note${membros.length ? '' : ' warn'}`;
-  note.innerHTML = membros.length
+  btn.disabled = !membrosDisponiveis.length;
+  note.className = `live-note${membrosDisponiveis.length ? '' : ' warn'}`;
+  note.innerHTML = membrosDisponiveis.length
     ? 'Os nomes aqui sao puxados da aba <strong>Adicionar nomes</strong>. Assim o pedido ao vivo sempre usa pessoas ja cadastradas pela congregacao.'
-    : 'Adicione pelo menos um nome na aba <strong>Adicionar nomes</strong> antes de criar um acesso ao vivo.';
+    : 'Todos os nomes ja possuem acesso ativo/enviado. Edite ou pause um acesso existente para liberar novo envio com este nome.';
 }
 
 function renderLiveRequests() {
@@ -2586,7 +2710,7 @@ function renderMembros() {
   const membros = getMembros();
   const el = document.getElementById('membros-chips');
   el.innerHTML = membros.length
-    ? membros.map(m => `<span class="membro-chip">👤 ${m.nome}<span class="membro-role">${m.funcao}${m.podeRepetir ? ' · repete' : ''}</span><button onclick="removerMembro('${escaparJs(m.nome)}')">✕</button></span>`).join('')
+    ? membros.map(m => `<span class="membro-chip">👤 ${m.nome}<span class="membro-role">${m.funcao}${m.podeRepetir ? ' · repete' : ''}</span><button title="Editar" onclick="editarMembro('${escaparJs(m.nome)}')">✏️</button><button title="Remover" onclick="removerMembro('${escaparJs(m.nome)}')">✕</button></span>`).join('')
     : '<span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>';
   ['badge-escala-tab', 'badge-escala-card'].forEach(id => {
     const badge = document.getElementById(id);
@@ -2594,6 +2718,27 @@ function renderMembros() {
     badge.textContent = membros.length || '';
     badge.style.display = membros.length ? 'inline' : 'none';
   });
+}
+
+let membroEmEdicao = '';
+
+window.editarMembro = function(nome) {
+  const membro = getMembros().find(m => m.nome === nome);
+  if (!membro) return;
+  membroEmEdicao = nome;
+  document.getElementById('input-membro').value = membro.nome;
+  document.getElementById('select-funcao-membro').value = membro.funcao || 'Publicador';
+  document.getElementById('membro-pode-repetir').checked = !!membro.podeRepetir;
+  document.getElementById('btn-add-membro').textContent = '💾 Atualizar';
+  document.getElementById('input-membro').focus();
+};
+
+function limparEdicaoMembro() {
+  membroEmEdicao = '';
+  document.getElementById('input-membro').value = '';
+  document.getElementById('select-funcao-membro').value = 'Publicador';
+  document.getElementById('membro-pode-repetir').checked = false;
+  document.getElementById('btn-add-membro').textContent = '➕ Adicionar';
 }
 
 window.configurarAgenda = function(desigId) {
@@ -2707,6 +2852,7 @@ function renderPostosTurnos() {
       </div>`;
   }).join('');
   renderResumoEscala();
+  renderAvisosAdministrativos();
   renderAvisosAjuda();
   renderEscalaSectorActions();
 }
@@ -2813,27 +2959,56 @@ document.getElementById('btn-add-membro').addEventListener('click', () => {
   const nome = document.getElementById('input-membro').value.trim();
   const funcao = document.getElementById('select-funcao-membro').value;
   const podeRepetir = document.getElementById('membro-pode-repetir').checked;
+  const estavaEditando = !!membroEmEdicao;
   if (!nome) { showToast('Informe o nome!', 'error'); return; }
   const cfg = getCongConfig();
   cfg.membros = cfg.membros || [];
   const membros = (cfg.membros || []).map(normalizarMembro).filter(Boolean);
-  if (membros.some(m => m.nome.toLowerCase() === nome.toLowerCase())) { showToast('Nome já adicionado!', 'warning'); return; }
-  membros.push({ nome, funcao, podeRepetir });
+  const duplicado = membros.some(m => m.nome.toLowerCase() === nome.toLowerCase() && m.nome !== membroEmEdicao);
+  if (duplicado) { showToast('Nome já adicionado!', 'warning'); return; }
+
+  if (membroEmEdicao) {
+    const idx = membros.findIndex(m => m.nome === membroEmEdicao);
+    if (idx < 0) { showToast('Não foi possível localizar este nome para editar.', 'error'); return; }
+    membros[idx] = { nome, funcao, podeRepetir };
+
+    if (cfg.turnos) {
+      Object.keys(cfg.turnos).forEach(did => {
+        Object.keys(cfg.turnos[did] || {}).forEach(slot => {
+          cfg.turnos[did][slot] = (cfg.turnos[did][slot] || []).map(pessoa => {
+            const normalizada = normalizarPessoaEscala(pessoa);
+            if (!normalizada || normalizada.nome !== membroEmEdicao) return pessoa;
+            return { ...normalizada, nome };
+          });
+        });
+      });
+    }
+
+    const live = cfg.liveRequests && typeof cfg.liveRequests === 'object' ? cfg.liveRequests : { enabled: false, invites: [] };
+    live.invites = Array.isArray(live.invites) ? live.invites : [];
+    live.invites = live.invites.map(invite => {
+      if (String(invite?.nome || '').toLowerCase() !== String(membroEmEdicao || '').toLowerCase()) return invite;
+      return { ...invite, nome };
+    });
+    cfg.liveRequests = live;
+  } else {
+    membros.push({ nome, funcao, podeRepetir });
+  }
+
   cfg.membros = membros;
   saveCongConfig(cfg);
-  document.getElementById('input-membro').value = '';
-  document.getElementById('select-funcao-membro').value = 'Publicador';
-  document.getElementById('membro-pode-repetir').checked = false;
+  limparEdicaoMembro();
   renderMembros();
   renderPostosTurnos();
   renderLiveRequests();
   renderLiveMemberOptions();
-  showToast(`${nome} adicionado(a) como ${funcao}.`, 'success');
+  showToast(estavaEditando ? `${nome} atualizado(a).` : `${nome} adicionado(a) como ${funcao}.`, 'success');
 });
 
 window.removerMembro = function(nome) {
   const cfg = getCongConfig();
   cfg.membros = (cfg.membros || []).map(normalizarMembro).filter(m => m && m.nome !== nome);
+  if (membroEmEdicao === nome) limparEdicaoMembro();
   if (cfg.turnos) {
     Object.keys(cfg.turnos).forEach(did => {
       Object.keys(cfg.turnos[did]).forEach(slot => {
@@ -2961,12 +3136,14 @@ renderMembros();
 renderPostosTurnos();
 renderLiveRequests();
 renderLiveMemberOptions();
+renderSolicitacoesManuais();
 
 window.addEventListener('pageshow', () => {
   renderMembros();
   renderPostosTurnos();
   renderLiveRequests();
   renderLiveMemberOptions();
+  renderSolicitacoesManuais();
   renderPubsSalvas();
   renderHistorico();
   renderResultado();
@@ -2974,11 +3151,12 @@ window.addEventListener('pageshow', () => {
 
 window.addEventListener('db-sync', e => {
   const key = e.detail?.key;
-  if (!['cong_config', 'pedidos_ajuda_escala', 'distribuicoes'].includes(key)) return;
+  if (!['cong_config', 'pedidos_ajuda_escala', 'distribuicoes', 'ajustes_manuais_escala'].includes(key)) return;
   renderMembros();
   renderPostosTurnos();
   renderLiveRequests();
   renderLiveMemberOptions();
+  if (key === 'ajustes_manuais_escala') renderSolicitacoesManuais();
   if (key === 'cong_config') renderPubsSalvas();
   if (key === 'distribuicoes') {
     renderHistorico();

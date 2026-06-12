@@ -415,6 +415,7 @@
 <!-- STATS RÁPIDAS -->
 <section class="section" style="padding-bottom:0;">
   <div class="grid grid-4" id="stats-postos"></div>
+  <div id="stats-pessoas" style="margin-top:1rem;"></div>
 </section>
 
 <!-- FILTROS + BOTÃO NOVO -->
@@ -658,6 +659,8 @@
     const designacoesPosto = designacoes.filter(d => String(d.postoId) === String(posto.id));
     let totalSlots = 0;
     let faltando = 0;
+    let capacidade = 0;
+    let pessoasEscaladas = 0;
     designacoesPosto.forEach(desig => {
       const cfg = congCfgAll?.[desig.congId] || {};
       const escalaKey = getEscalaKey(desig, posto);
@@ -665,13 +668,17 @@
       const turnos = cfg.turnos || {};
       gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno).forEach(slot => {
         totalSlots += 1;
+        capacidade += agenda.maxPorTurno;
         const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
+        pessoasEscaladas += pessoas.length;
         faltando += Math.max(0, agenda.maxPorTurno - pessoas.length);
       });
     });
     return {
       designacoes: designacoesPosto.length,
       totalSlots,
+      capacidade,
+      pessoasEscaladas,
       faltando,
       completo: designacoesPosto.length > 0 && totalSlots > 0 && faltando === 0,
     };
@@ -1012,11 +1019,6 @@
     const escalaResumo = getEscalaResumo(postos);
     const finalizadas = escalaResumo.postosProntos;
 
-    const coberturaAll = postos.map(p => getCoberturaPosto(p, designacoes, congCfgAll));
-    const totalVagas    = coberturaAll.reduce((s, c) => s + c.totalSlots, 0);
-    const vagasOcupadas = coberturaAll.reduce((s, c) => s + (c.totalSlots - c.faltando), 0);
-    const vagasFaltando = totalVagas - vagasOcupadas;
-
     document.getElementById('stats-postos').innerHTML = `
       <div class="stat-card">
         <div class="stat-icon blue">📍</div>
@@ -1034,11 +1036,42 @@
         <div class="stat-icon green">🏁</div>
         <div class="stat-info"><h3>${finalizadas}</h3><p>Prontos</p><small style="color:var(--gray);">designação completa</small></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon purple">👥</div>
-        <div class="stat-info"><h3>${totalVagas}</h3><p>Total de Vagas</p><small style="color:var(--gray);">${vagasOcupadas} preenchidas · ${vagasFaltando} faltando</small></div>
-      </div>
     `;
+
+    renderStatsPessoas(postos, designacoes, congCfgAll);
+  }
+
+  // ---- DIMENSIONAMENTO DE PESSOAS ----
+  function renderStatsPessoas(postos, designacoes, congCfgAll) {
+    // Pessoas cadastradas: publicadores registrados pelas congregações ("Adicionar nomes").
+    const cadastradas = Object.values(congCfgAll || {})
+      .reduce((s, cfg) => s + (Array.isArray(cfg?.membros) ? cfg.membros.length : 0), 0);
+
+    // Cobertura dos postos filtrados.
+    const cob = postos.map(p => getCoberturaPosto(p, designacoes, congCfgAll));
+    const escaladas    = cob.reduce((s, c) => s + c.pessoasEscaladas, 0); // lugares já preenchidos nos turnos
+    const disponiveis  = cob.reduce((s, c) => s + c.faltando, 0);         // lugares de turno ainda vazios
+    const arranjoTotal = cob.reduce((s, c) => s + c.capacidade, 0);       // capacidade total = escaladas + disponíveis
+    const pct = arranjoTotal > 0 ? Math.round((escaladas / arranjoTotal) * 100) : 0;
+
+    const item = (icon, valor, titulo, desc, cor) => `
+      <div style="flex:1 1 180px;min-width:160px;display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+        <div style="font-size:1.6rem;line-height:1;">${icon}</div>
+        <div>
+          <div style="font-size:1.5rem;font-weight:800;color:${cor};line-height:1.1;">${valor}</div>
+          <div style="font-weight:600;font-size:.82rem;color:var(--dark,#333);">${titulo}</div>
+          <div style="font-size:.7rem;color:var(--gray,#888);">${desc}</div>
+        </div>
+      </div>`;
+
+    document.getElementById('stats-pessoas').innerHTML = `
+      <div style="font-size:.8rem;font-weight:700;color:var(--gray,#777);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">👥 Dimensionamento de pessoas</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+        ${item('🧑‍🤝‍🧑', cadastradas, 'Pessoas cadastradas', 'publicadores nas congregações', 'var(--primary,#2c3e9e)')}
+        ${item('✅', escaladas, 'Pessoas escaladas', `já alocadas nos turnos (${pct}%)`, '#1e9e5a')}
+        ${item('🪑', disponiveis, 'Vagas ainda disponíveis', 'lugares de turno em aberto', '#d97706')}
+        ${item('🎯', arranjoTotal, 'Total no arranjo completo', 'escaladas + vagas em aberto', '#7c3aed')}
+      </div>`;
   }
 
   // ---- RENDER GRID ----

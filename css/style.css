@@ -581,9 +581,6 @@ tbody td {
   padding: 2rem;
   width: 100%;
   max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-lg);
   animation: modalIn 0.3s ease;
   border: 1px solid rgba(255,255,255,0.45);
@@ -790,6 +787,8 @@ tbody td {
   .modal {
     padding: 1.25rem;
     max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Evita o zoom automatico do iOS ao focar campos de texto (fonte precisa ser >=16px).

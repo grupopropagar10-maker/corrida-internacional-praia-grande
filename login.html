@@ -461,40 +461,38 @@
   document.getElementById('subadmin-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginSubAdmin(); });
 
   // ── LOGIN CONGREGAÇÃO ──
-  function loginCong() {
+  async function loginCong() {
     const btn    = document.getElementById('btn-login-cong');
     const congId = document.getElementById('cong-select').value;
     const senha  = document.getElementById('cong-senha').value;
     if (!congId) { mostrarErro('Selecione sua congregação!'); return; }
     if (!senha)  { mostrarErro('Informe a senha/PIN!'); return; }
     btn.innerHTML = '<span class="spin"></span>';
-    setTimeout(() => {
-      if (Auth.loginCong(congId, senha)) {
-        window.location.href = 'minha-congregacao.html';
-      } else {
-        btn.innerHTML = '<span>Entrar</span>';
-        mostrarErro('Senha incorreta!');
-      }
-    }, 600);
+    await (window.DB_SYNC_READY || Promise.resolve());
+    if (Auth.loginCong(congId, senha)) {
+      window.location.href = 'minha-congregacao.html';
+    } else {
+      btn.innerHTML = '<span>Entrar</span>';
+      mostrarErro('Senha incorreta!');
+    }
   }
 
   document.getElementById('btn-login-cong').addEventListener('click', loginCong);
   document.getElementById('cong-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginCong(); });
 
-  function loginLive() {
+  async function loginLive() {
     const btn = document.getElementById('btn-login-live');
     const usuario = document.getElementById('live-usuario').value.trim();
     const senha = document.getElementById('live-senha').value;
     if (!usuario || !senha) { mostrarErro('Informe usuário e senha do pedido ao vivo!'); return; }
     btn.innerHTML = '<span class="spin"></span>';
-    setTimeout(() => {
-      if (Auth.loginLiveInvite(usuario, senha)) {
-        window.location.href = 'pedidos-ao-vivo.html';
-      } else {
-        btn.innerHTML = '<span>Entrar no pedido ao vivo</span>';
-        mostrarErro('Acesso ao vivo inválido ou expirado!');
-      }
-    }, 500);
+    await (window.DB_SYNC_READY || Promise.resolve());
+    if (Auth.loginLiveInvite(usuario, senha)) {
+      window.location.href = 'pedidos-ao-vivo.html';
+    } else {
+      btn.innerHTML = '<span>Entrar no pedido ao vivo</span>';
+      mostrarErro('Acesso ao vivo inválido ou expirado!');
+    }
   }
 
   document.getElementById('btn-login-live').addEventListener('click', loginLive);

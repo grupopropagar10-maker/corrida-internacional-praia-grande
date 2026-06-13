@@ -285,17 +285,21 @@ const Auth = {
 
   migrateCongs() {
     if (location.protocol === 'file:') return;
-    const congs      = DB.get('congregacoes', []);
-    const normalized = congs.map(c => ({
-      ...c,
-      senha:      c.senha      || '',
-      contato:    c.contato    || '',
-      telefone:   c.telefone   || '',
-      confirmada: c.confirmada === undefined ? false : c.confirmada,
-    }));
-    if (normalized.length) {
-      DB.set('congregacoes', normalized); // usa DB.set para sincronizar com Firebase
-    }
+    const congs = DB.get('congregacoes', []);
+    if (!congs.length) return;
+    let changed = false;
+    const normalized = congs.map(c => {
+      const needsMigration = c.senha == null || c.contato == null || c.telefone == null || c.confirmada == null;
+      if (needsMigration) changed = true;
+      return {
+        ...c,
+        senha:      c.senha      ?? '',
+        contato:    c.contato    ?? '',
+        telefone:   c.telefone   ?? '',
+        confirmada: c.confirmada ?? false,
+      };
+    });
+    if (changed) DB.set('congregacoes', normalized);
   }
 };
 

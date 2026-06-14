@@ -3399,6 +3399,7 @@ function buildRegisterAssignments() {
       desigId: desig.id,
       postoId: posto?.id || null,
       postoNome: posto?.nome || 'Posto',
+      postoNumero: posto?.numero != null ? String(posto.numero).padStart(2, '0') : null,
       localLabel: getAssignmentStreetLabel(posto),
       categoriaNome: categoria?.nome || 'Sem setor',
       data: desig.data || '',
@@ -3472,7 +3473,7 @@ function renderAssignmentPicker() {
     const pending = pendingIds.has(item.id);
     return `
       <button class="assignment-option ${item.id === regAssignmentId ? 'active' : ''} ${pending ? 'alert' : ''}" onclick="selecionarRegisterAssignment('${item.id}')">
-        <strong>${item.postoNome}</strong>
+        <strong>${item.postoNumero ? `<span style="background:var(--primary);color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.78rem;margin-right:.4rem;font-weight:800;">Nº ${item.postoNumero}</span>` : ''}${item.postoNome}</strong>
         <div style="font-size:.8rem;color:var(--gray);margin-top:.25rem;">${item.localLabel}</div>
         <div class="meta">
           <span>📅 ${item.data || '—'}</span>

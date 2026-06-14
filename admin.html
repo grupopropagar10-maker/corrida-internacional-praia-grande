@@ -541,9 +541,13 @@
                 <label>Nome da categoria</label>
                 <input class="form-control" id="cat-nome" placeholder="Ex: Corrida 21km, Caminhada 5km..."/>
               </div>
-              <div class="form-group">
-                <label>Cor identificadora</label>
-                <input type="color" class="form-control" id="cat-cor" value="#0057A8" style="height:42px;padding:4px;"/>
+              <div class="form-group" style="flex:0 0 120px;">
+                <label>Número</label>
+                <input type="number" class="form-control" id="cat-numero" placeholder="Ex: 1" min="1" style="width:100%;"/>
+              </div>
+              <div class="form-group" style="flex:0 0 80px;">
+                <label>Cor</label>
+                <input type="color" class="form-control" id="cat-cor" value="#0057A8" style="height:42px;padding:4px;width:100%;"/>
               </div>
             </div>
             <div class="form-row">
@@ -1718,7 +1722,7 @@
         <div style="flex:1;">
           <div style="font-weight:700;color:var(--primary-dark);font-size:.95rem;">
             <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c.cor};margin-right:5px;"></span>
-            ${c.nome}
+            ${c.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.72rem;font-weight:800;margin-right:.35rem;">Nº ${String(c.numero).padStart(2,'0')}</span>` : ''}${c.nome}
           </div>
           <div style="font-size:.78rem;color:var(--gray);margin-top:.2rem;">
             📅 ${datasStr} &nbsp;&nbsp; ⏱️ ${c.horario || '—'}–${c.horarioFim || '—'}
@@ -1768,6 +1772,7 @@
   document.getElementById('btn-nova-categoria').addEventListener('click', () => {
     document.getElementById('cat-edit-id').value   = '';
     document.getElementById('cat-nome').value      = '';
+    document.getElementById('cat-numero').value    = '';
     document.getElementById('cat-cor').value       = '#0057A8';
     document.getElementById('cat-horario').value   = '06:00';
     document.getElementById('cat-horario-fim').value = '12:00';
@@ -1793,6 +1798,8 @@
   document.getElementById('btn-salvar-cat').addEventListener('click', () => {
     const id         = parseInt(document.getElementById('cat-edit-id').value) || null;
     const nome       = document.getElementById('cat-nome').value.trim();
+    const numeroRaw  = document.getElementById('cat-numero').value.trim();
+    const numero     = numeroRaw !== '' ? parseInt(numeroRaw, 10) : null;
     const cor        = document.getElementById('cat-cor').value;
     const horario    = document.getElementById('cat-horario').value;
     const horarioFim = document.getElementById('cat-horario-fim').value;
@@ -1821,7 +1828,7 @@
         const oldDatas = Array.isArray(cats[idx].datas) ? cats[idx].datas.filter(Boolean) : [];
         cats[idx] = {
           ...cats[idx],
-          nome, cor, horario, horarioFim, descricao, datas,
+          nome, numero, cor, horario, horarioFim, descricao, datas,
           operacaoBebidas: {
             ...operacaoBebidas,
             equipes: {
@@ -1844,7 +1851,7 @@
       }
       showToast('Categoria atualizada! ✅', 'success');
     } else {
-      cats.push({ id: Date.now(), nome, cor, horario, horarioFim, descricao, datas, operacaoBebidas });
+      cats.push({ id: Date.now(), nome, numero, cor, horario, horarioFim, descricao, datas, operacaoBebidas });
       showToast('Categoria criada! ✅', 'success');
     }
     DB.set('categorias', cats);
@@ -1864,6 +1871,7 @@
     if (!c) return;
     document.getElementById('cat-edit-id').value     = c.id;
     document.getElementById('cat-nome').value        = c.nome;
+    document.getElementById('cat-numero').value      = c.numero != null ? c.numero : '';
     document.getElementById('cat-cor').value         = c.cor;
     document.getElementById('cat-horario').value     = c.horario    || '06:00';
     document.getElementById('cat-horario-fim').value = c.horarioFim || '12:00';

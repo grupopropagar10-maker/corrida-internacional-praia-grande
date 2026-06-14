@@ -980,6 +980,7 @@
               </div>
             </div>
           </div>
+          <div id="card-categoria-info"></div>
         </div>
         <div class="card map-card-shell">
           <div style="padding:.8rem 1.2rem;background:var(--primary-dark);color:white;font-size:.88rem;font-weight:600;">🗺️ Sua localização no percurso</div>
@@ -1513,7 +1514,7 @@ document.querySelectorAll('[data-tab]').forEach(a => {
     return `<tr>
       <td><strong>${p?.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.72rem;font-weight:800;margin-right:.35rem;">Nº ${String(p.numero).padStart(2,'0')}</span>` : ''}${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
       <td>${dt}</td><td>${d.inicio}–${d.fim}</td>
-      <td>${d.irmaos||'?'} irmão(s)</td>
+      <td>${(() => { const cat = getCategoriaById(p?.categoriaId); return cat ? `${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:4px;padding:.05rem .35rem;font-size:.7rem;font-weight:800;margin-right:.3rem;">Nº ${String(cat.numero).padStart(2,'0')}</span>` : ''}${cat.nome}` : '—'; })()}</td>
       <td>${d.obs||'—'}</td>
     </tr>`;
   }).join('');
@@ -1526,12 +1527,41 @@ document.querySelectorAll('[data-tab]').forEach(a => {
           <th style="padding:.5rem .8rem;text-align:left;">Posto</th>
           <th style="padding:.5rem .8rem;">Data</th>
           <th style="padding:.5rem .8rem;">Horário</th>
-          <th style="padding:.5rem .8rem;">Equipe</th>
+          <th style="padding:.5rem .8rem;">Categoria</th>
           <th style="padding:.5rem .8rem;">Obs.</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+
+  // Card de categoria
+  const catInfoEl = document.getElementById('card-categoria-info');
+  if (catInfoEl) {
+    if (categoria) {
+      const datasStr = Array.isArray(categoria.datas) && categoria.datas.filter(Boolean).length
+        ? categoria.datas.filter(Boolean).map(d => new Date(d + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })).join(' · ')
+        : '—';
+      const horarioStr = categoria.horario && categoria.horarioFim ? `${categoria.horario}–${categoria.horarioFim}` : '—';
+      catInfoEl.innerHTML = `
+        <div class="card" style="margin-top:.8rem;">
+          <div class="card-header"><span class="icon">🧭</span><h2>Sua categoria de serviço</h2></div>
+          <div style="display:flex;flex-direction:column;gap:.5rem;padding-top:.3rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${categoria.cor || '#0057A8'};flex-shrink:0;"></span>
+              ${categoria.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.15rem .5rem;font-size:.78rem;font-weight:800;">Nº ${String(categoria.numero).padStart(2,'0')}</span>` : ''}
+              <strong style="font-size:.95rem;color:var(--primary-dark);">${categoria.nome}</strong>
+            </div>
+            <div style="font-size:.84rem;color:var(--gray);display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;">
+              <span>⏱️ Horário: <strong style="color:var(--dark);">${horarioStr}</strong></span>
+              <span>📅 Datas: <strong style="color:var(--dark);">${datasStr}</strong></span>
+            </div>
+            ${categoria.descricao ? `<div style="font-size:.82rem;color:var(--gray);margin-top:.1rem;">💬 ${categoria.descricao}</div>` : ''}
+          </div>
+        </div>`;
+    } else {
+      catInfoEl.innerHTML = '';
+    }
+  }
 
   // Mapa
   const coordsBase = [

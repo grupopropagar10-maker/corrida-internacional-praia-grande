@@ -1515,7 +1515,10 @@ document.querySelectorAll('[data-tab]').forEach(a => {
       <td><strong>${p?.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.72rem;font-weight:800;margin-right:.35rem;">Nº ${String(p.numero).padStart(2,'0')}</span>` : ''}${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
       <td>${dt}</td><td>${d.inicio}–${d.fim}</td>
       <td>${(() => { const cat = getCategoriaById(p?.categoriaId); return cat ? `${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:4px;padding:.05rem .35rem;font-size:.7rem;font-weight:800;margin-right:.3rem;">Nº ${String(cat.numero).padStart(2,'0')}</span>` : ''}${cat.nome}` : '—'; })()}</td>
-      <td>${d.obs||'—'}</td>
+      <td>
+        ${d.obs ? `<div style="font-size:.8rem;color:var(--gray);margin-bottom:.3rem;">${d.obs}</div>` : ''}
+        ${(() => { const url = (typeof p?.lat === 'number' && typeof p?.lng === 'number') ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving` : p?.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.local)}` : ''; return url ? `<a href="${url}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.2rem .55rem;">🗺️ Ver</a>` : '—'; })()}
+      </td>
     </tr>`;
   }).join('');
 
@@ -1534,29 +1537,38 @@ document.querySelectorAll('[data-tab]').forEach(a => {
       </table>
     </div>`;
 
-  // Card de categoria
+  // Card de categorias — coleta todas únicas das designações
   const catInfoEl = document.getElementById('card-categoria-info');
   if (catInfoEl) {
-    if (categoria) {
-      const datasStr = Array.isArray(categoria.datas) && categoria.datas.filter(Boolean).length
-        ? categoria.datas.filter(Boolean).map(d => new Date(d + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })).join(' · ')
-        : '—';
-      const horarioStr = categoria.horario && categoria.horarioFim ? `${categoria.horario}–${categoria.horarioFim}` : '—';
-      catInfoEl.innerHTML = `
-        <div class="card" style="margin-top:.8rem;">
-          <div class="card-header"><span class="icon">🧭</span><h2>Sua categoria de serviço</h2></div>
-          <div style="display:flex;flex-direction:column;gap:.5rem;padding-top:.3rem;">
-            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
-              <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${categoria.cor || '#0057A8'};flex-shrink:0;"></span>
-              ${categoria.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.15rem .5rem;font-size:.78rem;font-weight:800;">Nº ${String(categoria.numero).padStart(2,'0')}</span>` : ''}
-              <strong style="font-size:.95rem;color:var(--primary-dark);">${categoria.nome}</strong>
+    const categoriaIds = [...new Set(desigs.map(d => {
+      const p = todosPos.find(x => x.id === d.postoId);
+      return p?.categoriaId;
+    }).filter(Boolean))];
+    const categorias = categoriaIds.map(id => getCategoriaById(id)).filter(Boolean);
+    if (categorias.length) {
+      const linhas = categorias.map(cat => {
+        const datasStr = Array.isArray(cat.datas) && cat.datas.filter(Boolean).length
+          ? cat.datas.filter(Boolean).map(d => new Date(d + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })).join(' · ')
+          : '—';
+        const horarioStr = cat.horario && cat.horarioFim ? `${cat.horario}–${cat.horarioFim}` : '—';
+        return `
+          <div style="padding:.7rem 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem;">
+              <span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${cat.cor || '#0057A8'};flex-shrink:0;"></span>
+              ${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.75rem;font-weight:800;">Nº ${String(cat.numero).padStart(2,'0')}</span>` : ''}
+              <strong style="font-size:.92rem;color:var(--primary-dark);">${cat.nome}</strong>
             </div>
-            <div style="font-size:.84rem;color:var(--gray);display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;">
+            <div style="font-size:.82rem;color:var(--gray);display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;">
               <span>⏱️ Horário: <strong style="color:var(--dark);">${horarioStr}</strong></span>
               <span>📅 Datas: <strong style="color:var(--dark);">${datasStr}</strong></span>
             </div>
-            ${categoria.descricao ? `<div style="font-size:.82rem;color:var(--gray);margin-top:.1rem;">💬 ${categoria.descricao}</div>` : ''}
-          </div>
+            ${cat.descricao ? `<div style="font-size:.8rem;color:var(--gray);margin-top:.2rem;">💬 ${cat.descricao}</div>` : ''}
+          </div>`;
+      }).join('');
+      catInfoEl.innerHTML = `
+        <div class="card" style="margin-top:.8rem;">
+          <div class="card-header"><span class="icon">🧭</span><h2>Sua${categorias.length > 1 ? 's' : ''} categoria${categorias.length > 1 ? 's' : ''} de serviço</h2></div>
+          <div style="padding-top:.1rem;">${linhas}</div>
         </div>`;
     } else {
       catInfoEl.innerHTML = '';

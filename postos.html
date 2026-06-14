@@ -678,6 +678,7 @@
       duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
       maxPorTurno: 3,
       slotsOverride: agenda.slotsOverride || {},
+      slotFinalizado: agenda.slotFinalizado || {},
     };
   }
 
@@ -701,7 +702,8 @@
         const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
         pessoasEscaladas += pessoas.length;
         const fechadoCom2 = agenda.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
-        const efetivo = fechadoCom2 ? pessoas.length : agenda.maxPorTurno;
+        const slotFinalizado = !!agenda.slotFinalizado[slot.inicio];
+        const efetivo = (fechadoCom2 || slotFinalizado) ? pessoas.length : agenda.maxPorTurno;
         capacidade += efetivo;
         faltando += Math.max(0, efetivo - pessoas.length);
       });

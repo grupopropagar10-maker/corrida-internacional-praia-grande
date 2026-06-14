@@ -1216,7 +1216,7 @@
       <tr>
         <td style="font-weight:600;text-align:center;white-space:nowrap;">${slot.inicio}–${slot.fim}</td>
         <td>${slot.pessoas.map(p => p.nome + ((p.origem === 'ajuda' || p.origem === 'tapa_buraco') && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')}</td>
-        <td style="text-align:center;">${slot.pessoas.length}/3</td>
+        <td style="text-align:center;">${slot.pessoas.length}/${slot.fechadoCom2 ? 2 : 3}${slot.fechadoCom2 ? ' ✌️' : ''}</td>
       </tr>`).join('');
 
     document.getElementById('print-content').innerHTML = `
@@ -1292,7 +1292,7 @@
                 ${item.slots.map(slot => `
                   <div class="slot-pill ${slot.faltam === 0 ? 'closed' : slot.pedidoAberto ? 'open' : 'missing'}">
                     <strong>${slot.inicio}–${slot.fim}</strong>
-                    ${slot.pessoas.length}/3 escalados${slot.faltam > 0 ? ` · faltam ${slot.faltam}` : ' · completo'}
+                    ${slot.pessoas.length}/${slot.fechadoCom2 ? 2 : 3} escalados${slot.fechadoCom2 ? ' · ✌️ fechado com 2' : slot.faltam > 0 ? ` · faltam ${slot.faltam}` : ' · completo'}
                     ${slot.pedidoAberto ? `<div class="mini-note">🆘 ${slot.pedidoAberto.subAdminNome || 'Pedido aberto'}</div>` : ''}
                     ${slot.faltam > 0 ? `<div class="slot-pill-actions"><button class="btn btn-outline btn-sm" onclick="fecharHorarioDoSetor(${item.cong?.id || 0}, '${escaparJs(item.escalaKey)}', '${escaparJs(slot.inicio)}', ${slot.faltam})">Completar agora</button></div>` : ''}
                   </div>`).join('')}

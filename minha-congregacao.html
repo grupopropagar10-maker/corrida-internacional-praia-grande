@@ -3610,14 +3610,14 @@ document.getElementById('btn-confirmar-fechar-com2').addEventListener('click', (
   setSlotFechadoCom2(desigId, slotKey, true);
   fecharModalCom2();
   renderPostosTurnos();
-  renderEscalaStatus();
+  renderResumoEscala();
   showToast('Horário fechado com 2 irmãos. ✌️', 'success');
 });
 
 window.reabrirSlotCom2 = function(desigId, slotKey) {
   setSlotFechadoCom2(desigId, slotKey, false);
   renderPostosTurnos();
-  renderEscalaStatus();
+  renderResumoEscala();
   showToast('Horário reaberto.', 'info');
 };
 </script>

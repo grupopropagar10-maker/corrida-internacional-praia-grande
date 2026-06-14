@@ -3408,6 +3408,9 @@ function buildRegisterAssignments() {
       localLabel: getAssignmentStreetLabel(posto),
       categoriaNome: categoria?.nome || 'Sem setor',
       data: desig.data || '',
+      dataFmt: desig.data
+        ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+        : '',
       horario: `${desig.inicio}–${desig.fim}`,
       inicio,
       fim,
@@ -3481,7 +3484,7 @@ function renderAssignmentPicker() {
         <strong>${item.postoNumero ? `<span style="background:var(--primary);color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.78rem;margin-right:.4rem;font-weight:800;">Nº ${item.postoNumero}</span>` : ''}${item.postoNome}</strong>
         <div style="font-size:.8rem;color:var(--gray);margin-top:.25rem;">${item.localLabel}</div>
         <div class="meta">
-          <span>📅 ${item.data || '—'}</span>
+          <span>📅 ${item.dataFmt || item.data || '—'}</span>
           <span>⏱️ ${item.horario}</span>
           <span>🧭 ${item.categoriaNome}</span>
           <span>${report ? `📚 ${report.quantidade} registradas` : pending ? '🔴 faltando fechar' : '⏳ aguardando fechamento'}</span>

@@ -665,6 +665,7 @@
     return {
       duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
       maxPorTurno: 3,
+      slotsOverride: agenda.slotsOverride || {},
     };
   }
 
@@ -797,12 +798,15 @@
       const turnos = cfg.turnos || {};
       const slots = gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno).map(slot => {
         const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
-        const faltam = Math.max(0, agenda.maxPorTurno - pessoas.length);
+        const fechadoCom2 = agenda.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
+        const efetivo = fechadoCom2 ? pessoas.length : agenda.maxPorTurno;
+        const faltam = Math.max(0, efetivo - pessoas.length);
         const pedidoAberto = pedidos.find(p => String(p.designacaoId) === escalaKey && p.slotKey === slot.inicio && p.status === 'aberto');
         return {
           ...slot,
           pessoas,
           faltam,
+          fechadoCom2,
           pedidoAberto,
         };
       });

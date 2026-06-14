@@ -219,6 +219,19 @@
       gap: .45rem;
       font-size: .76rem;
     }
+    .slot-fechado-com2 {
+      margin-top: .55rem;
+      padding: .5rem .7rem;
+      border-radius: 10px;
+      background: #eefbf3;
+      border: 1px solid #bfe3c7;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-size: .76rem;
+      color: #1d6b33;
+      flex-wrap: wrap;
+    }
     .slot-help-actions {
       display: flex;
       gap: .45rem;
@@ -1683,7 +1696,18 @@ function getAgendaConfig(desigId) {
   return {
     duracaoTurno: cfg.duracaoTurno === 3 ? 3 : 2,
     maxPorTurno: 3,
+    slotsOverride: cfg.slotsOverride || {},
   };
+}
+
+function setSlotFechadoCom2(desigId, slotKey, valor) {
+  const cfg = getCongConfig();
+  cfg.agendaConfig = cfg.agendaConfig || {};
+  cfg.agendaConfig[desigId] = cfg.agendaConfig[desigId] || { duracaoTurno: 2, maxPorTurno: 3 };
+  cfg.agendaConfig[desigId].slotsOverride = cfg.agendaConfig[desigId].slotsOverride || {};
+  if (valor) cfg.agendaConfig[desigId].slotsOverride[slotKey] = true;
+  else delete cfg.agendaConfig[desigId].slotsOverride[slotKey];
+  saveCongConfig(cfg);
 }
 
 function getNomeMembro(membro) {
@@ -1768,12 +1792,14 @@ function getResumoEscala() {
   let faltando = 0;
 
   desigs.forEach(desig => {
-    const duracao = getAgendaConfig(desig.id).duracaoTurno;
+    const agendaCfg = getAgendaConfig(desig.id);
+    const duracao = agendaCfg.duracaoTurno;
     gerarSlots(desig.inicio, desig.fim, duracao).forEach(slot => {
       totalSlots += 1;
       const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
       totalPessoas += pessoas.length;
-      faltando += Math.max(0, 3 - pessoas.length);
+      const fechadoCom2 = agendaCfg.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
+      faltando += Math.max(0, (fechadoCom2 ? 2 : 3) - pessoas.length);
     });
   });
 
@@ -2308,14 +2334,17 @@ function getEscalaEntries(filterFn = null) {
     const maxSlot = agendaCfg.maxPorTurno;
     const slots = gerarSlots(desig.inicio, desig.fim, duracao).map(slot => {
       const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+      const fechadoCom2 = agendaCfg.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
+      const efetivo = fechadoCom2 ? pessoas.length : maxSlot;
       return {
         ...slot,
         pessoas,
-        ocupacao: `${pessoas.length}/${maxSlot}`,
+        fechadoCom2,
+        ocupacao: `${pessoas.length}/${efetivo}`,
       };
     });
     const totalAlocado = slots.reduce((sum, slot) => sum + slot.pessoas.length, 0);
-    const totalCapacidade = slots.length * maxSlot;
+    const totalCapacidade = slots.reduce((sum, slot) => sum + (slot.fechadoCom2 ? slot.pessoas.length : maxSlot), 0);
     return {
       ...baseEntry,
       categoriaNome: categoria?.nome || 'Sem setor',
@@ -2796,6 +2825,7 @@ function renderPostosTurnos() {
       const key     = slot.inicio;
       const people  = getPessoasDoSlot(turnos, desig.id, key);
       const vagas   = maxSlot - people.length;
+      const fechadoCom2 = agendaCfg.slotsOverride[key] === true && people.length >= 2;
       const slotOvernight = getResumoVirada(desig.data, slot.inicio, slot.fim);
       const pedidoAjuda = getPedidoAjudaAberto(desig.id, key);
       const safeId = getDomIdSeguro(getChaveAjuda(desig.id, key));
@@ -2807,7 +2837,8 @@ function renderPostosTurnos() {
           <button onclick="removeFromSlot('${escaparJs(desig.id)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">✕</button>
         </div>`).join('');
 
-      const vagasHtml = Array.from({length: Math.max(0,vagas)}, (_,i) => {
+      const vagasEfetivas = fechadoCom2 ? 0 : vagas;
+      const vagasHtml = Array.from({length: Math.max(0, vagasEfetivas)}, (_,i) => {
         const disponíveis = membros.filter(m => membroDisponivelNoHorario(m, desig, key, people));
         if (!disponíveis.length) return `<div style="font-size:.72rem;color:var(--gray);text-align:center;padding:.2rem;">— sem membros —</div>`;
         return `<select class="turno-vaga-select" onchange="addToSlotFromSelect('${escaparJs(desig.id)}','${escaparJs(key)}',${maxSlot},this)">
@@ -2816,11 +2847,13 @@ function renderPostosTurnos() {
         </select>`;
       }).join('');
 
-      const helpHtml = vagas > 0
-        ? pedidoAjuda
-          ? `<div class="slot-help-box"><strong>🆘 Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}–${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button></div></div>`
-          : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horário.</span>${subAdmins.length ? `<div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(desig.id)}','${escaparJs(key)}')">🆘 Pedir ajuda</button></div>${window._ajudaAbertaKey === getChaveAjuda(desig.id, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmãos para completar este horário."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(desig.id)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}` : '<span>Nenhum sub-admin cadastrado para esta categoria.</span>'}</div>`
-        : '';
+      const helpHtml = fechadoCom2
+        ? `<div class="slot-fechado-com2">✅ Fechado com 2 irmãos <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotCom2('${escaparJs(desig.id)}','${escaparJs(key)}')">↩ Reabrir</button></div>`
+        : vagas > 0
+          ? pedidoAjuda
+            ? `<div class="slot-help-box"><strong>🆘 Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}–${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button></div></div>`
+            : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horário.</span><div class="slot-help-actions">${people.length >= 2 ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFecharCom2('${escaparJs(desig.id)}','${escaparJs(key)}')">✌️ Fechar com 2</button>` : ''}${subAdmins.length ? `<button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(desig.id)}','${escaparJs(key)}')">🆘 Pedir ajuda</button>` : ''}</div>${subAdmins.length && window._ajudaAbertaKey === getChaveAjuda(desig.id, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmãos para completar este horário."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(desig.id)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}${!subAdmins.length ? '<span>Nenhum sub-admin cadastrado para esta categoria.</span>' : ''}</div>`
+          : '';
 
       return `
         <div class="turno-slot">
@@ -3555,6 +3588,55 @@ function initRegisterTab() {
 
 initRegisterTab();
 })();
+
+// ══════════════════════════════════════════
+//  FECHAR COM 2 — modal e funções globais
+// ══════════════════════════════════════════
+let _fecharCom2Pending = null;
+
+window.abrirConfirmacaoFecharCom2 = function(desigId, slotKey) {
+  _fecharCom2Pending = { desigId, slotKey };
+  document.getElementById('modal-fechar-com2').classList.add('open');
+};
+
+window.fecharModalCom2 = function() {
+  _fecharCom2Pending = null;
+  document.getElementById('modal-fechar-com2').classList.remove('open');
+};
+
+document.getElementById('btn-confirmar-fechar-com2').addEventListener('click', () => {
+  if (!_fecharCom2Pending) return;
+  const { desigId, slotKey } = _fecharCom2Pending;
+  setSlotFechadoCom2(desigId, slotKey, true);
+  fecharModalCom2();
+  renderPostosTurnos();
+  renderEscalaStatus();
+  showToast('Horário fechado com 2 irmãos. ✌️', 'success');
+});
+
+window.reabrirSlotCom2 = function(desigId, slotKey) {
+  setSlotFechadoCom2(desigId, slotKey, false);
+  renderPostosTurnos();
+  renderEscalaStatus();
+  showToast('Horário reaberto.', 'info');
+};
 </script>
+
+<!-- Modal: Confirmar fechar com 2 -->
+<div class="modal-overlay" id="modal-fechar-com2">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>✌️ Fechar horário com 2 irmãos</h3>
+      <button class="modal-close" onclick="fecharModalCom2()">×</button>
+    </div>
+    <p style="line-height:1.65;color:var(--text);margin-bottom:1.5rem;">
+      Ao marcar com 2, o irmão se responsabiliza em assegurar uma possível desfalque. Concorda?
+    </p>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="fecharModalCom2()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-fechar-com2">Sim, fechar com 2</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

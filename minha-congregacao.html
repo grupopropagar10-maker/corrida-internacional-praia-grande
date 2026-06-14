@@ -3617,8 +3617,19 @@ initRegisterTab();
 //  FECHAR COM 2 — diálogo nativo (à prova de mobile)
 // ══════════════════════════════════════════
 window.abrirConfirmacaoFecharCom2 = function(desigId, slotKey) {
+  // Marca pending ANTES do confirm() para proteger o localStorage contra
+  // callbacks do Firebase que chegam enquanto o diálogo está aberto.
+  const guardAll = DB.get('cong_config', {});
+  const guardTs = typeof markPendingWrite === 'function'
+    ? markPendingWrite('cong_config', guardAll) : null;
+
   const ok = confirm('Ao marcar com 2, o irmão se responsabiliza em assegurar uma possível desfalque.\n\nConfirma fechar este horário com 2 irmãos?');
-  if (!ok) return;
+
+  if (!ok) {
+    if (guardTs && typeof clearPendingWrite === 'function') clearPendingWrite('cong_config', guardTs);
+    return;
+  }
+  // setSlotFechadoCom2 sobrescreve o pending com o valor correto (inclui o novo slot)
   setSlotFechadoCom2(desigId, slotKey, true);
   renderPostosTurnos();
   renderResumoEscala();

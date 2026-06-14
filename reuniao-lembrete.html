@@ -277,6 +277,186 @@
     .step-content strong { font-size: 0.9rem; color: var(--primary-dark); }
     .step-content p { font-size: 0.82rem; color: var(--gray); margin-top: 0.15rem; }
 
+    /* ---- PAUTA 2 DINÂMICA: PRINCÍPIOS BÍBLICOS ---- */
+    .intro-dinamica {
+      font-size: 0.9rem;
+      color: var(--gray);
+      background: rgba(0,87,168,0.04);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.6rem;
+      border: 1px dashed rgba(0,61,122,0.14);
+    }
+    .principio {
+      border: 1px solid rgba(0,61,122,0.10);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 1.1rem;
+      box-shadow: 0 6px 18px rgba(8,45,89,0.05);
+    }
+    .principio-head {
+      display: flex; align-items: center; gap: 0.85rem;
+      padding: 1rem 1.2rem;
+      background: linear-gradient(135deg, rgba(0,87,168,0.06), rgba(74,144,217,0.05));
+      border-bottom: 1px solid rgba(0,61,122,0.07);
+    }
+    .principio-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .principio-head .tag {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--accent); font-weight: 800;
+    }
+    .principio-head h3 { font-size: 1rem; color: var(--primary-dark); font-weight: 800; margin-top: 0.1rem; }
+    .principio-body { padding: 1.1rem 1.2rem; }
+
+    .escrituras { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; }
+    .escritura {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(0,87,168,0.08);
+      color: var(--primary-dark);
+      border: 1px solid rgba(0,87,168,0.18);
+      border-radius: 99px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.82rem; font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .escritura:hover { background: rgba(0,87,168,0.16); }
+    .escritura-quote {
+      border-left: 3px solid var(--accent);
+      padding: 0.55rem 0 0.55rem 0.95rem;
+      font-style: italic; color: var(--dark);
+      font-size: 0.9rem; margin-bottom: 1.1rem;
+    }
+    .perguntas-label {
+      font-size: 0.78rem; font-weight: 800; color: var(--primary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem;
+    }
+    .perguntas { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pergunta {
+      display: flex; gap: 0.65rem; align-items: flex-start;
+      background: #fafcff; border: 1px solid rgba(0,61,122,0.08);
+      border-radius: 10px; padding: 0.7rem 0.9rem;
+      font-size: 0.86rem; color: var(--dark);
+    }
+    .pergunta::before {
+      content: '?'; flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      font-weight: 800; font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ---- SUB-BLOCO ---- */
+    .sub-bloco-titulo {
+      font-size: 0.85rem; font-weight: 800; color: var(--primary-dark);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin: 1.8rem 0 0.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      padding-top: 1.4rem; border-top: 1px dashed rgba(0,61,122,0.14);
+    }
+    .sub-bloco-sub { font-size: 0.84rem; color: var(--gray); margin-bottom: 1rem; }
+
+    /* ---- CENÁRIOS (RESPONSÁVEL) ---- */
+    .cenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 0.9rem; }
+    .cenario {
+      background: linear-gradient(135deg, #fff7f0, #fff);
+      border: 1px solid rgba(255,107,0,0.22);
+      border-radius: var(--radius-sm);
+      padding: 1.1rem;
+    }
+    .cenario-tag {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--accent); display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.5rem;
+    }
+    .cenario p { font-size: 0.9rem; color: var(--dark); font-weight: 500; }
+
+    /* ---- FLUXO DE PUBLICAÇÕES ---- */
+    .fluxo {
+      display: flex; align-items: stretch; flex-wrap: nowrap;
+      overflow-x: auto; padding-bottom: 0.5rem; gap: 0;
+    }
+    .fluxo-step {
+      flex: 1 1 0; min-width: 150px;
+      background: #fff; border: 1px solid rgba(0,61,122,0.10);
+      border-radius: var(--radius-sm);
+      padding: 1.1rem 0.9rem; text-align: center;
+    }
+    .fluxo-step.destaque { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,0,0.12); }
+    .fluxo-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--primary); color: #fff; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 0.6rem; font-size: 0.85rem;
+    }
+    .fluxo-step.destaque .fluxo-num { background: var(--accent); }
+    .fluxo-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+    .fluxo-step strong { display: block; font-size: 0.86rem; color: var(--primary-dark); margin-bottom: 0.25rem; }
+    .fluxo-step .fluxo-desc { font-size: 0.76rem; color: var(--gray); }
+    .fluxo-arrow {
+      display: flex; align-items: center; color: var(--primary-light);
+      font-size: 1.4rem; padding: 0 0.25rem; flex-shrink: 0;
+    }
+    .registrar-badge {
+      display: inline-block; margin-top: 0.55rem;
+      background: rgba(255,107,0,0.12); color: var(--accent);
+      font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.2rem 0.55rem; border-radius: 99px;
+    }
+    @media (max-width: 640px) {
+      .fluxo { flex-direction: column; }
+      .fluxo-arrow { transform: rotate(90deg); padding: 0.2rem 0; justify-content: center; }
+    }
+
+    /* ---- DIVISOR SS (parte exclusiva) ---- */
+    .ss-divider {
+      margin-top: 1rem;
+      background: linear-gradient(135deg, #1A1A2E 0%, #003D7A 100%);
+      border-radius: var(--radius);
+      padding: 1.8rem;
+      color: #fff;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .ss-divider::after {
+      content: '🎙️';
+      position: absolute;
+      font-size: 9rem;
+      right: -1.5rem; bottom: -2.5rem;
+      opacity: 0.06;
+    }
+    .ss-divider .ss-badge {
+      display: inline-block;
+      background: var(--accent); color: #fff;
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.3rem 0.95rem; border-radius: 99px; margin-bottom: 0.8rem;
+    }
+    .ss-divider h2 { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 800; line-height: 1.25; }
+    .ss-divider p { color: rgba(255,255,255,0.82); font-size: 0.9rem; margin-top: 0.5rem; max-width: 620px; margin-left: auto; margin-right: auto; }
+    .ss-divider .ss-meta {
+      display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1rem;
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 99px; padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: 600;
+    }
+
+    /* seção exclusiva SS com moldura destacada */
+    .section.section-ss { border: 2px solid var(--accent); }
+    .section.section-ss .section-header { background: rgba(255,107,0,0.07); border-bottom-color: rgba(255,107,0,0.18); }
+
+    /* rótulo de "onde fazer" dentro dos passos SS */
+    .step-tela {
+      display: inline-block; margin-top: 0.4rem;
+      background: rgba(0,87,168,0.10); color: var(--primary-dark);
+      font-size: 0.72rem; font-weight: 700;
+      padding: 0.18rem 0.6rem; border-radius: 7px;
+    }
+
     /* ---- ZOOM CTA ---- */
     .zoom-cta {
       background: linear-gradient(135deg, #003D7A, #0057A8);
@@ -380,42 +560,139 @@
     </div>
     <div class="section-body">
 
-      <div class="checklist">
-        <div class="check-item">
-          <div class="check-icon blue">👔</div>
-          <div class="check-text">
-            <strong>Vestimenta adequada</strong>
-            <p>Use o uniforme ou roupa definida para o evento. Apareça apresentável e identificável como parte da equipe de apoio.</p>
+      <div class="intro-dinamica">
+        💬 <strong>Reunião participativa:</strong> em vez de só ler regras, vamos refletir <strong>juntos</strong>.
+        Abra cada texto no <strong>jw.org</strong>, leia em voz alta e convide os irmãos a responder as perguntas.
+      </div>
+
+      <!-- Princípio 1: Vestimenta -->
+      <div class="principio">
+        <div class="principio-head">
+          <div class="principio-icon" style="background:rgba(0,87,168,0.10);">👔</div>
+          <div>
+            <span class="tag">📖 Princípio bíblico</span>
+            <h3>Vestimenta que dá bom testemunho</h3>
           </div>
         </div>
-        <div class="check-item">
-          <div class="check-icon orange">🛡️</div>
-          <div class="check-text">
-            <strong>Segurança em primeiro lugar</strong>
-            <p>Siga as orientações do responsável do posto. Nunca aja por conta própria em situações de risco ou emergência.</p>
+        <div class="principio-body">
+          <div class="escrituras">
+            <a class="escritura" href="https://www.jw.org/finder?wtlocale=T&prefer=lang&bible=54002009" target="_blank" rel="noopener">📖 1 Timóteo 2:9, 10</a>
+            <a class="escritura" href="https://www.jw.org/finder?wtlocale=T&prefer=lang&bible=60003003" target="_blank" rel="noopener">📖 1 Pedro 3:3, 4</a>
+          </div>
+          <div class="escritura-quote">"...se enfeitem com roupa adequada, com modéstia e bom senso..." — o que importa não é só a aparência, mas o que ela transmite.</div>
+          <div class="perguntas-label">💬 Para refletir juntos</div>
+          <div class="perguntas">
+            <div class="pergunta">Como a nossa aparência durante o evento pode dar — ou tirar — um bom testemunho diante do público?</div>
+            <div class="pergunta">O que significa, na prática, "modéstia e bom senso" num posto sob sol, calor e bastante movimento?</div>
           </div>
         </div>
-        <div class="check-item">
-          <div class="check-icon green">⏰</div>
-          <div class="check-text">
-            <strong>Pontualidade</strong>
-            <p>Esteja no posto antes do horário combinado. A chegada tardia compromete toda a equipe e a cobertura do posto.</p>
+      </div>
+
+      <!-- Princípio 2: Segurança -->
+      <div class="principio">
+        <div class="principio-head">
+          <div class="principio-icon" style="background:rgba(255,107,0,0.12);">🛡️</div>
+          <div>
+            <span class="tag">📖 Princípio bíblico</span>
+            <h3>Segurança em primeiro lugar</h3>
           </div>
         </div>
-        <div class="check-item">
-          <div class="check-icon yellow">📞</div>
-          <div class="check-text">
-            <strong>Ligue para o responsável da sua congregação</strong>
-            <p>Antes do evento confirme presença e horário com o responsável da sua congregação. A comunicação evita falhas de cobertura.</p>
+        <div class="principio-body">
+          <div class="escrituras">
+            <a class="escritura" href="https://www.jw.org/finder?wtlocale=T&prefer=lang&bible=20022003" target="_blank" rel="noopener">📖 Provérbios 22:3</a>
+          </div>
+          <div class="escritura-quote">"O perspicaz vê o perigo e se esconde, mas o inexperiente segue em frente e sofre as consequências."</div>
+          <div class="perguntas-label">💬 Para refletir juntos</div>
+          <div class="perguntas">
+            <div class="pergunta">Ao perceber uma situação de risco no posto, qual é a atitude "perspicaz" a tomar?</div>
+            <div class="pergunta">Por que seguir a orientação do responsável — em vez de agir por conta própria — protege a todos?</div>
           </div>
         </div>
-        <div class="check-item">
-          <div class="check-icon purple">📤</div>
-          <div class="check-text">
-            <strong>Saídas de publicações — sempre alinhe com o responsável</strong>
-            <p>Qualquer saída de publicação deve ser informada e aprovada pelo responsável do posto antes de acontecer.</p>
+      </div>
+
+      <!-- Princípio 3: Pontualidade -->
+      <div class="principio">
+        <div class="principio-head">
+          <div class="principio-icon" style="background:rgba(40,167,69,0.12);">⏰</div>
+          <div>
+            <span class="tag">📖 Princípio bíblico</span>
+            <h3>Pontualidade e confiabilidade</h3>
           </div>
         </div>
+        <div class="principio-body">
+          <div class="escrituras">
+            <a class="escritura" href="https://www.jw.org/finder?wtlocale=T&prefer=lang&bible=46014040" target="_blank" rel="noopener">📖 1 Coríntios 14:40</a>
+            <a class="escritura" href="https://www.jw.org/finder?wtlocale=T&prefer=lang&bible=42016010" target="_blank" rel="noopener">📖 Lucas 16:10</a>
+          </div>
+          <div class="escritura-quote">"...tudo seja feito decentemente e com ordem." Quem é "fiel no pouco" também é fiel no muito.</div>
+          <div class="perguntas-label">💬 Para refletir juntos</div>
+          <div class="perguntas">
+            <div class="pergunta">Como o meu atraso afeta o restante da equipe e a cobertura do posto?</div>
+            <div class="pergunta">De que forma a pontualidade demonstra respeito pelos irmãos e pela organização?</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloco: Responsável — cenários -->
+      <div class="sub-bloco-titulo">📞 Comunicação com o responsável da congregação</div>
+      <p class="sub-bloco-sub">Apresente cada situação e pergunte aos irmãos: <strong>"Como você reagiria?"</strong></p>
+      <div class="cenarios">
+        <div class="cenario">
+          <div class="cenario-tag">🤔 E se...</div>
+          <p>Você percebe que vai se atrasar 20 minutos para o seu turno. O que faz?</p>
+        </div>
+        <div class="cenario">
+          <div class="cenario-tag">🤔 E se...</div>
+          <p>Alguém pede para retirar publicações sem avisar o responsável. Como você reage?</p>
+        </div>
+        <div class="cenario">
+          <div class="cenario-tag">🤔 E se...</div>
+          <p>Surge uma dúvida no posto e o responsável não está por perto naquele momento. Qual é o caminho certo?</p>
+        </div>
+        <div class="cenario">
+          <div class="cenario-tag">🤔 E se...</div>
+          <p>Você não vai conseguir comparecer no dia. Quando e para quem você avisa?</p>
+        </div>
+      </div>
+
+      <!-- Bloco: Saída de publicações — fluxo -->
+      <div class="sub-bloco-titulo">📤 Saída de publicações — o caminho certo</div>
+      <p class="sub-bloco-sub">Todo movimento de publicação segue este fluxo. Os passos com <strong style="color:var(--accent)">REGISTRAR</strong> não podem ser pulados.</p>
+      <div class="fluxo">
+        <div class="fluxo-step destaque">
+          <div class="fluxo-num">1</div>
+          <div class="fluxo-icon">📦</div>
+          <strong>Abastecimento</strong>
+          <div class="fluxo-desc">O irmão recebe as publicações no posto.</div>
+          <span class="registrar-badge">✍️ Registrar</span>
+        </div>
+        <div class="fluxo-arrow">→</div>
+        <div class="fluxo-step">
+          <div class="fluxo-num">2</div>
+          <div class="fluxo-icon">📣</div>
+          <strong>Pregação</strong>
+          <div class="fluxo-desc">Os irmãos usam as publicações no testemunho ao público.</div>
+        </div>
+        <div class="fluxo-arrow">→</div>
+        <div class="fluxo-step destaque">
+          <div class="fluxo-num">3</div>
+          <div class="fluxo-icon">📤</div>
+          <strong>Retirada</strong>
+          <div class="fluxo-desc">Alguém retira publicações do posto.</div>
+          <span class="registrar-badge">✍️ Registrar</span>
+        </div>
+        <div class="fluxo-arrow">→</div>
+        <div class="fluxo-step">
+          <div class="fluxo-num">4</div>
+          <div class="fluxo-icon">✅</div>
+          <strong>Informar</strong>
+          <div class="fluxo-desc">A retirada é comunicada ao responsável do posto.</div>
+        </div>
+      </div>
+
+      <div class="alert orange">
+        <span>📌</span>
+        <div><strong>Regra de ouro:</strong> nada de publicação entra ou sai sem ser <strong>registrado</strong> e <strong>informado ao responsável</strong>. Isso garante controle e um relatório fiel.</div>
       </div>
 
       <div class="alert info">
@@ -426,63 +703,74 @@
     </div>
   </div>
 
+  <!-- ===== DIVISOR — PARTE EXCLUSIVA SS ===== -->
+  <div class="ss-divider">
+    <span class="ss-badge">Parte exclusiva</span>
+    <h2>Reunião dos Superintendentes de Serviço</h2>
+    <p>A pauta a seguir é tratada numa <strong>reunião posterior, somente com os SS</strong>, na sub-sala do Zoom. Os demais voluntários já podem ser liberados após a oração.</p>
+    <div class="ss-meta">🎙️ Sub-sala do Zoom · Somente SS</div>
+  </div>
+
   <!-- ===== SEÇÃO 3 — AGENDA SS ===== -->
-  <div class="section">
+  <div class="section section-ss">
     <div class="section-header">
       <div class="section-num" style="background:var(--accent)">3</div>
-      <h2>Agenda dos Superintendentes de Serviço
-        <small>Para os SS que se juntaram na parte final — pauta específica</small>
+      <h2>Publicações — do abastecimento ao relatório
+        <small>Passo a passo que cada congregação registra no sistema</small>
       </h2>
     </div>
     <div class="section-body">
 
-      <div class="big-numbers">
-        <div class="big-card">
-          <div class="num accent" id="numPublicacoesDisp">—</div>
-          <label>Publicações disponíveis</label>
-        </div>
-        <div class="big-card">
-          <div class="num success" id="numPublicacoesSaidas">—</div>
-          <label>Publicações distribuídas</label>
-        </div>
-        <div class="big-card">
-          <div class="num" id="numRelatorio">—</div>
-          <label>Registros p/ relatório</label>
-        </div>
-      </div>
-
-      <div class="chart-wrap" style="margin-bottom:1.2rem">
-        <h3>Publicações: disponibilizadas × distribuídas por posto</h3>
-        <canvas id="chartPublicacoes"></canvas>
+      <div class="intro-dinamica">
+        📋 Oriente cada congregação a seguir <strong>esta ordem</strong> no sistema. O registro correto em cada etapa é o que garante um relatório fiel para a Betel.
       </div>
 
       <div class="steps">
         <div class="step">
           <div class="step-num">1</div>
           <div class="step-content">
-            <strong>Como registrar as publicações disponíveis</strong>
-            <p>Informe ao administrador a quantidade de cada tipo de publicação que estará no seu posto antes do início do evento.</p>
+            <strong>Entrar na congregação</strong>
+            <p>O responsável acessa o sistema com o login da própria congregação.</p>
+            <span class="step-tela">🔑 Tela: Login da congregação</span>
           </div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
           <div class="step-content">
-            <strong>Como contabilizar as publicações distribuídas</strong>
-            <p>Ao final do evento, registre a quantidade que foi realmente entregue ao público. A diferença = estoque não utilizado.</p>
+            <strong>Informar o abastecimento</strong>
+            <p>Registrar quantas unidades de cada tipo de publicação (Sentinela, Despertai!, livros, folhetos…) a congregação vai levar ao posto.</p>
+            <span class="step-tela">📚 Aba: Publicações</span>
           </div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
           <div class="step-content">
+            <strong>Escolher a designação (arranjo)</strong>
+            <p>Na aba de registro, selecionar o arranjo correspondente — o posto, a data e o horário em que a congregação serviu.</p>
+            <span class="step-tela">📝 Aba: Registrar</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Registrar a retirada (total distribuído)</strong>
+            <p>Informar a quantidade total de publicações que <strong>realmente saiu</strong> naquele arranjo e salvar. É a saída efetiva ao público.</p>
+            <span class="step-tela">📤 Campo: Total distribuído no arranjo</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
             <strong>Relatório realista para a Betel</strong>
-            <p>Apenas publicações efetivamente entregues entram no relatório. Não infle os números — precisão garante credibilidade perante a Betel.</p>
+            <p>Somente o que foi efetivamente distribuído entra no relatório. A diferença entre o abastecimento e a retirada é o estoque que voltou.</p>
+            <span class="step-tela">📊 Tela: Resultado consolidado</span>
           </div>
         </div>
       </div>
 
       <div class="alert warning">
         <span>⚠️</span>
-        <div><strong>Atenção SS:</strong> O relatório enviado à Betel deve refletir a realidade. Contabilize somente o que foi distribuído, não o que estava disponível.</div>
+        <div><strong>Atenção SS:</strong> o relatório enviado à Betel deve refletir a realidade. Contabilize somente o que foi <strong>distribuído</strong>, não o que estava disponível.</div>
       </div>
 
     </div>
@@ -546,43 +834,6 @@
     }
   });
 
-  // --- Gráfico 3: Publicações por posto ---
-  new Chart(document.getElementById('chartPublicacoes'), {
-    type: 'bar',
-    data: {
-      labels: ['P1','P2','P3','P4','P5','P6','P7','P8'],
-      datasets: [
-        {
-          label: 'Disponibilizadas',
-          data: [120, 100, 140, 90, 110, 105, 95, 120],
-          backgroundColor: 'rgba(0,87,168,0.55)',
-          borderRadius: 6,
-          borderSkipped: false,
-        },
-        {
-          label: 'Distribuídas',
-          data: [98, 87, 122, 74, 95, 89, 80, 102],
-          backgroundColor: 'rgba(255,107,0,0.75)',
-          borderRadius: 6,
-          borderSkipped: false,
-        }
-      ]
-    },
-    options: {
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 14 } }
-      },
-      scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-        x: { grid: { display: false } }
-      }
-    }
-  });
-
-  // Big numbers SS (valores de exemplo — substitua pelos reais)
-  document.getElementById('numPublicacoesDisp').textContent  = '880';
-  document.getElementById('numPublicacoesSaidas').textContent = '747';
-  document.getElementById('numRelatorio').textContent         = '747';
 </script>
 </body>
 </html>

@@ -1276,9 +1276,23 @@ function getMinhasDesignacoes() {
   return manuais.concat(automaticas).sort((a, b) => (a.data + a.inicio).localeCompare(b.data + b.inicio));
 }
 
+function getEscalaKey(desig, posto = null) {
+  if (!desig) return '';
+  if (!desig.autoGerada) return String(desig.id);
+  const currentPosto = posto || todosPos.find(p => Number(p.id) === Number(desig.postoId));
+  const categoria = getCategoriaById(currentPosto?.categoriaId);
+  const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  const dataIdx = datas.findIndex(data => String(data) === String(desig.data));
+  if (currentPosto?.id != null && dataIdx >= 0) return `${currentPosto.id}-${dataIdx}`;
+  return String(desig.id);
+}
+
+window.cong = cong;
 const desigs   = getMinhasDesignacoes();
 const meusPostos = todosPos.filter(p => p.congId === CONG_ID);
 const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';
+
+window.desigs = desigs;
 
 function getCongInitials(nome) {
   const parts = String(nome || '')
@@ -1687,9 +1701,14 @@ function getTurnos()  { return getCongConfig().turnos  || {}; }
 function getAgendaConfigMap() { return getCongConfig().agendaConfig || {}; }
 function getPedidosAjudaEscala() { return DB.get(HELP_REQUEST_KEY, []); }
 
+window.getTurnos = getTurnos;
+
 function salvarPedidosAjudaEscala(lista) {
   DB.set(HELP_REQUEST_KEY, lista);
 }
+
+window.getPedidosAjudaEscala = getPedidosAjudaEscala;
+window.salvarPedidosAjudaEscala = salvarPedidosAjudaEscala;
 
 function getAgendaConfig(desigId) {
   const cfg = getAgendaConfigMap()[desigId] || {};
@@ -1697,10 +1716,21 @@ function getAgendaConfig(desigId) {
     duracaoTurno: cfg.duracaoTurno === 3 ? 3 : 2,
     maxPorTurno: 3,
     slotsOverride: cfg.slotsOverride || {},
+    slotFinalizado: cfg.slotFinalizado || {},
   };
 }
 
-function setSlotFechadoCom2(desigId, slotKey, valor) {
+window.getAgendaConfig = getAgendaConfig;
+
+function getSlotFinalizadoInfo(agendaCfg, slotKey) {
+  const raw = agendaCfg?.slotFinalizado?.[slotKey];
+  if (!raw) return null;
+  if (raw === true) return { ativo: true };
+  if (typeof raw === 'object') return { ativo: true, ...raw };
+  return null;
+}
+
+window.setSlotFechadoCom2 = function(desigId, slotKey, valor) {
   // 1. Atualiza localStorage imediatamente (cumulativo — não perde slots anteriores)
   const all = DB.get('cong_config', {});
   const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
@@ -1734,6 +1764,36 @@ function setSlotFechadoCom2(desigId, slotKey, valor) {
   }
 }
 
+window.setSlotFinalizado = function(desigId, slotKey, valor, meta = null) {
+  const all = DB.get('cong_config', {});
+  const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
+  cfg.agendaConfig = cfg.agendaConfig || {};
+  cfg.agendaConfig[desigId] = cfg.agendaConfig[desigId] || { duracaoTurno: 2, maxPorTurno: 3 };
+  cfg.agendaConfig[desigId].slotFinalizado = cfg.agendaConfig[desigId].slotFinalizado || {};
+  if (valor) cfg.agendaConfig[desigId].slotFinalizado[slotKey] = meta && typeof meta === 'object' ? meta : true;
+  else delete cfg.agendaConfig[desigId].slotFinalizado[slotKey];
+  all[CONG_ID] = cfg;
+
+  if (typeof savePrewriteSnapshot === 'function') savePrewriteSnapshot('cong_config');
+  localStorage.setItem('cong_config', JSON.stringify(all));
+  const writeTs = typeof markPendingWrite === 'function'
+    ? markPendingWrite('cong_config', all)
+    : null;
+
+  if (!IS_LOCAL_FILE && typeof rtdb !== 'undefined') {
+    const patch = {};
+    patch[slotKey] = valor === true ? true : null;
+    rtdb.ref('cong_config/' + CONG_ID + '/agendaConfig/' + desigId + '/slotFinalizado')
+      .update(patch)
+      .then(() => {
+        if (writeTs && typeof clearPendingWrite === 'function') clearPendingWrite('cong_config', writeTs);
+      })
+      .catch(err => console.warn('[Firebase] Erro ao salvar slotFinalizado:', err));
+  } else if (writeTs && typeof clearPendingWrite === 'function') {
+    clearPendingWrite('cong_config', writeTs);
+  }
+}
+
 function getNomeMembro(membro) {
   return typeof membro === 'string' ? membro : membro?.nome || '';
 }
@@ -1759,8 +1819,26 @@ function getPessoasDoSlot(turnos, desigId, slotKey) {
   return (turnos?.[desigId]?.[slotKey] || []).map(normalizarPessoaEscala).filter(Boolean);
 }
 
+window.getPessoasDoSlot = getPessoasDoSlot;
+
 function getNomePessoaEscala(pessoa) {
   return normalizarPessoaEscala(pessoa)?.nome || '';
+}
+
+function isSlotCompletoState(people, agendaCfg, slotKey) {
+  if (getSlotFinalizadoInfo(agendaCfg, slotKey)?.ativo) return true;
+  if (agendaCfg.slotsOverride?.[slotKey] === true && people.length >= 2) return true;
+  return people.length >= agendaCfg.maxPorTurno;
+}
+
+function podeFinalizarArranjo(desig, slots, slotIndex, turnos) {
+  if (slotIndex !== slots.length - 1) return false;
+  const escalaKey = getEscalaKey(desig);
+  const agendaCfg = getAgendaConfig(escalaKey);
+  return slots.slice(0, -1).every(prevSlot => {
+    const prevPeople = getPessoasDoSlot(turnos, escalaKey, prevSlot.inicio);
+    return isSlotCompletoState(prevPeople, agendaCfg, prevSlot.inicio);
+  });
 }
 
 function membroJaEscaladoNoDia(nome, data, ignorar = {}) {
@@ -1768,8 +1846,9 @@ function membroJaEscaladoNoDia(nome, data, ignorar = {}) {
   const turnos = getTurnos();
   return desigs.some(desig => {
     if (desig.data !== data) return false;
-    return Object.entries(turnos[desig.id] || {}).some(([slot, pessoas]) => {
-      if (desig.id === ignorar.desigId && slot === ignorar.slotKey) return false;
+    const escalaKey = getEscalaKey(desig);
+    return Object.entries(turnos[escalaKey] || {}).some(([slot, pessoas]) => {
+      if (escalaKey === ignorar.desigId && slot === ignorar.slotKey) return false;
       return (pessoas || []).some(pessoa => getNomePessoaEscala(pessoa) === nome);
     });
   });
@@ -1779,13 +1858,15 @@ function membroDisponivelNoHorario(membro, desig, slotKey, assigned) {
   const nome = getNomeMembro(membro);
   if (!nome) return false;
   if ((assigned || []).some(pessoa => getNomePessoaEscala(pessoa) === nome)) return false;
-  if (desig.data && !membro.podeRepetir && membroJaEscaladoNoDia(nome, desig.data, { desigId: desig.id, slotKey })) return false;
+  if (desig.data && !membro.podeRepetir && membroJaEscaladoNoDia(nome, desig.data, { desigId: getEscalaKey(desig), slotKey })) return false;
   return true;
 }
 
 function getPedidoAjudaAberto(desigId, slotKey) {
   return getPedidosAjudaEscala().find(p => p.congId === CONG_ID && p.designacaoId === desigId && p.slotKey === slotKey && p.status === 'aberto') || null;
 }
+
+window.getPedidoAjudaAberto = getPedidoAjudaAberto;
 
 function getPedidosDaCongregacao() {
   return getPedidosAjudaEscala().filter(p => p.congId === CONG_ID && p.status !== 'cancelado');
@@ -1816,14 +1897,16 @@ function getResumoEscala() {
   let faltando = 0;
 
   desigs.forEach(desig => {
-    const agendaCfg = getAgendaConfig(desig.id);
+    const escalaKey = getEscalaKey(desig);
+    const agendaCfg = getAgendaConfig(escalaKey);
     const duracao = agendaCfg.duracaoTurno;
     gerarSlots(desig.inicio, desig.fim, duracao).forEach(slot => {
       totalSlots += 1;
-      const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+      const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
       totalPessoas += pessoas.length;
+      const slotFinalizado = !!getSlotFinalizadoInfo(agendaCfg, slot.inicio)?.ativo;
       const fechadoCom2 = agendaCfg.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
-      faltando += Math.max(0, (fechadoCom2 ? 2 : 3) - pessoas.length);
+      faltando += Math.max(0, ((fechadoCom2 || slotFinalizado) ? pessoas.length : 3) - pessoas.length);
     });
   });
 
@@ -1970,6 +2053,8 @@ function renderResumoEscala() {
   exportBtn.style.opacity = resumo.todosFechados ? '1' : '.55';
   exportBtn.style.cursor = resumo.todosFechados ? 'pointer' : 'not-allowed';
 }
+
+window.renderResumoEscala = renderResumoEscala;
 
 function getDigits(value) {
   return String(value || '').replace(/\D/g, '');
@@ -2350,27 +2435,37 @@ function getEscalaEntries(filterFn = null) {
   return desigs.map(desig => {
     const posto = todosPos.find(p => p.id === desig.postoId);
     if (!posto) return null;
+    const escalaKey = getEscalaKey(desig, posto);
     const categoria = getCategoriaById(posto.categoriaId);
     const baseEntry = { desig, posto, categoria };
     if (filterFn && !filterFn(baseEntry)) return null;
-    const agendaCfg = getAgendaConfig(desig.id);
+    const agendaCfg = getAgendaConfig(escalaKey);
     const duracao = agendaCfg.duracaoTurno;
     const maxSlot = agendaCfg.maxPorTurno;
     const slots = gerarSlots(desig.inicio, desig.fim, duracao).map(slot => {
-      const pessoas = getPessoasDoSlot(turnos, desig.id, slot.inicio);
+      const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
+      const finalizadoInfo = getSlotFinalizadoInfo(agendaCfg, slot.inicio);
+      const slotFinalizado = !!finalizadoInfo?.ativo;
       const fechadoCom2 = agendaCfg.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
-      const efetivo = fechadoCom2 ? pessoas.length : maxSlot;
+      const efetivo = (fechadoCom2 || slotFinalizado) ? pessoas.length : maxSlot;
+      const esperadoOriginal = Number(finalizadoInfo?.expectedQtd || (fechadoCom2 ? 2 : maxSlot));
+      const ocupacaoLabel = slotFinalizado
+        ? `${pessoas.length}/${esperadoOriginal} · finalizado`
+        : `${pessoas.length}/${efetivo}${fechadoCom2 ? ' · fechado com 2' : ''}`;
       return {
         ...slot,
         pessoas,
         fechadoCom2,
-        ocupacao: `${pessoas.length}/${efetivo}`,
+        slotFinalizado,
+        finalizadoInfo,
+        ocupacao: ocupacaoLabel,
       };
     });
     const totalAlocado = slots.reduce((sum, slot) => sum + slot.pessoas.length, 0);
-    const totalCapacidade = slots.reduce((sum, slot) => sum + (slot.fechadoCom2 ? slot.pessoas.length : maxSlot), 0);
+    const totalCapacidade = slots.reduce((sum, slot) => sum + ((slot.fechadoCom2 || slot.slotFinalizado) ? slot.pessoas.length : maxSlot), 0);
     return {
       ...baseEntry,
+      desigKey: escalaKey,
       categoriaNome: categoria?.nome || 'Sem setor',
       dataFmt: desig.data
         ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
@@ -2671,7 +2766,7 @@ function createPdfDoc(payload) {
         `${slot.inicio}–${slot.fim}`,
         slot.pessoas.length
           ? slot.pessoas.map(p => p.nome + ((p.origem === 'ajuda' || p.origem === 'tapa_buraco') && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')
-          : 'vaga',
+          : (slot.slotFinalizado ? 'arranjo finalizado sem novos nomes' : 'vaga'),
         slot.ocupacao,
       ])),
       styles: { fontSize: 8.8, cellPadding: 2 },
@@ -2832,13 +2927,14 @@ function renderPostosTurnos() {
   el.innerHTML = desigs.map((desig, desigIndex) => {
     const posto   = todosPos.find(p => p.id === desig.postoId);
     if (!posto) return '';
-    const agendaCfg = getAgendaConfig(desig.id);
+    const escalaKey = getEscalaKey(desig, posto);
+    const agendaCfg = getAgendaConfig(escalaKey);
     const duracao  = agendaCfg.duracaoTurno;
     const maxSlot  = agendaCfg.maxPorTurno;
     const slots    = gerarSlots(desig.inicio, desig.fim, duracao);
     const overnightInfo = getResumoVirada(desig.data, desig.inicio, desig.fim);
-    const assigned = turnos[desig.id] || {};
-    const agendaAberta = window._agendaAbertaId === desig.id;
+    const assigned = turnos[escalaKey] || {};
+    const agendaAberta = window._agendaAbertaId === escalaKey;
     const dataFmt  = desig.data
       ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', {weekday:'short',day:'numeric',month:'short'})
       : '—';
@@ -2847,36 +2943,40 @@ function renderPostosTurnos() {
 
     const slotsHtml = slots.map((slot, slotIndex) => {
       const key     = slot.inicio;
-      const people  = getPessoasDoSlot(turnos, desig.id, key);
+      const people  = getPessoasDoSlot(turnos, escalaKey, key);
       const vagas   = maxSlot - people.length;
       const fechadoCom2 = agendaCfg.slotsOverride[key] === true && people.length >= 2;
+      const slotFinalizado = agendaCfg.slotFinalizado[key] === true;
       const slotOvernight = getResumoVirada(desig.data, slot.inicio, slot.fim);
-      const pedidoAjuda = getPedidoAjudaAberto(desig.id, key);
-      const safeId = getDomIdSeguro(getChaveAjuda(desig.id, key));
+      const pedidoAjuda = getPedidoAjudaAberto(escalaKey, key);
+      const safeId = getDomIdSeguro(getChaveAjuda(escalaKey, key));
       const subAdmins = getSubAdminsElegiveis(posto.categoriaId);
+      const podeFinalizar = !slotFinalizado && vagas > 0 && podeFinalizarArranjo(desig, slots, slotIndex, turnos);
 
       const peopleHtml = people.map(pessoa => `
         <div class="turno-pessoa">
           👤 ${pessoa.nome}${pessoa.origem === 'ajuda' ? `<span class="helper-badge">ajuda${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}${pessoa.origem === 'tapa_buraco' ? `<span class="helper-badge">tapa-buraco${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}
-          <button onclick="removeFromSlot('${escaparJs(desig.id)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">✕</button>
+          <button onclick="removeFromSlot('${escaparJs(escalaKey)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">✕</button>
         </div>`).join('');
 
-      const vagasEfetivas = fechadoCom2 ? 0 : vagas;
-      const vagasHtml = Array.from({length: Math.max(0, vagasEfetivas)}, (_,i) => {
+      const vagasEfetivas = (fechadoCom2 || slotFinalizado) ? 0 : vagas;
+      const vagasHtml = (fechadoCom2 || slotFinalizado) ? '' : Array.from({length: Math.max(0, vagasEfetivas)}, (_,i) => {
         const disponíveis = membros.filter(m => membroDisponivelNoHorario(m, desig, key, people));
         if (!disponíveis.length) return `<div style="font-size:.72rem;color:var(--gray);text-align:center;padding:.2rem;">— sem membros —</div>`;
-        return `<select class="turno-vaga-select" onchange="addToSlotFromSelect('${escaparJs(desig.id)}','${escaparJs(key)}',${maxSlot},this)">
+        return `<select class="turno-vaga-select" onchange="addToSlotFromSelect('${escaparJs(escalaKey)}','${escaparJs(key)}',${maxSlot},this)">
           <option value="">+ Vaga ${people.length+i+1}</option>
           ${disponíveis.map(m => `<option value="${getNomeMembro(m).replace(/"/g,'&quot;')}">${getLabelMembro(m)}</option>`).join('')}
         </select>`;
       }).join('');
 
-      const helpHtml = fechadoCom2
-        ? `<div class="slot-fechado-com2">✅ Fechado com 2 irmãos <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotCom2('${escaparJs(desig.id)}','${escaparJs(key)}')">↩ Reabrir</button></div>`
+      const helpHtml = slotFinalizado
+        ? `<div class="slot-fechado-com2">✅ Arranjo finalizado <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotFinalizado('${escaparJs(escalaKey)}','${escaparJs(key)}')">↩ Reabrir</button></div>`
+        : fechadoCom2
+        ? `<div class="slot-fechado-com2">✅ Fechado com 2 irmãos <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotCom2('${escaparJs(escalaKey)}','${escaparJs(key)}')">↩ Reabrir</button></div>`
         : vagas > 0
           ? pedidoAjuda
-            ? `<div class="slot-help-box"><strong>🆘 Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}–${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button></div></div>`
-            : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horário.</span><div class="slot-help-actions">${people.length >= 2 ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFecharCom2('${escaparJs(desig.id)}','${escaparJs(key)}')">✌️ Fechar com 2</button>` : ''}${subAdmins.length ? `<button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(desig.id)}','${escaparJs(key)}')">🆘 Pedir ajuda</button>` : ''}</div>${subAdmins.length && window._ajudaAbertaKey === getChaveAjuda(desig.id, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmãos para completar este horário."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(desig.id)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}${!subAdmins.length ? '<span>Nenhum sub-admin cadastrado para esta categoria.</span>' : ''}</div>`
+            ? `<div class="slot-help-box"><strong>🆘 Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}–${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button>${podeFinalizar ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFinalizarArranjo('${escaparJs(escalaKey)}','${escaparJs(key)}')">✅ Finalizar arranjo</button>` : ''}</div>${podeFinalizar ? '<span>Como os horários anteriores já foram fechados, você também pode encerrar este último arranjo sem aguardar ajuda.</span>' : ''}</div>`
+            : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horário.</span><div class="slot-help-actions">${people.length >= 2 ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFecharCom2('${escaparJs(escalaKey)}','${escaparJs(key)}')">✌️ Fechar com 2</button>` : ''}${subAdmins.length ? `<button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(escalaKey)}','${escaparJs(key)}')">🆘 Pedir ajuda</button>` : ''}${podeFinalizar ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFinalizarArranjo('${escaparJs(escalaKey)}','${escaparJs(key)}')">✅ Finalizar arranjo</button>` : ''}</div>${subAdmins.length && window._ajudaAbertaKey === getChaveAjuda(escalaKey, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmãos para completar este horário."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(escalaKey)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}${!subAdmins.length ? '<span>Nenhum sub-admin cadastrado para esta categoria.</span>' : ''}${podeFinalizar ? '<span>Disponível apenas no último horário, quando os anteriores já estiverem fechados.</span>' : ''}</div>`
           : '';
 
       return `
@@ -2887,7 +2987,7 @@ function renderPostosTurnos() {
         </div>`;
     }).join('');
 
-    const entry = getEscalaEntries(item => String(item.desig.id) === String(desig.id))[0];
+    const entry = getEscalaEntries(item => String(item.desigKey) === String(escalaKey))[0];
     const responsavelSetor = posto.categoriaId ? getResponsavelSetor(posto.categoriaId) : null;
     const mapsUrl = getMapsUrlForAssignment({
       posto,
@@ -2896,7 +2996,7 @@ function renderPostosTurnos() {
     const actionsHtml = entry ? `
       <div class="carrinho-actions">
         ${mapsUrl ? `<a class="btn btn-outline btn-sm" href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver rota da designacao ${String(desigIndex + 1).padStart(2, '0')}</a>` : ''}
-        <button class="btn btn-outline btn-sm" onclick="exportarPdfPosto('${escaparJs(desig.id)}')" ${entry.completo ? '' : 'disabled'}>📄 PDF individual</button>
+        <button class="btn btn-outline btn-sm" onclick="exportarPdfPosto('${escaparJs(escalaKey)}')" ${entry.completo ? '' : 'disabled'}>📄 PDF individual</button>
         ${posto.categoriaId && responsavelSetor ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${posto.categoriaId})" ${entry.completo ? '' : 'disabled'}>📱 WhatsApp do setor</button>` : ''}
       </div>` : '';
 
@@ -2910,8 +3010,8 @@ function renderPostosTurnos() {
             <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">📍 ${posto.local}</div>
           </div>
           <div style="font-size:.78rem;opacity:.85;text-align:right;">
-            <button class="agenda-trigger" onclick="configurarAgenda('${escaparJs(desig.id)}')">📅 Agenda: ${dataFmt} · ${duracao}h/turno</button>
-            ${agendaAberta ? `<div class="agenda-chooser"><button class="agenda-choice-btn ${duracao === 2 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(desig.id)}', 2)">2h</button><button class="agenda-choice-btn ${duracao === 3 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(desig.id)}', 3)">3h</button></div>` : ''}<br>
+            <button class="agenda-trigger" onclick="configurarAgenda('${escaparJs(escalaKey)}')">📅 Agenda: ${dataFmt} · ${duracao}h/turno</button>
+            ${agendaAberta ? `<div class="agenda-chooser"><button class="agenda-choice-btn ${duracao === 2 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(escalaKey)}', 2)">2h</button><button class="agenda-choice-btn ${duracao === 3 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(escalaKey)}', 3)">3h</button></div>` : ''}<br>
             ⏱️ ${desig.inicio}–${desig.fim}<br>${overnightInfo ? `🌙 ${overnightInfo.badge}<br><span style="display:inline-block;max-width:240px;color:#7b4f00;line-height:1.4;">${overnightInfo.texto}</span><br>` : ''}máx. ${maxSlot} por horário
           </div>
         </div>
@@ -2924,6 +3024,8 @@ function renderPostosTurnos() {
   renderAvisosAjuda();
   renderEscalaSectorActions();
 }
+
+window.renderPostosTurnos = renderPostosTurnos;
 
 window.toggleAjudaHorario = function(desigId, slotKey) {
   const chave = getChaveAjuda(desigId, slotKey);
@@ -3630,17 +3732,66 @@ window.abrirConfirmacaoFecharCom2 = function(desigId, slotKey) {
     return;
   }
   // setSlotFechadoCom2 sobrescreve o pending com o valor correto (inclui o novo slot)
-  setSlotFechadoCom2(desigId, slotKey, true);
-  renderPostosTurnos();
-  renderResumoEscala();
+  window.setSlotFechadoCom2(desigId, slotKey, true);
+  window.renderPostosTurnos();
+  window.renderResumoEscala();
   showToast('Horário fechado com 2 irmãos. ✌️', 'success');
 };
 
 window.reabrirSlotCom2 = function(desigId, slotKey) {
-  setSlotFechadoCom2(desigId, slotKey, false);
-  renderPostosTurnos();
-  renderResumoEscala();
+  window.setSlotFechadoCom2(desigId, slotKey, false);
+  window.renderPostosTurnos();
+  window.renderResumoEscala();
   showToast('Horário reaberto.', 'info');
+};
+
+window.abrirConfirmacaoFinalizarArranjo = function(desigId, slotKey) {
+  const guardAll = DB.get('cong_config', {});
+  const guardTs = typeof markPendingWrite === 'function'
+    ? markPendingWrite('cong_config', guardAll) : null;
+
+  const ok = confirm('Finalize este último horário do arranjo sem solicitar ajuda?\n\nUse esta opção apenas quando os horários anteriores já estiverem fechados.');
+
+  if (!ok) {
+    if (guardTs && typeof clearPendingWrite === 'function') clearPendingWrite('cong_config', guardTs);
+    return;
+  }
+
+  const desig = (window.desigs || []).find(item => String(item.id) === String(desigId));
+  const agendaCfg = window.getAgendaConfig(desigId);
+  const pessoas = window.getPessoasDoSlot(window.getTurnos(), desigId, slotKey);
+  const expectedQtd = agendaCfg.slotsOverride[slotKey] === true ? 2 : agendaCfg.maxPorTurno;
+  const faltaAtual = Math.max(0, expectedQtd - pessoas.length);
+  const pedidoAberto = window.getPedidoAjudaAberto(desigId, slotKey);
+  if (pedidoAberto) {
+    pedidoAberto.status = 'fechado';
+    pedidoAberto.resolvidoPor = window.cong?.nome || 'Congregação';
+    pedidoAberto.resolvidoEm = new Date().toLocaleString('pt-BR');
+    pedidoAberto.resolvidoVia = 'finalizacao_arranjo';
+    pedidoAberto.faltaQtdOriginal = Number(pedidoAberto.faltaQtd || faltaAtual);
+    pedidoAberto.faltaQtdFinal = faltaAtual;
+    pedidoAberto.nomesResolvidos = pessoas.map(p => p.nome);
+    pedidoAberto.observacaoFechamento = `Finalizado pela congregação com ${pessoas.length} de ${expectedQtd} nome(s) neste horário.`;
+    window.salvarPedidosAjudaEscala(window.getPedidosAjudaEscala());
+  }
+  window.setSlotFinalizado(desigId, slotKey, true, {
+    finalizedAt: new Date().toLocaleString('pt-BR'),
+    expectedQtd,
+    alocadoQtd: pessoas.length,
+    faltaQtdFinal: faltaAtual,
+    designacaoId: desigId,
+    data: desig?.data || '',
+  });
+  window.renderPostosTurnos();
+  window.renderResumoEscala();
+  showToast('Arranjo finalizado neste último horário. ✅', 'success');
+};
+
+window.reabrirSlotFinalizado = function(desigId, slotKey) {
+  window.setSlotFinalizado(desigId, slotKey, false);
+  window.renderPostosTurnos();
+  window.renderResumoEscala();
+  showToast('Finalização do arranjo removida.', 'info');
 };
 </script>
 </body>

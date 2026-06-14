@@ -18,7 +18,7 @@ const rtdb = firebase.database();
 const IS_LOCAL_FILE = location.protocol === 'file:';
 
 // Chaves que devem ser sincronizadas com o Firebase
-const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config', 'evento_config', 'pedidos_ajuda_escala'];
+const SYNC_KEYS = ['postos', 'congregacoes', 'distribuicoes', 'postos_init', 'admin_creds', 'sub_admins', 'designacoes', 'categorias', 'cong_config', 'evento_config', 'pedidos_ajuda_escala', 'slots_override'];
 const CRITICAL_KEYS = ['congregacoes', 'postos', 'designacoes', 'cong_config'];
 const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
 const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';

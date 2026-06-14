@@ -210,16 +210,14 @@ function startSync() {
       if (val !== null) {
         const pending = getPendingWrites()[key];
         if (pending) {
-          if (valuesMatch(pending.value, val)) {
-            clearPendingWrite(key, pending.ts);
-          } else {
-            localStorage.setItem(key, JSON.stringify(pending.value));
-            return;
-          }
+          // Enquanto houver escrita pendente, NUNCA aceita dado do Firebase —
+          // independentemente se é eco local ou atualização concorrente.
+          // O pending só é liberado pelo setTimeout em pushToFirebase.
+          localStorage.setItem(key, JSON.stringify(pending.value));
+          return;
         }
         localStorage.setItem(key, JSON.stringify(val));
         saveLocalBackup('pull', key);
-        // Dispara evento para páginas atualizarem a UI sem recarregar
         window.dispatchEvent(new CustomEvent('db-sync', { detail: { key } }));
       }
     });
@@ -238,14 +236,7 @@ function pushToFirebase(key, value, options = {}) {
   }
   const writeTs = markPendingWrite(key, value);
   rtdb.ref(key).set(value)
-    .then(() => {
-      // NÃO limpa na hora: mantém o pending por uma janela curta para que
-      // qualquer eco concorrente (outra aba/aparelho gravando o mesmo blob)
-      // seja sobreposto pelo nosso valor. O listener limpa antes disso assim
-      // que o servidor refletir exatamente esta escrita (valuesMatch). Este
-      // timeout é só uma rede de segurança caso o eco não chegue.
-      setTimeout(() => clearPendingWrite(key, writeTs), 6000);
-    })
+    .then(() => clearPendingWrite(key, writeTs))
     .catch(err => {
       console.warn('[Firebase] Erro ao salvar:', err);
       restoreFullBackup('write-error');

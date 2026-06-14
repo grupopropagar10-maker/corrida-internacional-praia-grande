@@ -1701,13 +1701,37 @@ function getAgendaConfig(desigId) {
 }
 
 function setSlotFechadoCom2(desigId, slotKey, valor) {
-  const cfg = getCongConfig();
+  // 1. Atualiza localStorage imediatamente (cumulativo — não perde slots anteriores)
+  const all = DB.get('cong_config', {});
+  const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
   cfg.agendaConfig = cfg.agendaConfig || {};
   cfg.agendaConfig[desigId] = cfg.agendaConfig[desigId] || { duracaoTurno: 2, maxPorTurno: 3 };
   cfg.agendaConfig[desigId].slotsOverride = cfg.agendaConfig[desigId].slotsOverride || {};
   if (valor) cfg.agendaConfig[desigId].slotsOverride[slotKey] = true;
   else delete cfg.agendaConfig[desigId].slotsOverride[slotKey];
-  saveCongConfig(cfg);
+  all[CONG_ID] = cfg;
+
+  // 2. Protege localStorage com pending write — listener não sobrescreve enquanto pendente
+  if (typeof savePrewriteSnapshot === 'function') savePrewriteSnapshot('cong_config');
+  localStorage.setItem('cong_config', JSON.stringify(all));
+  const writeTs = typeof markPendingWrite === 'function'
+    ? markPendingWrite('cong_config', all)
+    : null;
+
+  // 3. Grava APENAS o campo alterado no Firebase (update atômico no caminho filho).
+  //    Não grava o blob inteiro — Firebase faz o merge no servidor sem race condition.
+  if (!IS_LOCAL_FILE && typeof rtdb !== 'undefined') {
+    const patch = {};
+    patch[slotKey] = valor === true ? true : null;
+    rtdb.ref('cong_config/' + CONG_ID + '/agendaConfig/' + desigId + '/slotsOverride')
+      .update(patch)
+      .then(() => {
+        if (writeTs && typeof clearPendingWrite === 'function') clearPendingWrite('cong_config', writeTs);
+      })
+      .catch(err => console.warn('[Firebase] Erro ao salvar slotsOverride:', err));
+  } else if (writeTs && typeof clearPendingWrite === 'function') {
+    clearPendingWrite('cong_config', writeTs);
+  }
 }
 
 function getNomeMembro(membro) {

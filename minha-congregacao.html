@@ -1496,17 +1496,22 @@ document.querySelectorAll('[data-tab]').forEach(a => {
   const resumoCategoria = categoria
     ? `📅 ${categoria.nome}${categoria.horario && categoria.horarioFim ? ` · ${categoria.horario}-${categoria.horarioFim}` : ''}`
     : '';
+  const mapsUrlPosto = (typeof postoP.lat === 'number' && typeof postoP.lng === 'number')
+    ? `https://www.google.com/maps?q=${postoP.lat},${postoP.lng}`
+    : postoP.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(postoP.local)}` : '';
   document.getElementById('ph-detail').innerHTML = `
+    ${postoP.numero != null ? `<span>🔢 Posto Nº ${String(postoP.numero).padStart(2,'0')}</span>` : ''}
     <span>📌 ${postoP.local || 'Local não informado'}</span>
     <span>📊 Status: ${postoP.status==='ativo'?'🟢 Ativo':postoP.status==='standby'?'🟡 Standby':'🔴 Inativo'}</span>
     ${postoP.responsavel ? `<span>👤 Responsável geral: ${postoP.responsavel}</span>` : ''}
-    ${resumoCategoria ? `<span>${resumoCategoria}</span>` : ''}`;
+    ${resumoCategoria ? `<span>${resumoCategoria}</span>` : ''}
+    ${mapsUrlPosto ? `<a href="${mapsUrlPosto}" target="_blank" rel="noopener" style="color:white;text-decoration:underline;font-weight:600;">🗺️ Ver no mapa</a>` : ''}`;
 
   const rows = desigs.map(d => {
     const p  = todosPos.find(x => x.id === d.postoId);
     const dt = d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}) : '—';
     return `<tr>
-      <td><strong>${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
+      <td><strong>${p?.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.72rem;font-weight:800;margin-right:.35rem;">Nº ${String(p.numero).padStart(2,'0')}</span>` : ''}${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
       <td>${dt}</td><td>${d.inicio}–${d.fim}</td>
       <td>${d.irmaos||'?'} irmão(s)</td>
       <td>${d.obs||'—'}</td>

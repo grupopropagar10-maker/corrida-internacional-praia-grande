@@ -3604,7 +3604,7 @@ window.fecharModalCom2 = function() {
   document.getElementById('modal-fechar-com2').classList.remove('open');
 };
 
-document.getElementById('btn-confirmar-fechar-com2').addEventListener('click', () => {
+window.confirmarFecharCom2 = function() {
   if (!_fecharCom2Pending) return;
   const { desigId, slotKey } = _fecharCom2Pending;
   setSlotFechadoCom2(desigId, slotKey, true);
@@ -3612,7 +3612,7 @@ document.getElementById('btn-confirmar-fechar-com2').addEventListener('click', (
   renderPostosTurnos();
   renderResumoEscala();
   showToast('Horário fechado com 2 irmãos. ✌️', 'success');
-});
+};
 
 window.reabrirSlotCom2 = function(desigId, slotKey) {
   setSlotFechadoCom2(desigId, slotKey, false);
@@ -3634,7 +3634,7 @@ window.reabrirSlotCom2 = function(desigId, slotKey) {
     </p>
     <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;">
       <button class="btn btn-outline" onclick="fecharModalCom2()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-confirmar-fechar-com2">Sim, fechar com 2</button>
+      <button class="btn btn-primary" onclick="confirmarFecharCom2()">Sim, fechar com 2</button>
     </div>
   </div>
 </div>

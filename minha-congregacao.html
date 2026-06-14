@@ -3590,25 +3590,12 @@ initRegisterTab();
 })();
 
 // ══════════════════════════════════════════
-//  FECHAR COM 2 — modal e funções globais
+//  FECHAR COM 2 — diálogo nativo (à prova de mobile)
 // ══════════════════════════════════════════
-let _fecharCom2Pending = null;
-
 window.abrirConfirmacaoFecharCom2 = function(desigId, slotKey) {
-  _fecharCom2Pending = { desigId, slotKey };
-  document.getElementById('modal-fechar-com2').style.display = 'flex';
-};
-
-window.fecharModalCom2 = function() {
-  _fecharCom2Pending = null;
-  document.getElementById('modal-fechar-com2').style.display = 'none';
-};
-
-window.confirmarFecharCom2 = function() {
-  if (!_fecharCom2Pending) return;
-  const { desigId, slotKey } = _fecharCom2Pending;
+  const ok = confirm('Ao marcar com 2, o irmão se responsabiliza em assegurar uma possível desfalque.\n\nConfirma fechar este horário com 2 irmãos?');
+  if (!ok) return;
   setSlotFechadoCom2(desigId, slotKey, true);
-  fecharModalCom2();
   renderPostosTurnos();
   renderResumoEscala();
   showToast('Horário fechado com 2 irmãos. ✌️', 'success');
@@ -3621,28 +3608,5 @@ window.reabrirSlotCom2 = function(desigId, slotKey) {
   showToast('Horário reaberto.', 'info');
 };
 </script>
-
-<!-- Modal: Confirmar fechar com 2 -->
-<div id="modal-fechar-com2" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
-  <div style="background:#fff;border-radius:1rem;padding:1.5rem;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <h3 style="font-size:1.15rem;color:#1a4a8a;margin:0;">✌️ Fechar horário com 2 irmãos</h3>
-      <button style="background:none;border:none;font-size:1.6rem;cursor:pointer;color:#999;padding:0 4px;line-height:1;touch-action:manipulation;"
-              onclick="fecharModalCom2()"
-              ontouchend="event.preventDefault();fecharModalCom2()">×</button>
-    </div>
-    <p style="line-height:1.65;color:#333;margin-bottom:1.5rem;">
-      Ao marcar com 2, o irmão se responsabiliza em assegurar uma possível desfalque. Concorda?
-    </p>
-    <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;">
-      <button class="btn btn-outline" style="touch-action:manipulation;"
-              onclick="fecharModalCom2()"
-              ontouchend="event.preventDefault();fecharModalCom2()">Cancelar</button>
-      <button class="btn btn-primary" style="touch-action:manipulation;"
-              onclick="confirmarFecharCom2()"
-              ontouchend="event.preventDefault();confirmarFecharCom2()">Sim, fechar com 2</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>

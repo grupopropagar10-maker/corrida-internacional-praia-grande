@@ -167,13 +167,16 @@ function flushPendingWrites() {
   const entries = Object.entries(pending).filter(([key, entry]) => SYNC_KEYS.includes(key) && entry);
   if (!entries.length) return Promise.resolve();
 
-  return Promise.all(entries.map(([key, entry]) =>
-    rtdb.ref(key).set(entry.value)
+  return Promise.all(entries.map(([key, entry]) => {
+    const op = key === 'cong_config'
+      ? rtdb.ref(key).update(entry.value)
+      : rtdb.ref(key).set(entry.value);
+    return op
       .then(() => clearPendingWrite(key, entry.ts))
       .catch(err => {
         console.warn(`[Firebase] Erro ao reenviar dado pendente em ${key}:`, err);
-      })
-  ));
+      });
+  }));
 }
 
 window.FirebaseBackup = {
@@ -258,7 +261,12 @@ function pushToFirebase(key, value, options = {}) {
   const writeTs = markPendingWrite(key, value);
   // Evento de status: salvando — #14
   window.dispatchEvent(new CustomEvent('db-sync-status', { detail: { state: 'pending', key } }));
-  rtdb.ref(key).set(value)
+  // cong_config usa update() em vez de set() para evitar que uma sessão
+  // sobrescreva dados de outra congregação escritos concorrentemente.
+  const writeOp = key === 'cong_config'
+    ? rtdb.ref(key).update(value)
+    : rtdb.ref(key).set(value);
+  writeOp
     .then(() => {
       clearPendingWrite(key, writeTs);
       window.dispatchEvent(new CustomEvent('db-sync-status', { detail: { state: 'saved', key } }));

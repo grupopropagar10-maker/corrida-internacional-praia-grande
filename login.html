@@ -501,10 +501,33 @@
   const params = new URLSearchParams(window.location.search);
   if (params.get('type') === 'live') {
     setTab('live');
-    document.getElementById('live-usuario').value = params.get('user') || '';
-    document.getElementById('live-senha').value   = params.get('pass') || '';
-    // Remove credenciais do histórico do navegador imediatamente após leitura (#4)
+    const _u = params.get('user') || '';
+    const _p = params.get('pass') || '';
+    document.getElementById('live-usuario').value = _u;
+    document.getElementById('live-senha').value   = _p;
     history.replaceState({}, '', window.location.pathname);
+
+    if (_u && _p) {
+      // Login automático: aguarda Firebase e entra direto, sem precisar clicar
+      const btn = document.getElementById('btn-login-live');
+      btn.innerHTML = '<span class="spin"></span> Conectando...';
+      btn.disabled = true;
+      (window.DB_SYNC_READY || Promise.resolve()).finally(async () => {
+        if (Auth.loginLiveInvite(_u, _p)) {
+          window.location.href = 'pedidos-ao-vivo.html';
+          return;
+        }
+        // Retentativa após 3 s — Firebase pode ainda estar sincronizando em redes lentas
+        await new Promise(r => setTimeout(r, 3000));
+        if (Auth.loginLiveInvite(_u, _p)) {
+          window.location.href = 'pedidos-ao-vivo.html';
+        } else {
+          btn.innerHTML = '<span>Entrar no pedido ao vivo</span>';
+          btn.disabled = false;
+          mostrarErro('Não foi possível conectar automaticamente. Toque no botão para tentar de novo.');
+        }
+      });
+    }
   }
 
   // ── UTILITÁRIOS ──

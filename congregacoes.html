@@ -692,6 +692,12 @@ function getCategoriaDatas(categoria) {
   return Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
 }
 
+function getPostoDatas(posto, categoria) {
+  const todas = getCategoriaDatas(categoria);
+  const excluidas = Array.isArray(posto?.datasExcluidas) ? posto.datasExcluidas : [];
+  return todas.filter(d => !excluidas.includes(d));
+}
+
 function getCategoriaResumo(categoria) {
   if (!categoria) return { datasLabel: 'Sem datas', horarioLabel: 'Sem horario' };
   const datas = getCategoriaDatas(categoria);
@@ -703,7 +709,7 @@ function getCategoriaResumo(categoria) {
 
 function buildAutoDesignacoesForPosto(posto) {
   const categoria = getCategoriaById(posto.categoriaId);
-  const datas = getCategoriaDatas(categoria);
+  const datas = getPostoDatas(posto, categoria);
   if (!categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
 
   return datas.map((data, idx) => ({
@@ -866,7 +872,7 @@ function buildPopup(posto) {
     ? `<div class="popup-desg" style="border-left:3px solid ${congSel?.cor||'#0057A8'};">
         <strong>${congSel?.nome || posto.nome}</strong><br>
         ${posto.recursoTipo === 'carrinho' ? '🛒 Carrinho' : '🪧 Display'}<br>
-        📅 ${catResumo.datasLabel}<br>
+        📅 ${getPostoDatas(posto, cat).map(d => formatarData(d, true)).join(', ') || 'Sem datas'}<br>
         ⏱️ ${catResumo.horarioLabel}
       </div>`
     : desig.length
@@ -886,7 +892,7 @@ function buildPopup(posto) {
 
   return `
     <div class="popup-inner">
-      <h4>📍 ${posto.nome} ${catBadge}</h4>
+      <h4>📍 ${getPostoNumero(posto) ? `<span style="color:var(--primary);font-size:.85em;">Nº ${getPostoNumero(posto)}</span> — ` : ''}${posto.nome} ${catBadge}</h4>
       <small style="color:#6C757D;">${detalhesPosto}</small>
       <div style="margin-top:0.6rem;">${desigHtml}</div>
       ${posto.congId
@@ -1019,14 +1025,36 @@ function abrirResumoPostoDesignado(postoId) {
   ativarTabDesignar();
   document.getElementById('form-novo-posto-mapa').style.display = 'none';
   document.getElementById('form-designar').style.display = 'none';
+  const nPosto = getPostoNumero(posto);
   document.getElementById('posto-badge').innerHTML = `
     <div class="posto-selected-badge">
       <span>📍</span>
       <div>
-        <strong>${posto.nome}</strong>
+        <strong>${nPosto ? `Nº ${nPosto} — ` : ''}${posto.nome}</strong>
         <div style="opacity:0.8; font-size:0.78rem;">${posto.local || 'Ponto personalizado no mapa'}</div>
       </div>
     </div>`;
+
+  const todasDatas = getCategoriaDatas(categoria);
+  const datasExcluidas = Array.isArray(posto.datasExcluidas) ? posto.datasExcluidas : [];
+  const datasChipsHtml = todasDatas.length
+    ? `<div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.2rem;">
+        ${todasDatas.map(d => {
+          const excluida = datasExcluidas.includes(d);
+          return `<span style="display:inline-flex;align-items:center;gap:.25rem;
+                    background:${excluida ? '#fee2e2' : '#eef4fb'};
+                    color:${excluida ? '#b42318' : 'var(--primary-dark)'};
+                    border:1px solid ${excluida ? '#fca5a5' : '#c3d9f0'};
+                    border-radius:999px;padding:.18rem .55rem;font-size:.76rem;
+                    ${excluida ? 'text-decoration:line-through;opacity:.6;' : ''}">
+                  ${formatarData(d, true)}
+                  ${!excluida ? `<button onclick="excluirDataPosto(${posto.id},'${d}')"
+                    title="Remover esta data" style="background:none;border:none;cursor:pointer;
+                    color:#b42318;font-size:.9rem;padding:0;line-height:1;margin-left:.1rem;">×</button>` : ''}
+                </span>`;
+        }).join('')}
+      </div>`
+    : '<span style="color:var(--gray);font-size:.84rem;">Sem datas</span>';
 
   document.getElementById('posto-resumo-designado').innerHTML = `
     <div style="background:#f8fafc;border:1px solid #d8e7f7;border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.8rem;">
@@ -1040,7 +1068,7 @@ function abrirResumoPostoDesignado(postoId) {
         <span style="background:#eef8ef;color:#2b6e3f;border-radius:999px;padding:.2rem .6rem;font-size:.78rem;">${categoria?.nome || 'Sem categoria'}</span>
         <span style="background:#fff7e6;color:#9a6700;border-radius:999px;padding:.2rem .6rem;font-size:.78rem;">${catResumo.horarioLabel}</span>
       </div>
-      <div style="font-size:.84rem;color:var(--text);"><strong>Datas:</strong> ${catResumo.datasLabel}</div>
+      <div style="font-size:.84rem;color:var(--text);"><strong>Datas:</strong> ${datasChipsHtml}</div>
       ${posto.obs ? `<div style="font-size:.84rem;color:var(--gray);"><strong>Obs.:</strong> ${posto.obs}</div>` : ''}
       <div style="display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="editarPostoMapa(${posto.id})">✏️ Editar</button>
@@ -1114,6 +1142,40 @@ window.deletarPostoMapa = function(postoId) {
   renderCronograma();
   map.closePopup();
   showToast('Posto removido com sucesso.', 'success');
+};
+
+window.excluirDataPosto = function(postoId, data) {
+  const postos = DB.get('postos', []);
+  const idx = postos.findIndex(p => p.id === postoId);
+  if (idx < 0) return;
+  const posto = postos[idx];
+  const cong = DB.get('congregacoes', []).find(c => c.id === posto.congId);
+  const dataFmt = formatarData(data, true);
+
+  if (!confirm(`Remover ${dataFmt} da escala de "${posto.nome}"?${cong ? `\n\nUma mensagem será aberta para avisar a ${cong.nome}.` : ''}`)) return;
+
+  postos[idx] = {
+    ...posto,
+    datasExcluidas: [...(Array.isArray(posto.datasExcluidas) ? posto.datasExcluidas : []), data],
+  };
+  DB.set('postos', postos);
+
+  renderMarcadores();
+  renderKPI();
+  renderAgenda();
+  renderCronograma();
+  abrirResumoPostoDesignado(postoId);
+  showToast(`Data ${dataFmt} removida da escala do posto.`, 'success');
+
+  if (cong?.telefone) {
+    const tel = cong.telefone.replace(/\D/g, '');
+    const waNum = tel.startsWith('55') ? tel : '55' + tel;
+    if (waNum.length >= 12) {
+      const categoria = DB.get('categorias', []).find(c => c.id === posto.categoriaId);
+      const msg = `Olá, ${cong.nome}!\n\nInformamos que a data *${formatarData(data)}* foi removida da sua escala no posto *${posto.nome}*${categoria ? ` (${categoria.nome})` : ''}.\n\nQualquer dúvida, entre em contato com a equipe de organização.`;
+      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+  }
 };
 
 // ================================================================

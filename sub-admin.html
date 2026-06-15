@@ -1864,7 +1864,7 @@
     showToast('Pedido cancelado.', 'info');
   };
 
-  function renderTapaBuraco() {
+  window.renderTapaBuraco = function renderTapaBuraco() {
     const section = document.getElementById('sec-tapa-buraco');
     const nav = document.getElementById('nav-tapa-buraco');
     const el = document.getElementById('body-tapa-buraco');
@@ -1882,7 +1882,20 @@
     const invites = cfg.invites.slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
     const suggestions = cfg.suggestions || [];
     const assignments = cfg.assignments || [];
-    const pedidosEncaminhados = getPedidosAjuda().filter(p => p.status === 'aberto' && p.tapaBuracoStatus === 'encaminhado');
+    const todasCats = DB.get('categorias', []);
+
+    // Categorias vinculadas a este sub-admin
+    const catIds = subAdminAtual?.categorias || [];
+    const catsFiltro = catIds.length
+      ? todasCats.filter(c => catIds.includes(c.id))
+      : todasCats;
+
+    if (!window._tbCatSel && catsFiltro.length) window._tbCatSel = null; // null = todas
+
+    const pedidosTodos = getPedidosAjuda().filter(p => p.status === 'aberto' && p.tapaBuracoStatus === 'encaminhado');
+    const pedidosEncaminhados = window._tbCatSel
+      ? pedidosTodos.filter(p => String(p.categoriaId) === String(window._tbCatSel) || p.categoriaNome === (todasCats.find(c => c.id === window._tbCatSel)?.nome))
+      : pedidosTodos;
     const congsOptionsHtml = DB.get('congregacoes', [])
       .slice()
       .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
@@ -1955,7 +1968,32 @@
         }).join('')
       : '<div style="color:var(--gray);font-size:.84rem;">Nenhum pedido encaminhado ao tapa-buraco no momento.</div>';
 
-    el.innerHTML = `
+    // Seletor de modalidade/categoria
+    const catPillsHtml = catsFiltro.length > 1 ? `
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:.78rem;font-weight:700;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem;">🎯 Selecione a modalidade</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;">
+          <button onclick="window._tbCatSel=null;renderTapaBuraco();"
+            style="padding:.35rem .75rem;border-radius:99px;border:2px solid ${!window._tbCatSel ? 'var(--primary)' : '#ccc'};
+              background:${!window._tbCatSel ? 'var(--primary)' : 'white'};color:${!window._tbCatSel ? 'white' : 'var(--gray)'};
+              font-size:.8rem;font-weight:700;cursor:pointer;">
+            Todas (${pedidosTodos.length})
+          </button>
+          ${catsFiltro.map(cat => {
+            const qtd = pedidosTodos.filter(p => String(p.categoriaId) === String(cat.id) || p.categoriaNome === cat.nome).length;
+            const ativa = window._tbCatSel === cat.id;
+            return `<button onclick="window._tbCatSel=${cat.id};renderTapaBuraco();"
+              style="padding:.35rem .75rem;border-radius:99px;border:2px solid ${ativa ? cat.cor || 'var(--primary)' : '#ccc'};
+                background:${ativa ? cat.cor || 'var(--primary)' : 'white'};color:${ativa ? 'white' : 'var(--gray)'};
+                font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.35rem;">
+              <span style="width:9px;height:9px;border-radius:50%;background:${ativa ? 'white' : cat.cor || '#999'};flex-shrink:0;opacity:.85;"></span>
+              ${cat.numero != null ? `Nº ${String(cat.numero).padStart(2,'0')} · ` : ''}${cat.nome} (${qtd})
+            </button>`;
+          }).join('')}
+        </div>
+      </div>` : '';
+
+    el.innerHTML = catPillsHtml + `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1rem;">
         <div class="setor-stat"><strong>${invites.length}</strong><span>Tapa-buracos ativos</span></div>
         <div class="setor-stat warn"><strong>${pedidosEncaminhados.length}</strong><span>Pedidos encaminhados</span></div>

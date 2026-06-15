@@ -523,8 +523,12 @@
       <div class="section-card">
         <div class="section-card-header" style="background:linear-gradient(135deg,#005f8f,#0097c4);">
           <h2>📅 Categorias do Evento</h2>
-          <button class="btn btn-sm" id="btn-nova-categoria"
-            style="background:rgba(255,255,255,0.2);color:white;">➕ Nova Categoria</button>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-sm" id="btn-auto-numerar-cat"
+              style="background:rgba(255,255,255,0.15);color:white;font-size:.78rem;">🔢 Numerar em ordem</button>
+            <button class="btn btn-sm" id="btn-nova-categoria"
+              style="background:rgba(255,255,255,0.2);color:white;">➕ Nova Categoria</button>
+          </div>
         </div>
         <div class="section-card-body">
           <p style="font-size:.83rem;color:var(--gray);margin-bottom:1rem;">
@@ -1900,6 +1904,17 @@
   };
 
   renderCategorias();
+
+  document.getElementById('btn-auto-numerar-cat').addEventListener('click', () => {
+    const cats = DB.get('categorias', []);
+    if (!cats.length) { showToast('Nenhuma categoria cadastrada.', 'warning'); return; }
+    if (!confirm(`Isso vai atribuir Nº 01, 02, 03... para as ${cats.length} categorias na ordem atual. Continuar?`)) return;
+    cats.forEach((c, i) => { c.numero = i + 1; });
+    DB.set('categorias', cats);
+    renderCategorias();
+    showToast('Categorias numeradas em ordem! ✅', 'success');
+  });
+
   renderCampoAnalitico();
 
   // ── LIMPAR POSTOS ──

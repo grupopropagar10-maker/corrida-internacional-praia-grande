@@ -1562,6 +1562,24 @@
     abrirWhatsAppAcessoTapaBuraco(invite);
   };
 
+  window.adicionarSetorTapaBuraco = function(inviteId, catIdStr) {
+    const catId = parseInt(catIdStr, 10);
+    if (!catId) { showToast('Escolha um setor para adicionar.', 'warning'); return; }
+    const catSel = DB.get('categorias', []).find(c => c.id === catId);
+    if (!catSel) return;
+    const cfg = getTapaBuracoConfig();
+    const invite = cfg.invites.find(i => i.id === inviteId);
+    if (!invite) return;
+    const jaExiste = Number(invite.catId) === catId || (invite.categoriasExtra || []).some(c => Number(c.id) === catId);
+    if (jaExiste) { showToast('Este setor já está vinculado.', 'warning'); return; }
+    if (!invite.categoriasExtra) invite.categoriasExtra = [];
+    invite.categoriasExtra.push({ id: catSel.id, nome: catSel.nome, numero: catSel.numero ?? null });
+    saveTapaBuracoConfig(cfg);
+    renderTapaBuraco();
+    renderAtividades();
+    showToast(`Setor "${catSel.nome}" adicionado a ${invite.nome}.`, 'success');
+  };
+
   function escaparJs(value) {
     return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   }
@@ -1915,7 +1933,7 @@
               <div style="display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
                 <div>
                   <strong>${invite.nome}</strong>
-                  ${(invite.catNome || invite.congNome) ? `<div class="mini-note">📂 ${escapeHtml(invite.catNome ? (invite.catNumero != null ? `Nº ${String(invite.catNumero).padStart(2,'0')} · ` : '') + invite.catNome : invite.congNome)}</div>` : ''}
+                  ${(() => { const cats = []; if (invite.catNome) cats.push((invite.catNumero != null ? `Nº ${String(invite.catNumero).padStart(2,'0')} · ` : '') + invite.catNome); (invite.categoriasExtra || []).forEach(c => cats.push((c.numero != null ? `Nº ${String(c.numero).padStart(2,'0')} · ` : '') + c.nome)); if (!cats.length && invite.congNome) cats.push(invite.congNome); return cats.length ? `<div class="mini-note">📂 ${escapeHtml(cats.join(', '))}</div>` : ''; })()}
                   <div class="mini-note">${invite.whatsapp || 'Sem WhatsApp'} · @${invite.usuario}</div>
                 </div>
                 <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
@@ -1926,6 +1944,19 @@
                   ${invite.whatsapp ? `<button class="btn btn-sm" style="background:#25D366;color:white;padding:.2rem .55rem;font-size:.78rem;" onclick="enviarAcessoTapaBuracoWhatsApp('${escaparJs(invite.id)}')" title="Enviar login e senha por WhatsApp">📱</button>` : ''}
                 </div>
               </div>
+              ${(() => {
+                const vinculadas = new Set([invite.catId, ...(invite.categoriasExtra||[]).map(c=>c.id)].filter(Boolean).map(Number));
+                const disponiveis = catsFiltro.filter(c => !vinculadas.has(Number(c.id)));
+                if (!disponiveis.length) return '';
+                const opts = disponiveis.map(c=>`<option value="${c.id}">${c.numero!=null?`Nº ${String(c.numero).padStart(2,'0')} · `:''}${escapeHtml(c.nome||'')}</option>`).join('');
+                return `<div style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;">
+                  <span style="font-size:.78rem;color:var(--gray);">+ Setor aceito:</span>
+                  <select id="add-setor-${escaparJs(invite.id)}" style="font-size:.78rem;padding:.2rem .5rem;border:1px solid #ccc;border-radius:6px;height:auto;">
+                    <option value="">Escolha...</option>${opts}
+                  </select>
+                  <button class="btn btn-sm btn-outline" style="font-size:.78rem;padding:.2rem .55rem;" onclick="adicionarSetorTapaBuraco('${escaparJs(invite.id)}',document.getElementById('add-setor-${escaparJs(invite.id)}').value)">Adicionar</button>
+                </div>`;
+              })()}
             </div>`;
         }).join('')
       : '<div style="color:var(--gray);font-size:.84rem;">Nenhum tapa-buraco cadastrado ainda.</div>';
@@ -1935,7 +1966,7 @@
           const sugestoes = suggestions.filter(item => item.pedidoId === pedido.id);
           const inviteOptions = invites
             .filter(invite => invite.ativo !== false)
-            .filter(invite => !invite.catId || Number(invite.catId) === Number(pedido.categoriaId))
+            .filter(invite => { if (!invite.catId && !(invite.categoriasExtra?.length)) return true; const ids = [invite.catId, ...(invite.categoriasExtra||[]).map(c=>c.id)].filter(Boolean).map(Number); return ids.includes(Number(pedido.categoriaId)); })
             .filter(invite => !sugestoes.some(item => item.inviteId === invite.id && ['sugerido', 'designado', 'aceito'].includes(item.status)))
             .map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'}</option>`)
             .join('');

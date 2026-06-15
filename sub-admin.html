@@ -1287,7 +1287,7 @@
             <div class="${statusClass}">
               <div class="setor-card-head">
                 <div>
-                  <strong>${item.posto?.nome || 'Posto sem nome'}</strong>
+                  <strong>${getPostoNumero(item.posto) ? `Nº ${getPostoNumero(item.posto)} — ` : ''}${item.posto?.nome || 'Posto sem nome'}</strong>
                   <div class="mini-note">${item.cong?.nome || 'Sem congregação'} · ${item.desig.data || 'Sem data'} · ${item.desig.inicio}–${item.desig.fim}</div>
                   <div class="setor-meta">
                     <span>${getCategoriaById(item.posto?.categoriaId)?.nome || 'Sem categoria'}</span>
@@ -1725,7 +1725,7 @@
           <div class="cong-row">
             <div class="cor-dot" style="background:${c.cor||'#0057A8'};"></div>
             <div><strong>${c.nome}</strong><div style="font-size:0.73rem;color:var(--gray);">${c.cidade}</div></div>
-            <div>${posto ? posto.nome : '<span style="color:var(--gray);">Sem designação</span>'}</div>
+            <div>${posto ? `${getPostoNumero(posto) ? `<strong>Nº ${getPostoNumero(posto)}</strong> — ` : ''}${posto.nome}` : '<span style="color:var(--gray);">Sem designação</span>'}</div>
             <div style="font-size:0.78rem;">${d?.data||'—'}</div>
             <div>
               <button class="btn btn-primary btn-sm" onclick="abrirDesig(${c.id})">✏️ Designar</button>

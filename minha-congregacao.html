@@ -1284,7 +1284,8 @@ function buildAutoDesignacoesForPosto(posto) {
 }
 
 function getMinhasDesignacoes() {
-  const manuais = DB.get('designacoes', []).filter(d => d.congId === CONG_ID && !d.autoGerada);
+  const postoAtivos = new Set(todosPos.map(p => p.id));
+  const manuais = DB.get('designacoes', []).filter(d => d.congId === CONG_ID && !d.autoGerada && postoAtivos.has(d.postoId));
   const meusPostosAtuais = todosPos.filter(p => p.congId === CONG_ID);
   const automaticas = meusPostosAtuais.flatMap(buildAutoDesignacoesForPosto);
   return manuais.concat(automaticas).sort((a, b) => (a.data + a.inicio).localeCompare(b.data + b.inicio));

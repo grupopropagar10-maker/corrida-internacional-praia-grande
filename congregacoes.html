@@ -739,8 +739,10 @@ function removeAutoDesignacoesForPosto(postoId) {
 }
 
 function getDesignacoesEfetivas() {
-  const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada);
-  const autoAtuais = DB.get('postos', [])
+  const postos = DB.get('postos', []);
+  const postoAtivos = new Set(postos.map(p => p.id));
+  const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada && postoAtivos.has(d.postoId));
+  const autoAtuais = postos
     .filter(p => p.congId && p.categoriaId)
     .flatMap(p => buildAutoDesignacoesForPosto(p));
   return manuais.concat(autoAtuais);

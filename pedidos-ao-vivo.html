@@ -1025,8 +1025,8 @@
             origem: 'tapa_buraco',
             liveInviteId: invite.id,
             helperRequestId: assignment.pedidoId,
-            ajudanteCongNome: invite.congNome || assignment.inviteCongNome || '',
-            ajudanteCongId: invite.congId ?? assignment.inviteCongId ?? null,
+            ajudanteCongNome: invite.catNome || invite.congNome || assignment.inviteCongNome || '',
+            ajudanteCongId: invite.catId ?? invite.congId ?? assignment.inviteCongId ?? null,
           }]);
       cfgCong.turnos[assignment.designacaoId][assignment.slotKey] = atualizados;
       saveCongConfigById(assignment.congId, cfgCong);

@@ -1898,10 +1898,8 @@
     const pedidosEncaminhados = window._tbCatSel
       ? pedidosTodos.filter(p => String(p.categoriaId) === String(window._tbCatSel) || p.categoriaNome === (todasCats.find(c => c.id === window._tbCatSel)?.nome))
       : pedidosTodos;
-    const congsOptionsHtml = DB.get('congregacoes', [])
-      .slice()
-      .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
-      .map(c => `<option value="${escapeHtml(c.nome || '')}"></option>`)
+    const catsOptionsHtml = catsFiltro
+      .map(c => `<option value="${c.id}">${c.numero != null ? `Nº ${String(c.numero).padStart(2,'0')} · ` : ''}${escapeHtml(c.nome || '')}</option>`)
       .join('');
 
     const convitesHtml = invites.length
@@ -1914,7 +1912,7 @@
               <div style="display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:flex-start;">
                 <div>
                   <strong>${invite.nome}</strong>
-                  ${invite.congNome ? `<div class="mini-note">🏢 ${escapeHtml(invite.congNome)}</div>` : ''}
+                  ${(invite.catNome || invite.congNome) ? `<div class="mini-note">📂 ${escapeHtml(invite.catNome ? (invite.catNumero != null ? `Nº ${String(invite.catNumero).padStart(2,'0')} · ` : '') + invite.catNome : invite.congNome)}</div>` : ''}
                   <div class="mini-note">${invite.whatsapp || 'Sem WhatsApp'} · @${invite.usuario}</div>
                 </div>
                 <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
@@ -2008,12 +2006,14 @@
           <div><label>Nome</label><input class="form-control" id="tb-nome" placeholder="Ex: Maria Souza"/></div>
           <div><label>WhatsApp</label><input class="form-control" id="tb-whatsapp" placeholder="(13) 99718-0445"/></div>
           <div>
-            <label>Congregação</label>
-            <input class="form-control" id="tb-cong" list="tb-congs-list" placeholder="Escolha ou digite a congregação" autocomplete="off"/>
-            <datalist id="tb-congs-list">${congsOptionsHtml}</datalist>
+            <label>Categoria</label>
+            <select class="form-control" id="tb-categoria">
+              <option value="">Escolha a categoria</option>
+              ${catsOptionsHtml}
+            </select>
           </div>
         </div>
-        <div class="mini-note" style="margin-top:.4rem;">Escolha uma congregação da lista ou digite uma nova. O nome fica vinculado ao tapa-buraco e aparece na escala.</div>
+        <div class="mini-note" style="margin-top:.4rem;">Vincule o tapa-buraco a uma categoria. Isso define em qual modalidade ele poderá atuar.</div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
           <button class="btn btn-primary btn-sm" onclick="salvarNovoTapaBuraco()">💾 Cadastrar e gerar acesso</button>
         </div>
@@ -2031,20 +2031,19 @@
   window.salvarNovoTapaBuraco = function() {
     const nome = document.getElementById('tb-nome')?.value.trim() || '';
     const whats = normalizarWhatsApp(document.getElementById('tb-whatsapp')?.value || '');
-    const congNomeDigitado = document.getElementById('tb-cong')?.value.trim() || '';
+    const catId = parseInt(document.getElementById('tb-categoria')?.value, 10) || null;
+    const catSel = catId ? DB.get('categorias', []).find(c => c.id === catId) : null;
     if (!nome) { showToast('Informe o nome do tapa-buraco.', 'warning'); return; }
     if (!whats.ok) { showToast('Informe um WhatsApp válido com DDD.', 'warning'); return; }
-    if (!congNomeDigitado) { showToast('Informe a congregação do tapa-buraco.', 'warning'); return; }
-    // Casa com uma congregação existente (sem diferenciar maiúsculas/acentos triviais); se não existir, guarda só o nome digitado.
-    const congExistente = DB.get('congregacoes', [])
-      .find(c => String(c.nome || '').trim().toLowerCase() === congNomeDigitado.toLowerCase());
+    if (!catId || !catSel) { showToast('Escolha a categoria do tapa-buraco.', 'warning'); return; }
     const cfg = getTapaBuracoConfig();
     const invite = {
       id: `tb_${Date.now()}`,
       nome,
       whatsapp: whats.formatted,
-      congNome: congExistente?.nome || congNomeDigitado,
-      congId: congExistente?.id ?? null,
+      catId,
+      catNome: catSel.nome,
+      catNumero: catSel.numero ?? null,
       usuario: gerarUsuarioTapaBuraco(nome, cfg.invites),
       senha: gerarSenhaAutomatica(),
       ativo: true,
@@ -2056,9 +2055,9 @@
     saveTapaBuracoConfig(cfg);
     document.getElementById('tb-nome').value = '';
     document.getElementById('tb-whatsapp').value = '';
-    const congInput = document.getElementById('tb-cong');
-    if (congInput) congInput.value = '';
-    Auth.registrarAtividade('Cadastrou tapa-buraco', `${invite.nome}${invite.congNome ? ` · ${invite.congNome}` : ''}`);
+    const catSelect = document.getElementById('tb-categoria');
+    if (catSelect) catSelect.value = '';
+    Auth.registrarAtividade('Cadastrou tapa-buraco', `${invite.nome}${catSel ? ` · ${catSel.nome}` : ''}`);
     renderTapaBuraco();
     renderAtividades();
     showToast('Tapa-buraco cadastrado com acesso individual.', 'success');

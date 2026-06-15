@@ -900,6 +900,12 @@
       if (isTapaBuraco && assignment.status !== 'aceito') {
         actionButtons.push(`<button class="btn btn-outline" onclick="responderTapaBuraco('${assignment.key}', false)">❌ Nao consigo aceitar</button>`);
       }
+      if (isTapaBuraco && assignment.status === 'aceito') {
+        const congContato = DB.get('congregacoes', []).find(c => c.id === assignment.congId);
+        if (congContato?.telefone) {
+          actionButtons.push(`<button class="btn btn-primary" style="background:#25D366;border-color:#25D366;" onclick="apresentarNaCong('${assignment.key}')">📱 Me apresentar na congregação</button>`);
+        }
+      }
       document.getElementById('assignment-actions').innerHTML = actionButtons.join('');
       const guidance = getAssignmentGuidance(assignment);
       const guidanceRoot = document.getElementById('assignment-guidance');
@@ -1039,8 +1045,33 @@
       }
       saveTapaBuracoConfig(cfg);
       atualizarPedidoTapaBuraco(assignment.pedidoId, invite.nome);
-      showToast('Designacao aceita com sucesso.', 'success');
+      showToast('Designacao aceita! Toque em "Me apresentar na congregação" para avisar o responsavel.', 'success');
       render();
+    };
+
+    window.apresentarNaCong = function(assignmentKey) {
+      const cfg = getTapaBuracoConfig();
+      const invite = getInvite();
+      const assignment = cfg.assignments.find(item => item.id === assignmentKey);
+      if (!assignment || !invite) return;
+      const cong = DB.get('congregacoes', []).find(c => c.id === assignment.congId);
+      if (!cong?.telefone) { showToast('Congregacao sem WhatsApp cadastrado.', 'warning'); return; }
+      const d = String(cong.telefone).replace(/\D/g, '');
+      const waDigits = d.startsWith('55') ? d : '55' + d;
+      if (waDigits.length < 12) { showToast('Numero de WhatsApp invalido.', 'warning'); return; }
+      const msg = [
+        `Ola, ${cong.nome}!`,
+        '',
+        `Meu nome e ${invite.nome}. Fui designado(a) para complementar a equipe de voces na Corrida Internacional de Praia Grande.`,
+        '',
+        `Posto: ${assignment.postoNome || 'Nao informado'}`,
+        `Setor: ${assignment.categoriaNome || '—'}`,
+        `Data: ${assignment.dataFmt || assignment.data || '—'}`,
+        `Horario: ${assignment.slotLabel || '—'}`,
+        '',
+        `Estou disponivel para esse horario. Por favor, confirme o recebimento respondendo esta mensagem. Obrigado!`,
+      ].join('\n');
+      window.open(`https://wa.me/${waDigits}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
     };
 
     function render() {

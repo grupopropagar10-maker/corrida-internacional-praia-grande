@@ -1568,6 +1568,21 @@
     abrirWhatsAppAcessoTapaBuraco(invite);
   };
 
+  window.deletarTapaBuraco = function(inviteId) {
+    const cfg = getTapaBuracoConfig();
+    const invite = cfg.invites.find(i => i.id === inviteId);
+    if (!invite) return;
+    const temAtivo = (cfg.suggestions || []).some(s => s.inviteId === inviteId && ['sugerido', 'designado', 'aceito'].includes(s.status))
+                  || (cfg.assignments || []).some(a => a.inviteId === inviteId && ['pendente', 'aceito'].includes(a.status));
+    const aviso = temAtivo ? ' Esta pessoa tem sugestões ou designações ativas — isso não as remove da escala.' : '';
+    if (!confirm(`Remover "${invite.nome}" da equipe de tapa-buraco?${aviso}`)) return;
+    cfg.invites = cfg.invites.filter(i => i.id !== inviteId);
+    saveTapaBuracoConfig(cfg);
+    renderTapaBuraco();
+    renderAtividades();
+    showToast(`${invite.nome} removido(a) da equipe.`, 'success');
+  };
+
   window.removerSugestaoTapaBuraco = function(suggestionId) {
     const cfg = getTapaBuracoConfig();
     const sug = (cfg.suggestions || []).find(s => s.id === suggestionId);
@@ -1959,6 +1974,7 @@
                   <span class="badge badge-ativo">${aceitas} aceita(s)</span>
                   ${invite.ativo === false ? '<span class="badge badge-inativo">Inativo</span>' : ''}
                   ${invite.whatsapp ? `<button class="btn btn-sm" style="background:#25D366;color:white;padding:.2rem .55rem;font-size:.78rem;" onclick="enviarAcessoTapaBuracoWhatsApp('${escaparJs(invite.id)}')" title="Enviar login e senha por WhatsApp">📱</button>` : ''}
+                  <button class="btn btn-sm" style="background:#dc3545;color:white;padding:.2rem .55rem;font-size:.78rem;" onclick="deletarTapaBuraco('${escaparJs(invite.id)}')" title="Remover da equipe">🗑️</button>
                 </div>
               </div>
               ${(() => {
@@ -2090,7 +2106,7 @@
         </div>
       </div>
       <div class="help-card" style="margin-bottom:1rem;">
-        <strong>Equipe de tapa-buraco</strong>
+        <strong>Equipe de tapa-buraco</strong> <span style="font-size:.8rem;color:var(--gray);font-weight:400;">(${invites.length} pessoa${invites.length !== 1 ? 's' : ''})</span>
         <div style="margin-top:.8rem;">${convitesHtml}</div>
       </div>
       <div class="help-card">

@@ -1708,13 +1708,15 @@
   // ── PEDIDOS DE AJUDA ──
   function renderPedidosAjuda() {
     const el = document.getElementById('body-ajuda');
-    if (!temEscopoCategoria()) {
+    if (!isTapaBuracoAdmin && !temEscopoCategoria()) {
       el.innerHTML = '<div class="locked-msg"><div class="lock-icon">🧭</div>Sem categoria vinculada para acompanhar pedidos.</div>';
       return;
     }
-    const pedidos = getPedidosDoSetor().filter(p => p.subAdminId === session.subAdminId);
+    const pedidos = isTapaBuracoAdmin
+      ? getPedidosAjuda().filter(p => p.status === 'aberto' || p.status === 'fechado')
+      : getPedidosDoSetor().filter(p => p.subAdminId === session.subAdminId);
     if (!pedidos.length) {
-      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhum pedido de ajuda atribuído a você no seu setor.</div>';
+      el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--gray);">${isTapaBuracoAdmin ? 'Nenhum pedido de ajuda aberto no momento.' : 'Nenhum pedido de ajuda atribuído a você no seu setor.'}</div>`;
       return;
     }
 
@@ -2184,7 +2186,7 @@
     const managers = getTapaBuracoManagers();
     if (!managers.length) { showToast('Nenhum admin tapa-buraco cadastrado ainda.', 'warning'); return; }
     const lista = getPedidosAjuda();
-    const pedido = lista.find(item => item.id === id && item.subAdminId === session.subAdminId);
+    const pedido = lista.find(item => item.id === id);
     if (!pedido || pedido.status !== 'aberto') return;
     pedido.tapaBuracoStatus = 'encaminhado';
     pedido.tapaBuracoEncaminhadoEm = new Date().toLocaleString('pt-BR');

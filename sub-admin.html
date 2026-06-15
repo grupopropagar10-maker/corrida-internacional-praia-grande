@@ -1529,16 +1529,15 @@
   }
 
   function getMensagemAcessoTapaBuraco(invite) {
-    const url = `${location.origin}${location.pathname.replace(/sub-admin\.html$/i, 'login.html')}?type=live`;
+    const base = `${location.origin}${location.pathname.replace(/sub-admin\.html$/i, 'login.html')}`;
+    const url = `${base}?type=live&user=${encodeURIComponent(invite.usuario)}&pass=${encodeURIComponent(invite.senha)}`;
     return [
-      `Olá, ${invite.nome}.`,
+      `Olá, ${invite.nome}!`,
       '',
-      'Seu acesso à equipe de tapa-buraco da Corrida PG foi cadastrado.',
-      'Use o link abaixo para acompanhar e responder as designações em tempo real.',
+      'Você foi cadastrado(a) na equipe de tapa-buraco da Corrida Internacional de Praia Grande.',
+      'Clique no link abaixo para acessar diretamente — as credenciais já vêm preenchidas:',
       '',
-      `Login: ${invite.usuario}`,
-      `Senha: ${invite.senha}`,
-      `Site: ${url}`,
+      url,
     ].join('\n');
   }
 
@@ -1556,6 +1555,10 @@
     const cfg = getTapaBuracoConfig();
     const invite = cfg.invites.find(item => item.id === inviteId);
     if (!invite) { showToast('Tapa-buraco não encontrado.', 'warning'); return; }
+    invite.acessoEnviadoEm = new Date().toLocaleString('pt-BR');
+    saveTapaBuracoConfig(cfg);
+    renderTapaBuraco();
+    renderAtividades();
     abrirWhatsAppAcessoTapaBuraco(invite);
   };
 
@@ -2058,11 +2061,10 @@
     document.getElementById('tb-whatsapp').value = '';
     const catSelect = document.getElementById('tb-categoria');
     if (catSelect) catSelect.value = '';
-    Auth.registrarAtividade('Cadastrou tapa-buraco', `${invite.nome}${catSel ? ` · ${catSel.nome}` : ''}`);
+    Auth.registrarAtividade('Cadastrou tapa-buraco', `${invite.nome}${catSel ? ` · ${catSel.nome}` : ''}`, { inviteId: invite.id });
     renderTapaBuraco();
     renderAtividades();
-    showToast('Tapa-buraco cadastrado com acesso individual.', 'success');
-    setTimeout(() => abrirWhatsAppAcessoTapaBuraco(invite), 250);
+    showToast('Tapa-buraco cadastrado. Envie o acesso pelo WhatsApp quando quiser.', 'success');
   };
 
   window.enviarSugestaoTapaBuraco = function(pedidoId) {
@@ -2210,15 +2212,33 @@
       el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);">Nenhuma atividade registrada ainda.</div>';
       return;
     }
-    el.innerHTML = ativs.map(a => `
+    const tbCfg = getTapaBuracoConfig();
+    el.innerHTML = ativs.map(a => {
+      let extra = '';
+      if (a.acao === 'Cadastrou tapa-buraco' && a.inviteId) {
+        const inv = tbCfg.invites.find(i => i.id === a.inviteId);
+        if (inv) {
+          const enviado = inv.acessoEnviadoEm ? `<span style="color:#155724;font-size:.74rem;">✅ Enviado em ${inv.acessoEnviadoEm}</span>` : '';
+          const entrou  = inv.ultimoAcessoEm  ? `<span style="color:#0057A8;font-size:.74rem;">🔓 Entrou em ${inv.ultimoAcessoEm}</span>` : '';
+          const btnWA   = inv.whatsapp && !inv.ultimoAcessoEm
+            ? `<button class="btn btn-sm" style="background:#25D366;color:white;padding:.18rem .5rem;font-size:.74rem;" onclick="enviarAcessoTapaBuracoWhatsApp('${escaparJs(inv.id)}')">📱 Enviar acesso</button>`
+            : '';
+          if (enviado || entrou || btnWA) {
+            extra = `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-top:.3rem;">${enviado}${entrou}${btnWA}</div>`;
+          }
+        }
+      }
+      return `
       <div class="activity-row">
         <span style="font-size:1.1rem;">📌</span>
         <div style="flex:1;">
           <strong>${a.acao}</strong>
           ${a.detalhes ? `<div style="color:var(--gray);font-size:0.78rem;">${a.detalhes}</div>` : ''}
+          ${extra}
         </div>
         <span class="activity-ts">${a.ts}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // Smooth scroll sidebar

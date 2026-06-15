@@ -233,14 +233,16 @@ const Auth = {
     return false;
   },
 
-  registrarAtividade(acao, detalhes = '') {
+  registrarAtividade(acao, detalhes = '', meta = null) {
     const s = this.getSession();
     if (!s || s.type !== 'subadmin') return;
     const lista = DB.get('sub_admins', []);
     const sa    = lista.find(x => x.id === s.subAdminId);
     if (!sa) return;
     if (!sa.atividades) sa.atividades = [];
-    sa.atividades.unshift({ acao, detalhes, ts: new Date().toLocaleString('pt-BR') });
+    const entry = { acao, detalhes, ts: new Date().toLocaleString('pt-BR') };
+    if (meta && typeof meta === 'object') Object.assign(entry, meta);
+    sa.atividades.unshift(entry);
     if (sa.atividades.length > 50) sa.atividades = sa.atividades.slice(0, 50);
     DB.set('sub_admins', lista);
   },

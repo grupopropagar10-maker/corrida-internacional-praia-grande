@@ -3133,7 +3133,7 @@ function renderPostosTurnos() {
         <div class="carrinho-header">
           <span class="ch-km">${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}</span>
           <div style="flex:1;">
-            <div style="display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .55rem;border-radius:999px;background:#eef4fb;color:var(--primary-dark);font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.45rem;"># Designacao ${String(desigIndex + 1).padStart(2, '0')}</div>
+            <div style="display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .55rem;border-radius:999px;background:#eef4fb;color:var(--primary-dark);font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.45rem;">${getPostoNumero(posto) ? `Posto ${String(getPostoNumero(posto)).padStart(2,'0')} · ` : ''}# Designacao ${String(desigIndex + 1).padStart(2, '0')}</div>
             <strong>🪧 ${posto.nome}</strong>
             <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">📍 ${posto.local}</div>
           </div>

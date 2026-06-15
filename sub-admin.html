@@ -1932,6 +1932,7 @@
           const sugestoes = suggestions.filter(item => item.pedidoId === pedido.id);
           const inviteOptions = invites
             .filter(invite => invite.ativo !== false)
+            .filter(invite => !invite.catId || Number(invite.catId) === Number(pedido.categoriaId))
             .filter(invite => !sugestoes.some(item => item.inviteId === invite.id && ['sugerido', 'designado', 'aceito'].includes(item.status)))
             .map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'}</option>`)
             .join('');

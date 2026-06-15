@@ -1445,6 +1445,12 @@
     };
   }
 
+  function parseSlotMinutos(slotLabel) {
+    const m = String(slotLabel || '').match(/(\d{1,2}):(\d{2})[–\-](\d{1,2}):(\d{2})/);
+    if (!m) return null;
+    return { start: parseInt(m[1]) * 60 + parseInt(m[2]), end: parseInt(m[3]) * 60 + parseInt(m[4]) };
+  }
+
   function gerarSenhaAutomatica() {
     const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
     let senha = '';
@@ -1560,6 +1566,17 @@
     renderTapaBuraco();
     renderAtividades();
     abrirWhatsAppAcessoTapaBuraco(invite);
+  };
+
+  window.removerSugestaoTapaBuraco = function(suggestionId) {
+    const cfg = getTapaBuracoConfig();
+    const sug = (cfg.suggestions || []).find(s => s.id === suggestionId);
+    if (!sug) return;
+    if (sug.status !== 'sugerido') { showToast('Só é possível remover sugestões ainda pendentes.', 'warning'); return; }
+    cfg.suggestions = cfg.suggestions.filter(s => s.id !== suggestionId);
+    saveTapaBuracoConfig(cfg);
+    renderTapaBuraco();
+    showToast('Sugestão removida.', 'success');
   };
 
   window.adicionarSetorTapaBuraco = function(inviteId, catIdStr) {
@@ -1968,6 +1985,19 @@
             .filter(invite => invite.ativo !== false)
             .filter(invite => { if (!invite.catId && !(invite.categoriasExtra?.length)) return true; const ids = [invite.catId, ...(invite.categoriasExtra||[]).map(c=>c.id)].filter(Boolean).map(Number); return ids.includes(Number(pedido.categoriaId)); })
             .filter(invite => !sugestoes.some(item => item.inviteId === invite.id && ['sugerido', 'designado', 'aceito'].includes(item.status)))
+            .filter(invite => {
+              const tAtual = parseSlotMinutos(pedido.slotLabel);
+              if (!tAtual || !pedido.data) return true;
+              return !suggestions.some(sug => {
+                if (sug.inviteId !== invite.id || sug.pedidoId === pedido.id) return false;
+                if (!['sugerido', 'designado', 'aceito'].includes(sug.status)) return false;
+                if (sug.data !== pedido.data) return false;
+                const tOutro = parseSlotMinutos(sug.slotLabel);
+                if (!tOutro) return false;
+                const gap = Math.max(tAtual.start - tOutro.end, tOutro.start - tAtual.end, 0);
+                return gap < 120;
+              });
+            })
             .map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'}</option>`)
             .join('');
           return `
@@ -1992,7 +2022,13 @@
                 <div>
                   <label>Status das sugestões</label>
                   <div style="padding:.65rem .75rem;border:1px solid var(--gray-light);border-radius:10px;background:#fafbfd;font-size:.8rem;min-height:42px;">
-                    ${sugestoes.length ? sugestoes.map(item => `${item.inviteNome} — ${item.status === 'sugerido' ? 'aguardando setor' : item.status === 'designado' ? 'designado no setor' : item.status === 'aceito' ? 'aceitou' : 'recusou'}`).join('<br>') : 'Nenhuma sugestão enviada ainda.'}
+                    ${sugestoes.length ? sugestoes.map(item => {
+                      const lbl = item.status === 'sugerido' ? 'aguardando setor' : item.status === 'designado' ? 'designado no setor' : item.status === 'aceito' ? 'aceitou' : 'recusou';
+                      const xBtn = item.status === 'sugerido'
+                        ? `<span onclick="removerSugestaoTapaBuraco('${escaparJs(item.id)}')" title="Remover sugestão" style="cursor:pointer;color:#dc3545;font-weight:700;font-size:1.1rem;line-height:1;padding:0 .3rem;flex-shrink:0;">×</span>`
+                        : '';
+                      return `<div style="display:flex;align-items:center;gap:.2rem;">${xBtn}<span>${escapeHtml(item.inviteNome)} — ${lbl}</span></div>`;
+                    }).join('') : 'Nenhuma sugestão enviada ainda.'}
                   </div>
                 </div>
               </div>

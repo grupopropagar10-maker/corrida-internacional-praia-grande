@@ -902,6 +902,19 @@
 </head>
 <body>
 
+<!-- OVERLAY DE FILA DE ESPERA -->
+<div id="fila-espera-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,50,120,.97);z-index:9999;
+  display:none;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center;padding:2rem;">
+  <div style="font-size:3rem;margin-bottom:1rem;">⏳</div>
+  <h2 style="font-size:1.4rem;margin-bottom:.5rem;">Site com muitos acessos simultâneos</h2>
+  <p style="opacity:.85;max-width:340px;margin-bottom:1.5rem;">Você está na fila de espera. Assim que um acesso se liberar, você entrará automaticamente.</p>
+  <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:1.2rem 2rem;margin-bottom:1.5rem;">
+    <div style="font-size:2.5rem;font-weight:800;" id="fila-posicao">—</div>
+    <div style="opacity:.8;font-size:.9rem;">posição na fila</div>
+  </div>
+  <div style="opacity:.7;font-size:.85rem;" id="fila-tempo">Verificando disponibilidade...</div>
+</div>
+
 <!-- NAVBAR -->
 <nav class="navbar">
   <a href="minha-congregacao.html" class="navbar-brand">
@@ -1289,6 +1302,73 @@ function getEscalaKey(desig, posto = null) {
 }
 
 window.cong = cong;
+
+// ══ CONTROLE DE SESSÃO AO VIVO ══
+(function initSessionTracking() {
+  if (!cong || user.type !== 'cong') return;
+  const LIMITE = 50;
+  const INATIVIDADE = 5 * 60 * 1000;
+  const HEARTBEAT_MS = 60 * 1000;
+
+  // ID único por aba/tab
+  let sid = sessionStorage.getItem('_ao_vivo_sid');
+  if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('_ao_vivo_sid', sid); }
+
+  const sessRef = rtdb.ref('sessions_live/' + sid);
+  const sessData = { id: sid, nome: cong.nome || '', congId: cong.id, loginTs: Date.now(), heartbeatTs: Date.now(), status: 'active' };
+
+  function getActiveSessoes(snap) {
+    const all = Object.values(snap.val() || {});
+    const agora = Date.now();
+    return all.filter(s => s.status === 'active' && (agora - s.heartbeatTs) < INATIVIDADE && s.id !== sid);
+  }
+
+  function entrar() {
+    sessData.status = 'active';
+    sessData.heartbeatTs = Date.now();
+    sessRef.set(sessData);
+    document.getElementById('fila-espera-overlay').style.display = 'none';
+  }
+
+  function mostrarFila(posicao) {
+    const el = document.getElementById('fila-espera-overlay');
+    el.style.display = 'flex';
+    document.getElementById('fila-posicao').textContent = posicao || '—';
+    document.getElementById('fila-tempo').textContent = `Verificando a cada 15 segundos...`;
+  }
+
+  function verificarEEntrar() {
+    rtdb.ref('sessions_live').once('value').then(snap => {
+      const ativos = getActiveSessoes(snap);
+      if (ativos.length < LIMITE) {
+        entrar();
+      } else {
+        const all = Object.values(snap.val() || {});
+        const naFila = all.filter(s => s.status === 'queued' && (Date.now() - s.heartbeatTs) < INATIVIDADE);
+        const posicao = naFila.findIndex(s => s.id === sid) + 1 || naFila.length + 1;
+        sessData.status = 'queued';
+        sessData.heartbeatTs = Date.now();
+        sessRef.set(sessData);
+        mostrarFila(posicao);
+        setTimeout(verificarEEntrar, 15000);
+      }
+    });
+  }
+
+  verificarEEntrar();
+
+  // Heartbeat a cada 60s
+  const hbInterval = setInterval(() => {
+    if (!document.hidden) rtdb.ref('sessions_live/' + sid + '/heartbeatTs').set(Date.now());
+  }, HEARTBEAT_MS);
+
+  // Limpa ao fechar aba
+  window.addEventListener('beforeunload', () => {
+    clearInterval(hbInterval);
+    sessRef.remove();
+  });
+})();
+
 const desigs   = getMinhasDesignacoes();
 const meusPostos = todosPos.filter(p => p.congId === CONG_ID);
 const HELP_REQUEST_KEY = 'pedidos_ajuda_escala';

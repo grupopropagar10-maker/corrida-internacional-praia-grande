@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ao Vivo — Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .av-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem; margin-top:1.5rem; }
+    @media(max-width:1100px){ .av-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:700px){ .av-grid { grid-template-columns:1fr; } }
+
+    .av-grupos { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin:.8rem 0 1rem; }
+    @media(max-width:700px){ .av-grupos { grid-template-columns:1fr; } }
+
+    .av-grupo { border-radius:10px; overflow:hidden; }
+    .av-grupo-head {
+      padding:.55rem .9rem;
+      font-weight:800; font-size:.82rem;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .av-grupo-body { padding:.6rem .8rem; max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:.35rem; }
+
+    .g-pronta  .av-grupo-head { background:#d4edda; color:#155724; }
+    .g-quase   .av-grupo-head { background:#fff3cd; color:#7b4f00; }
+    .g-nao     .av-grupo-head { background:#f8d7da; color:#721c24; }
+
+    .g-pronta  { border:1px solid #c3e6cb; background:#f6fffa; }
+    .g-quase   { border:1px solid #ffeeba; background:#fffef5; }
+    .g-nao     { border:1px solid #f5c6cb; background:#fff8f8; }
+
+    .cong-pill {
+      font-size:.8rem; padding:.3rem .6rem;
+      border-radius:6px; background:rgba(0,0,0,.05);
+      display:flex; align-items:center; justify-content:space-between; gap:.4rem;
+    }
+    .cong-pill-bar { height:4px; border-radius:2px; background:currentColor; opacity:.35; margin-top:.25rem; }
+
+    /* ── sessions ── */
+    .sess-stats {
+      display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:.8rem;
+    }
+    .sess-stat {
+      background:var(--light); border-radius:8px; padding:.55rem .9rem;
+      font-size:.88rem; display:flex; align-items:center; gap:.5rem;
+    }
+    .sess-stat strong { font-size:1.2rem; }
+    .sess-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .sess-table th { background:var(--primary-dark); color:white; padding:.45rem .7rem; text-align:left; }
+    .sess-table td { padding:.45rem .7rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .sess-table tr:hover td { background:#f0f4ff; }
+    .badge-active { background:#d4edda; color:#155724; border-radius:99px; padding:.1rem .5rem; font-size:.74rem; font-weight:700; }
+    .badge-queued { background:#fff3cd; color:#7b4f00; border-radius:99px; padding:.1rem .5rem; font-size:.74rem; font-weight:700; }
+
+    .pulse { display:inline-block; width:9px; height:9px; border-radius:50%; background:#28A745; animation:pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+
+    .limit-bar { height:8px; border-radius:4px; background:#e9ecef; overflow:hidden; margin-top:.3rem; }
+    .limit-fill { height:100%; border-radius:4px; background:var(--primary); transition:width .4s; }
+    .limit-fill.warn { background:#ffc107; }
+    .limit-fill.danger { background:#dc3545; }
+
+    #btn-limpar-sessoes { font-size:.78rem; }
+
+    /* ── pedidos ── */
+    .pedido-item { padding:.6rem .8rem; border-radius:8px; font-size:.82rem; margin-bottom:.5rem; border:1px solid; }
+    .pedido-aberto   { background:#fff3cd; border-color:#ffeeba; color:#7b4f00; }
+    .pedido-fechado  { background:#d4edda; border-color:#c3e6cb; color:#155724; }
+    .pedido-cancelado{ background:#f8f9fa; border-color:#dee2e6; color:#6c757d; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">
+    <span class="logo-icon">🏃</span>
+    <span>Corrida Internacional PG</span>
+  </a>
+  <button class="hamburger" aria-label="Menu">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="index.html">🏠 Início</a></li>
+    <li><a href="congregacoes.html">🏢 Congregações</a></li>
+    <li><a href="postos.html">📍 Postos</a></li>
+    <li><a href="distribuicao.html">📖 Distribuição</a></li>
+    <li><a href="dashboard.html">📊 Dashboard</a></li>
+    <li><a href="ao-vivo.html" style="color:#ff6b00;font-weight:800;">🔴 Ao Vivo</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <h1>🔴 Monitoramento Ao Vivo</h1>
+  <p>Escala das congregações em tempo real e controle de acessos ao site</p>
+</div>
+
+<section class="section">
+  <div class="av-grid">
+
+    <!-- ══ CARD 1: ESCALA ══ -->
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">📊</span><h2>Escala das Congregações</h2></div>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          <span class="pulse"></span>
+          <button class="btn btn-outline btn-sm" id="btn-pdf-escala">📄 PDF</button>
+        </div>
+      </div>
+      <div id="av-escala-stats" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem;font-size:.82rem;color:var(--gray);"></div>
+      <div class="av-grupos" id="av-grupos"></div>
+    </div>
+
+    <!-- ══ CARD 2: ACESSOS ══ -->
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">🌐</span><h2>Acesso ao Site</h2></div>
+        <button class="btn btn-outline btn-sm" id="btn-limpar-sessoes">🗑️ Limpar inativas</button>
+      </div>
+      <div class="sess-stats" id="sess-stats"></div>
+      <div class="limit-bar" style="margin-bottom:.8rem;">
+        <div class="limit-fill" id="limit-fill" style="width:0%"></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="sess-table">
+          <thead><tr>
+            <th>Congregação</th>
+            <th>Entrada</th>
+            <th>Último sinal</th>
+            <th>Tempo online</th>
+            <th>Status</th>
+          </tr></thead>
+          <tbody id="sess-body"></tbody>
+        </table>
+      </div>
+      <div id="sess-empty" style="display:none;text-align:center;padding:1.5rem;color:var(--gray);font-size:.88rem;">Nenhum acesso ativo no momento.</div>
+    </div>
+
+    <!-- ══ CARD 3: PEDIDOS DE AJUDA ══ -->
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">🆘</span><h2>Pedidos de Ajuda</h2></div>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          <span class="pulse"></span>
+          <span id="badge-pedidos" style="background:#dc3545;color:white;border-radius:99px;padding:.1rem .5rem;font-size:.75rem;font-weight:800;display:none;"></span>
+        </div>
+      </div>
+      <div id="pedidos-stats" style="font-size:.82rem;color:var(--gray);margin-bottom:.6rem;"></div>
+      <div id="pedidos-lista" style="max-height:380px;overflow-y:auto;"></div>
+      <div id="pedidos-empty" style="display:none;text-align:center;padding:1.5rem;color:var(--gray);font-size:.88rem;">Nenhum pedido de ajuda em aberto.</div>
+    </div>
+
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="js/firebase-db.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ── Auth ──
+const session = Auth.check(true);
+if (!session) throw new Error('unauthorized');
+
+const LIMITE_SESSOES = 50;
+const INATIVIDADE_MS = 5 * 60 * 1000;
+
+// ── Helpers de escala (replicados de postos.html) ──
+function gerarSlots(inicio, fim, duracao = 2) {
+  const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const toStr = m => `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  let cur = toMin(inicio), end = toMin(fim);
+  if (end <= cur) end += 1440;
+  const slots = [];
+  while (cur < end) {
+    const next = Math.min(cur + duracao * 60, end);
+    slots.push({ inicio: toStr(cur), fim: toStr(next % 1440) });
+    cur = next;
+  }
+  return slots;
+}
+
+function getEscalaKey(desig, posto) {
+  if (!desig) return '';
+  if (!desig.autoGerada) return String(desig.id);
+  const categorias = DB.get('categorias', []);
+  const cat = categorias.find(c => c.id === posto?.categoriaId);
+  const datas = Array.isArray(cat?.datas) ? cat.datas.filter(Boolean) : [];
+  const dataIdx = datas.findIndex(d => String(d) === String(desig.data));
+  if (posto?.id != null && dataIdx >= 0) return `${posto.id}-${dataIdx}`;
+  return String(desig.id);
+}
+
+function getAgendaConfigByCong(cfg, escalaKey) {
+  const agenda = cfg?.agendaConfig?.[escalaKey] || {};
+  return {
+    duracaoTurno: agenda.duracaoTurno === 3 ? 3 : 2,
+    maxPorTurno: 3,
+    slotsOverride: agenda.slotsOverride || {},
+    slotFinalizado: agenda.slotFinalizado || {},
+  };
+}
+
+function classificarCong(cong) {
+  const designacoes = DB.get('designacoes', []);
+  const postos      = DB.get('postos', []);
+  const congCfgAll  = DB.get('cong_config', {});
+  const cfg         = congCfgAll?.[cong.id] || {};
+  const turnos      = cfg.turnos || {};
+  const desigsCong  = designacoes.filter(d => String(d.congId) === String(cong.id));
+
+  if (!desigsCong.length) return { status: 'sem-designacao', total: 0, completos: 0, pessoas: 0 };
+
+  let totalSlots = 0, completos = 0, pessoas = 0;
+  desigsCong.forEach(desig => {
+    const posto = postos.find(p => String(p.id) === String(desig.postoId));
+    const escalaKey = getEscalaKey(desig, posto);
+    const agenda = getAgendaConfigByCong(cfg, escalaKey);
+    gerarSlots(desig.inicio, desig.fim, agenda.duracaoTurno).forEach(slot => {
+      totalSlots++;
+      const ps = (turnos?.[escalaKey]?.[slot.inicio] || []);
+      pessoas += ps.length;
+      const fechadoCom2 = agenda.slotsOverride[slot.inicio] === true && ps.length >= 2;
+      const slotFinalizado = !!agenda.slotFinalizado[slot.inicio];
+      if (fechadoCom2 || slotFinalizado || ps.length >= agenda.maxPorTurno) completos++;
+    });
+  });
+
+  let status;
+  if (pessoas === 0) status = 'nao-iniciou';
+  else if (completos === totalSlots) status = 'pronta';
+  else status = 'quase';
+
+  return { status, total: totalSlots, completos, pessoas };
+}
+
+// ── Render Escala ──
+function renderEscala() {
+  const congs = DB.get('congregacoes', []).filter(c => c.confirmada !== false);
+  const grupos = { pronta: [], quase: [], 'nao-iniciou': [], 'sem-designacao': [] };
+
+  congs.forEach(cong => {
+    const r = classificarCong(cong);
+    grupos[r.status].push({ cong, ...r });
+  });
+
+  const total = congs.length;
+  document.getElementById('av-escala-stats').innerHTML = `
+    <span>Total: <strong>${total}</strong> congregações</span> ·
+    <span style="color:#155724">✅ ${grupos.pronta.length} prontas</span> ·
+    <span style="color:#7b4f00">⚠️ ${grupos.quase.length} quase</span> ·
+    <span style="color:#721c24">❌ ${grupos['nao-iniciou'].length} não iniciaram</span>
+    ${grupos['sem-designacao'].length ? `· <span style="color:var(--gray)">${grupos['sem-designacao'].length} sem designação</span>` : ''}`;
+
+  function grupoHtml(items, pct) {
+    if (!items.length) return '<span style="font-size:.8rem;color:var(--gray);opacity:.7;">—</span>';
+    return items.map(item => `
+      <div class="cong-pill">
+        <span>${item.cong.nome}</span>
+        <span style="font-size:.72rem;opacity:.7;">${item.completos}/${item.total}</span>
+      </div>`).join('');
+  }
+
+  document.getElementById('av-grupos').innerHTML = `
+    <div class="av-grupo g-pronta">
+      <div class="av-grupo-head"><span>✅ Prontas</span><span style="font-size:1.1rem;">${grupos.pronta.length}</span></div>
+      <div class="av-grupo-body">${grupoHtml(grupos.pronta)}</div>
+    </div>
+    <div class="av-grupo g-quase">
+      <div class="av-grupo-head"><span>⚠️ Quase</span><span style="font-size:1.1rem;">${grupos.quase.length}</span></div>
+      <div class="av-grupo-body">${grupoHtml(grupos.quase)}</div>
+    </div>
+    <div class="av-grupo g-nao">
+      <div class="av-grupo-head"><span>❌ Não iniciaram</span><span style="font-size:1.1rem;">${grupos['nao-iniciou'].length}</span></div>
+      <div class="av-grupo-body">${grupoHtml(grupos['nao-iniciou'])}</div>
+    </div>`;
+}
+
+// ── PDF Escala ──
+document.getElementById('btn-pdf-escala').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const congs = DB.get('congregacoes', []).filter(c => c.confirmada !== false);
+  const rows = congs.map(cong => {
+    const r = classificarCong(cong);
+    const status = r.status === 'pronta' ? '✅ Pronta'
+      : r.status === 'quase' ? '⚠️ Quase terminando'
+      : r.status === 'nao-iniciou' ? '❌ Não iniciou'
+      : '— Sem designação';
+    return [cong.nome, status, `${r.completos}/${r.total} slots`, `${r.pessoas} pessoa(s)`];
+  }).sort((a,b) => a[0].localeCompare(b[0]));
+
+  doc.setFontSize(14);
+  doc.text('Escala das Congregações — Ao Vivo', 14, 16);
+  doc.setFontSize(9);
+  doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, 14, 22);
+  doc.autoTable({
+    startY: 26,
+    head: [['Congregação', 'Status', 'Slots', 'Pessoas']],
+    body: rows,
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [0, 87, 168] },
+    didParseCell: d => {
+      if (d.section === 'body' && d.column.index === 1) {
+        if (d.cell.text[0]?.includes('✅')) d.cell.styles.textColor = [21, 87, 36];
+        else if (d.cell.text[0]?.includes('⚠️')) d.cell.styles.textColor = [123, 79, 0];
+        else if (d.cell.text[0]?.includes('❌')) d.cell.styles.textColor = [114, 28, 36];
+      }
+    }
+  });
+  doc.save(`escala-ao-vivo-${new Date().toISOString().slice(0,10)}.pdf`);
+});
+
+// ── Sessões ao vivo ──
+const SESS_REF = rtdb.ref('sessions_live');
+
+function duracao(ts) {
+  const seg = Math.floor((Date.now() - ts) / 1000);
+  if (seg < 60) return `${seg}s`;
+  if (seg < 3600) return `${Math.floor(seg/60)}m`;
+  return `${Math.floor(seg/3600)}h${Math.floor((seg%3600)/60)}m`;
+}
+
+function renderSessoes(snap) {
+  const all = snap.val() || {};
+  const agora = Date.now();
+  const entradas = Object.values(all);
+
+  const ativas  = entradas.filter(s => s.status === 'active' && (agora - s.heartbeatTs) < INATIVIDADE_MS);
+  const fila    = entradas.filter(s => s.status === 'queued' && (agora - s.heartbeatTs) < INATIVIDADE_MS);
+  const inativas = entradas.filter(s => (agora - s.heartbeatTs) >= INATIVIDADE_MS);
+
+  const total = ativas.length;
+  const pct = Math.min(100, Math.round(total / LIMITE_SESSOES * 100));
+  const fillEl = document.getElementById('limit-fill');
+  fillEl.style.width = pct + '%';
+  fillEl.className = 'limit-fill' + (pct >= 90 ? ' danger' : pct >= 70 ? ' warn' : '');
+
+  document.getElementById('sess-stats').innerHTML = `
+    <div class="sess-stat"><span>🟢</span><div>Ativos<br><strong>${ativas.length}</strong></div></div>
+    <div class="sess-stat"><span>🟡</span><div>Na fila<br><strong>${fila.length}</strong></div></div>
+    <div class="sess-stat"><span>⬛</span><div>Limite<br><strong>${LIMITE_SESSOES}</strong></div></div>
+    <div class="sess-stat"><span>📊</span><div>Uso<br><strong>${pct}%</strong></div></div>`;
+
+  const tbody = document.getElementById('sess-body');
+  const visiveis = [...ativas, ...fila].sort((a,b) => b.loginTs - a.loginTs);
+  if (!visiveis.length) {
+    tbody.innerHTML = '';
+    document.getElementById('sess-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('sess-empty').style.display = 'none';
+  tbody.innerHTML = visiveis.map(s => `
+    <tr>
+      <td><strong>${s.nome || '—'}</strong></td>
+      <td style="white-space:nowrap;">${new Date(s.loginTs).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td style="white-space:nowrap;">${new Date(s.heartbeatTs).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td>${duracao(s.loginTs)}</td>
+      <td><span class="${s.status === 'active' ? 'badge-active' : 'badge-queued'}">${s.status === 'active' ? 'Ativo' : 'Na fila'}</span></td>
+    </tr>`).join('');
+
+  // limpa stale do Firebase silenciosamente (só admin)
+  if (inativas.length) {
+    const updates = {};
+    inativas.forEach(s => { updates[s.id] = null; });
+    SESS_REF.update(updates).catch(() => {});
+  }
+}
+
+SESS_REF.on('value', snap => renderSessoes(snap));
+
+document.getElementById('btn-limpar-sessoes').addEventListener('click', () => {
+  SESS_REF.once('value').then(snap => {
+    const all = snap.val() || {};
+    const agora = Date.now();
+    const updates = {};
+    Object.entries(all).forEach(([id, s]) => {
+      if ((agora - s.heartbeatTs) >= INATIVIDADE_MS) updates[id] = null;
+    });
+    if (Object.keys(updates).length) {
+      SESS_REF.update(updates).then(() => showToast('Sessões inativas removidas.', 'success'));
+    } else {
+      showToast('Nenhuma sessão inativa encontrada.', 'info');
+    }
+  });
+});
+
+// ── Pedidos de Ajuda ──
+function renderPedidos() {
+  const pedidos = DB.get('pedidos_ajuda_escala', []);
+  const congs   = DB.get('congregacoes', []);
+  const abertos = pedidos.filter(p => p.status === 'aberto');
+  const badge = document.getElementById('badge-pedidos');
+  badge.textContent = abertos.length;
+  badge.style.display = abertos.length ? 'inline' : 'none';
+
+  const fechados   = pedidos.filter(p => p.status === 'fechado').length;
+  const cancelados = pedidos.filter(p => p.status === 'cancelado').length;
+  document.getElementById('pedidos-stats').innerHTML =
+    `🆘 <strong>${abertos.length}</strong> aberto(s) · ✅ ${fechados} fechado(s) · ✖️ ${cancelados} cancelado(s)`;
+
+  const lista = document.getElementById('pedidos-lista');
+  const empty = document.getElementById('pedidos-empty');
+
+  if (!pedidos.length) { lista.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const sorted = [...pedidos].sort((a, b) => {
+    const ordem = { aberto: 0, fechado: 1, cancelado: 2 };
+    return (ordem[a.status] ?? 3) - (ordem[b.status] ?? 3);
+  });
+
+  lista.innerHTML = sorted.map(p => {
+    const cong = congs.find(c => String(c.id) === String(p.congId));
+    const cls = p.status === 'aberto' ? 'pedido-aberto' : p.status === 'fechado' ? 'pedido-fechado' : 'pedido-cancelado';
+    const icone = p.status === 'aberto' ? '🆘' : p.status === 'fechado' ? '✅' : '✖️';
+    return `
+      <div class="pedido-item ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
+          <strong>${icone} ${cong?.nome || p.congId}</strong>
+          <span style="font-size:.72rem;opacity:.8;">${p.status}</span>
+        </div>
+        <div style="margin-top:.25rem;font-size:.8rem;opacity:.85;">
+          ${p.postoNome ? `📍 ${p.postoNome}` : ''} ${p.slotKey ? `· ⏱️ ${p.slotKey}` : ''}
+        </div>
+        ${p.subAdminNome ? `<div style="font-size:.78rem;margin-top:.15rem;">Sub-admin: <strong>${p.subAdminNome}</strong></div>` : ''}
+        ${p.observacao ? `<div style="font-size:.78rem;margin-top:.1rem;opacity:.8;">💬 ${p.observacao}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── Atualiza escala quando Firebase sincronizar ──
+window.addEventListener('db-sync', () => { renderEscala(); renderPedidos(); });
+window.DB_SYNC_READY.then(() => { renderEscala(); renderPedidos(); });
+
+// ── Hamburger ──
+document.querySelector('.hamburger')?.addEventListener('click', () => {
+  document.querySelector('.navbar-nav')?.classList.toggle('open');
+});
+</script>
+</body>
+</html>

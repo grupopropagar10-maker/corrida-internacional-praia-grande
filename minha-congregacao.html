@@ -1267,7 +1267,9 @@ function getCategoriaById(categoriaId) {
 
 function buildAutoDesignacoesForPosto(posto) {
   const categoria = getCategoriaById(posto.categoriaId);
-  const datas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  const todas = Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
+  const excluidas = Array.isArray(posto?.datasExcluidas) ? posto.datasExcluidas : [];
+  const datas = todas.filter(d => !excluidas.includes(d));
   if (!categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
 
   return datas.map((data, idx) => ({

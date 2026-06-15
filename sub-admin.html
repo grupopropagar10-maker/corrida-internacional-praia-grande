@@ -623,9 +623,15 @@
     return Array.isArray(categoria?.datas) ? categoria.datas.filter(Boolean) : [];
   }
 
+  function getPostoDatas(posto, categoria) {
+    const todas = getCategoriaDatas(categoria);
+    const excluidas = Array.isArray(posto?.datasExcluidas) ? posto.datasExcluidas : [];
+    return todas.filter(d => !excluidas.includes(d));
+  }
+
   function buildAutoDesignacoesForPosto(posto) {
     const categoria = getCategoriaById(posto?.categoriaId);
-    const datas = getCategoriaDatas(categoria);
+    const datas = getPostoDatas(posto, categoria);
     if (!posto?.congId || !categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
     return datas.map((data, idx) => ({
       id: `${posto.id}-${idx}`,

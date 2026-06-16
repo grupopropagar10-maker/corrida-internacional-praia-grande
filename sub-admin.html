@@ -595,7 +595,9 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
   crossorigin=""
 ></script>
-<script src="js/firebase-db.js?v=20260616l"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="js/firebase-db.js?v=20260616n"></script>
 <script src="js/app.js?v=20260616f"></script>
 <script src="js/auth.js?v=20260616f"></script>
 <script>
@@ -2141,11 +2143,14 @@
     const _tbFocused = document.activeElement?.closest('#body-tapa-buraco') ? document.activeElement.id : null;
 
     el.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1rem;">
-        <div class="setor-stat"><strong>${invites.length}</strong><span>Tapa-buracos ativos</span></div>
-        <div class="setor-stat warn"><strong>${pedidosEncaminhados.length}</strong><span>Pedidos encaminhados</span></div>
-        <div class="setor-stat"><strong>${suggestions.filter(item => item.status === 'sugerido').length}</strong><span>Nomes aguardando setor</span></div>
-        <div class="setor-stat success"><strong>${assignments.filter(item => item.status === 'aceito').length}</strong><span>Designações aceitas</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:.75rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;flex:1;">
+          <div class="setor-stat"><strong>${invites.length}</strong><span>Tapa-buracos ativos</span></div>
+          <div class="setor-stat warn"><strong>${pedidosEncaminhados.length}</strong><span>Pedidos encaminhados</span></div>
+          <div class="setor-stat"><strong>${suggestions.filter(item => item.status === 'sugerido').length}</strong><span>Nomes aguardando setor</span></div>
+          <div class="setor-stat success"><strong>${assignments.filter(item => item.status === 'aceito').length}</strong><span>Designações aceitas</span></div>
+        </div>
+        <button onclick="gerarRelatorioPdfTapaBuraco()" class="btn btn-outline btn-sm" style="white-space:nowrap;flex-shrink:0;">📄 Relatório PDF</button>
       </div>
       <div class="help-card" style="margin-bottom:1rem;">
         <strong>Cadastrar tapa-buraco</strong>
@@ -2430,6 +2435,155 @@
       a.classList.add('active');
     });
   });
+
+  window.gerarRelatorioPdfTapaBuraco = function() {
+    if (!window.jspdf) { showToast('PDF ainda carregando, tente em 2s.', 'warning'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const cfg = getTapaBuracoConfig();
+    const todasCats = DB.get('categorias', []).sort((a, b) => (a.numero ?? 999) - (b.numero ?? 999));
+    const invites   = cfg.invites || [];
+    const assignments = cfg.assignments || [];
+    const W = 210, M = 14;
+
+    const catLabel = (catId, catNome, catNumero) => {
+      const c = todasCats.find(x => String(x.id) === String(catId));
+      const n = c?.numero ?? catNumero;
+      const nome = c?.nome || catNome || '—';
+      return n != null ? `N\xba ${String(n).padStart(2,'0')} \xb7 ${nome}` : (nome || '—');
+    };
+
+    // ---- TITULO ----
+    let y = 18;
+    doc.setFontSize(15); doc.setFont('helvetica','bold');
+    doc.text('CORRIDA INTERNACIONAL PRAIA GRANDE 2026', W/2, y, {align:'center'});
+    y += 7;
+    doc.setFontSize(12);
+    doc.text('Relat\xf3rio de Tapa-Buraco', W/2, y, {align:'center'});
+    y += 5;
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W/2, y, {align:'center'});
+    y += 9;
+
+    // ---- SECAO 1: Participantes ----
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('1. Participantes — Status das Designa\xe7\xf5es', M, y);
+    y += 3;
+
+    const invitesSorted = invites.slice().sort((a, b) => {
+      const na = a.catNumero ?? 999, nb = b.catNumero ?? 999;
+      return na !== nb ? na - nb : (a.nome||'').localeCompare(b.nome||'');
+    });
+
+    const rows1 = [];
+    for (const inv of invitesSorted) {
+      const myA = assignments.filter(a => a.inviteId === inv.id);
+      const aceitas  = myA.filter(a => a.status === 'aceito');
+      const recusadas = myA.filter(a => a.status === 'recusado');
+      const pendentes = myA.filter(a => a.status === 'pendente');
+      const cat = catLabel(inv.catId, inv.catNome, inv.catNumero);
+      const extra = (inv.categoriasExtra||[]).map(c => catLabel(c.id, c.nome, c.numero)).join(', ');
+      const catFull = extra ? `${cat}\n+ ${extra}` : cat;
+
+      if (aceitas.length) {
+        aceitas.forEach(a => rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
+          'Aceito', `${a.postoNome||'—'}\n${a.dataFmt||a.data||'—'} ${a.slotLabel||a.slotKey||'—'}`,
+          a.managerNome||'—', a.congNome||'—']));
+      } else if (recusadas.length) {
+        recusadas.forEach(a => rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
+          'Recusado', a.postoNome||'—', a.managerNome||'—', a.congNome||'—']));
+      } else if (pendentes.length) {
+        pendentes.forEach(a => rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
+          'Pendente', a.postoNome||'—', a.managerNome||'—', a.congNome||'—']));
+      } else {
+        rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
+          'N\xe3o desig.', '—', '—', '—']);
+      }
+    }
+
+    doc.autoTable({
+      startY: y,
+      head: [['Nome', 'Cong. origem', 'Categoria', 'Status', 'Posto / Hor\xe1rio', 'Respons\xe1vel', 'Cong. posto']],
+      body: rows1,
+      styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255, fontSize: 7.5 },
+      columnStyles: {
+        0: { cellWidth: 28 }, 1: { cellWidth: 24 }, 2: { cellWidth: 32 },
+        3: { cellWidth: 18 }, 4: { cellWidth: 38 }, 5: { cellWidth: 22 }, 6: { cellWidth: 20 },
+      },
+      alternateRowStyles: { fillColor: [245, 247, 255] },
+      margin: { left: M, right: M },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    // ---- SECAO 2: Resumo por categoria ----
+    if (y > 245) { doc.addPage(); y = 18; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('2. Resumo por Categoria', M, y); y += 3;
+
+    const rows2 = todasCats.filter(c => c.nome).map(cat => {
+      const catInvites = invites.filter(i =>
+        Number(i.catId) === Number(cat.id) ||
+        (i.categoriasExtra||[]).some(c2 => Number(c2.id) === Number(cat.id))
+      );
+      const catA = assignments.filter(a => String(a.categoriaId) === String(cat.id));
+      const aceitos   = catA.filter(a => a.status === 'aceito').length;
+      const recusados = catA.filter(a => a.status === 'recusado').length;
+      const pendentes = catA.filter(a => a.status === 'pendente').length;
+      const semDesig  = catInvites.filter(i => {
+        const mine = assignments.filter(a => a.inviteId === i.id);
+        return !mine.length || mine.every(a => ['cancelado','recusado'].includes(a.status));
+      }).length;
+      if (!catInvites.length && !catA.length) return null;
+      return [cat.numero != null ? String(cat.numero).padStart(2,'0') : '—', cat.nome||'—',
+        String(catInvites.length), String(aceitos), String(recusados), String(pendentes), String(semDesig)];
+    }).filter(Boolean);
+
+    doc.autoTable({
+      startY: y,
+      head: [['N\xba', 'Categoria', 'Total', 'Aceitos', 'Recusados', 'Pendentes', 'N\xe3o desig.']],
+      body: rows2,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 65 },
+        2: { cellWidth: 16, halign: 'center' }, 3: { cellWidth: 18, halign: 'center' },
+        4: { cellWidth: 22, halign: 'center' }, 5: { cellWidth: 22, halign: 'center' },
+        6: { cellWidth: 20, halign: 'center' },
+      },
+      alternateRowStyles: { fillColor: [245, 247, 255] },
+      margin: { left: M, right: M },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    // ---- SECAO 3: Descricao das categorias ----
+    if (y > 240) { doc.addPage(); y = 18; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('3. Descri\xe7\xe3o das Categorias', M, y); y += 3;
+
+    const rows3 = todasCats.filter(c => c.nome).map(cat => [
+      cat.numero != null ? String(cat.numero).padStart(2,'0') : '—',
+      cat.nome || '—',
+      [cat.horario && cat.horarioFim ? `${cat.horario}–${cat.horarioFim}` : null, cat.descricao || null]
+        .filter(Boolean).join(' — ') || '—',
+    ]);
+
+    doc.autoTable({
+      startY: y,
+      head: [['N\xba', 'Categoria', 'Hor\xe1rio / Descri\xe7\xe3o']],
+      body: rows3,
+      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 55 }, 2: { cellWidth: 115 },
+      },
+      alternateRowStyles: { fillColor: [245, 247, 255] },
+      margin: { left: M, right: M },
+    });
+
+    const ts = new Date().toISOString().slice(0,10);
+    doc.save(`relatorio-tapa-buraco-${ts}.pdf`);
+  };
 
   // Sincroniza em tempo real
   window.addEventListener('db-sync', () => { renderSetor(); renderBebidasQuentes(); renderPostos(); renderDesignar(); renderPedidosAjuda(); renderTapaBuraco(); renderAtividades(); });

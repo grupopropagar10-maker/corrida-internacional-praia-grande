@@ -1895,6 +1895,7 @@ window.setSlotFechadoCom2 = function(desigId, slotKey, valor) {
 }
 
 window.setSlotFinalizado = function(desigId, slotKey, valor, meta = null) {
+  if (valor) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'Horário finalizado pela congregação.');
   const all = DB.get('cong_config', {});
   const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
   cfg.agendaConfig = cfg.agendaConfig || {};

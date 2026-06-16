@@ -1215,6 +1215,14 @@
     pedido.resolvidoEm = new Date().toLocaleString('pt-BR');
     pedido.status = 'fechado';
     if (!pedidoExistente) lista.unshift(pedido);
+    // Fecha também quaisquer outros pedidos abertos duplicados para o mesmo slot
+    lista.forEach(p => {
+      if (p.id !== pedido.id && p.congId === congId && String(p.designacaoId) === String(desigId) && p.slotKey === slotKey && p.status === 'aberto') {
+        p.status = 'fechado';
+        p.resolvidoPor = session.nome;
+        p.resolvidoEm = new Date().toLocaleString('pt-BR');
+      }
+    });
     savePedidosAjuda(lista);
 
     Auth.registrarAtividade('Fechou arranjo proativamente', `${item.cong?.nome || 'Congregação'} · ${item.posto?.nome || 'Posto'} · ${slot.inicio}–${slot.fim}`);
@@ -1957,7 +1965,19 @@
 
     const _postoIdsValidos = new Set(DB.get('postos', []).map(p => Number(p.id)).filter(Number.isFinite));
     const _pedidoValido = p => _postoIdsValidos.has(Number(p.postoId));
-    const _isResolvido = p => p.status !== 'aberto' || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status)).length >= (p.faltaQtd || 0);
+    const _congCfg = DB.get('cong_config', {});
+    const _slotJaCompleto = p => {
+      const cfg = _congCfg[String(p.congId)];
+      if (!cfg) return false;
+      const desigStr = String(p.designacaoId || '');
+      const agenda = cfg.agendaConfig?.[desigStr] || {};
+      if (getSlotFinalizadoInfo(agenda, p.slotKey)?.ativo) return true;
+      const maxPorTurno = agenda.maxPorTurno || 3;
+      const fechadoCom2 = agenda.slotsOverride?.[p.slotKey] === true;
+      const efetivo = fechadoCom2 ? 2 : maxPorTurno;
+      return (cfg.turnos?.[desigStr]?.[p.slotKey] || []).length >= efetivo;
+    };
+    const _isResolvido = p => p.status !== 'aberto' || _slotJaCompleto(p) || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status)).length >= (p.faltaQtd || 0);
     const pedidosTodos = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado' && (p.status === 'aberto' || p.status === 'fechado'));
     const pedidosProntos = pedidosTodos.filter(p => _isResolvido(p));
     const pedidosPendentes = pedidosTodos.filter(p => !_isResolvido(p));

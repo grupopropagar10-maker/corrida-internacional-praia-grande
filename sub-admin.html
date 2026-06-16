@@ -2170,6 +2170,11 @@
     if (!whats.ok) { showToast('Informe um WhatsApp válido com DDD.', 'warning'); return; }
     if (!catId || !catSel) { showToast('Escolha a categoria do tapa-buraco.', 'warning'); return; }
     const cfg = getTapaBuracoConfig();
+    const nomeNorm = nome.trim().toLowerCase();
+    const dupWhats = whats.formatted && cfg.invites.find(i => i.whatsapp === whats.formatted);
+    const dupNome = cfg.invites.find(i => (i.nome || '').trim().toLowerCase() === nomeNorm);
+    if (dupWhats) { showToast(`Já existe um tapa-buraco com esse WhatsApp: ${dupWhats.nome}.`, 'warning'); return; }
+    if (dupNome) { showToast(`Já existe um tapa-buraco com esse nome: ${dupNome.nome}.`, 'warning'); return; }
     const invite = {
       id: `tb_${Date.now()}`,
       nome,

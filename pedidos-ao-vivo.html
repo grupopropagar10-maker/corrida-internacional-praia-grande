@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pedidos ao vivo — Corrida PG</title>
-  <link rel="stylesheet" href="css/style.css?v=20260616e"/>
+  <title>Pedidos ao vivo â€” Corrida PG</title>
+  <link rel="stylesheet" href="css/style.css?v=20260616f"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     body {
@@ -393,7 +393,7 @@
 <body>
   <nav class="navbar">
     <a href="pedidos-ao-vivo.html" class="navbar-brand">
-      <span class="logo-icon">📲</span>
+      <span class="logo-icon">ðŸ“²</span>
       <span>Pedidos ao vivo</span>
     </a>
   </nav>
@@ -436,7 +436,7 @@
             <div class="live-assignment-chips" id="assignment-chips"></div>
             <div class="live-assignment-actions" id="assignment-actions"></div>
             <div class="live-guidance-card" id="assignment-guidance" style="display:none;">
-              <strong>Orientações do posto</strong>
+              <strong>OrientaÃ§Ãµes do posto</strong>
               <div class="live-guidance-list" id="assignment-guidance-list"></div>
             </div>
           </div>
@@ -450,7 +450,7 @@
 
     <section>
       <div class="card" style="margin-bottom:1rem;">
-        <div class="card-header"><span class="icon">📍</span><h2>Horarios e locais disponiveis</h2></div>
+        <div class="card-header"><span class="icon">ðŸ“</span><h2>Horarios e locais disponiveis</h2></div>
         <p style="color:var(--gray);font-size:.84rem;">A lista abaixo mostra apenas vagas abertas neste momento. Se voce ja escolheu um horario, pode trocar depois enquanto ainda houver vaga.</p>
       </div>
       <div class="live-list" id="slots-list"></div>
@@ -460,9 +460,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/firebase-db.js?v=20260616e"></script>
-  <script src="js/app.js?v=20260616e"></script>
-  <script src="js/auth.js?v=20260616e"></script>
+  <script src="js/firebase-db.js?v=20260616f"></script>
+  <script src="js/app.js?v=20260616f"></script>
+  <script src="js/auth.js?v=20260616f"></script>
   <script>
   (async function() {
     await (window.DB_SYNC_READY || Promise.resolve());
@@ -485,7 +485,7 @@
         <div class="s-icon">${icon}</div>
         <h2>${title}</h2>
         <p>${message}</p>
-        <button class="btn btn-outline" onclick="Auth.logout()">↩ Sair</button>`;
+        <button class="btn btn-outline" onclick="Auth.logout()">â†© Sair</button>`;
     }
 
     function getCongregacao() {
@@ -591,7 +591,7 @@
             },
             slotKey: item.slotKey,
             slotFim: item.slotFim || '',
-            resumo: `${item.postoNome || posto.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey || '—'}`,
+            resumo: `${item.postoNome || posto.nome || 'Posto'} Â· ${item.data || 'â€”'} Â· ${item.slotLabel || item.slotKey || 'â€”'}`,
           };
         })
         .sort((a, b) => (String(a.data) + String(a.slotKey)).localeCompare(String(b.data) + String(b.slotKey)));
@@ -728,7 +728,7 @@
               slotKey,
               slotFim,
               key: `${desig.id}__${slotKey}`,
-              resumo: `${posto?.nome || 'Posto'} · ${desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}`,
+              resumo: `${posto?.nome || 'Posto'} Â· ${desig.data || 'â€”'} Â· ${slotKey}${slotFim ? `â€“${slotFim}` : ''}`,
             };
             if (pessoa.liveInviteId === invite.id) {
               liveMatches.push(assignment);
@@ -757,7 +757,7 @@
       if (!hasCoords || typeof L === 'undefined') {
         mapEl.className = 'live-assignment-map empty';
         mapEl.innerHTML = assignment?.posto?.local
-          ? `📍 ${assignment.posto.local}`
+          ? `ðŸ“ ${assignment.posto.local}`
           : 'O mapa do posto aparece aqui quando a congregacao informar a localizacao.';
         noteEl.textContent = assignment?.posto?.local
           ? 'Local informado pela congregacao.'
@@ -857,8 +857,8 @@
         if ((assignments || []).length > 1) {
           selectorEl.style.display = 'flex';
           selectorEl.innerHTML = assignments.map((item, index) => {
-            const dataLabel = item.desig?.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '—';
-            return `<button type="button" class="${item.key === assignment.key ? 'active' : ''}" onclick="selecionarEscolhaConfirmada('${item.key}')">Designacao ${String(index + 1).padStart(2, '0')} · ${dataLabel} · ${item.slotKey}${item.slotFim ? `–${item.slotFim}` : ''}</button>`;
+            const dataLabel = item.desig?.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : 'â€”';
+            return `<button type="button" class="${item.key === assignment.key ? 'active' : ''}" onclick="selecionarEscolhaConfirmada('${item.key}')">Designacao ${String(index + 1).padStart(2, '0')} Â· ${dataLabel} Â· ${item.slotKey}${item.slotFim ? `â€“${item.slotFim}` : ''}</button>`;
           }).join('');
         } else {
           selectorEl.style.display = 'none';
@@ -889,28 +889,28 @@
           : `Seu horario atual e ${assignment.resumo}. Se a congregacao ainda estiver aceitando trocas, voce pode alterar abaixo.`;
       const overnightInfo = getResumoVirada(assignment.desig?.data, assignment.slotKey, assignment.slotFim || assignment.slotKey);
       document.getElementById('assignment-chips').innerHTML = [
-        `📍 ${assignment.posto?.nome || 'Posto'}`,
-        `🧭 ${assignment.categoria?.nome || 'Sem setor'}`,
-        `📅 ${assignment.desig?.data || '—'}`,
-        `⏱️ ${assignment.slotKey}${assignment.slotFim ? `–${assignment.slotFim}` : ''}`,
-        overnightInfo ? `🌙 ${overnightInfo.badge}` : '',
-        `📌 ${assignment.posto?.local || 'Local nao informado'}`,
+        `ðŸ“ ${assignment.posto?.nome || 'Posto'}`,
+        `ðŸ§­ ${assignment.categoria?.nome || 'Sem setor'}`,
+        `ðŸ“… ${assignment.desig?.data || 'â€”'}`,
+        `â±ï¸ ${assignment.slotKey}${assignment.slotFim ? `â€“${assignment.slotFim}` : ''}`,
+        overnightInfo ? `ðŸŒ™ ${overnightInfo.badge}` : '',
+        `ðŸ“Œ ${assignment.posto?.local || 'Local nao informado'}`,
       ].filter(Boolean).map(item => `<span>${item}</span>`).join('');
       const mapsUrl = getGoogleMapsUrl(assignment);
       const actionButtons = [];
       if (mapsUrl) {
-        actionButtons.push(`<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">📍 Abrir rota da designacao ${String((assignments || []).findIndex(item => item.key === assignment.key) + 1).padStart(2, '0')} no Google Maps</a>`);
+        actionButtons.push(`<a class="btn btn-primary" href="${mapsUrl}" target="_blank" rel="noopener">ðŸ“ Abrir rota da designacao ${String((assignments || []).findIndex(item => item.key === assignment.key) + 1).padStart(2, '0')} no Google Maps</a>`);
       }
       if (isTapaBuraco && assignment.status !== 'aceito') {
-        actionButtons.push(`<button class="btn btn-primary" onclick="responderTapaBuraco('${assignment.key}', true)">✅ Eu aceito a designacao</button>`);
+        actionButtons.push(`<button class="btn btn-primary" onclick="responderTapaBuraco('${assignment.key}', true)">âœ… Eu aceito a designacao</button>`);
       }
       if (isTapaBuraco && assignment.status !== 'aceito') {
-        actionButtons.push(`<button class="btn btn-outline" onclick="responderTapaBuraco('${assignment.key}', false)">❌ Nao consigo aceitar</button>`);
+        actionButtons.push(`<button class="btn btn-outline" onclick="responderTapaBuraco('${assignment.key}', false)">âŒ Nao consigo aceitar</button>`);
       }
       if (isTapaBuraco && assignment.status === 'aceito') {
         const congContato = DB.get('congregacoes', []).find(c => c.id === assignment.congId);
         if (congContato?.telefone) {
-          actionButtons.push(`<button class="btn btn-primary" style="background:#25D366;border-color:#25D366;" onclick="apresentarNaCong('${assignment.key}')">📱 Me apresentar na congregação</button>`);
+          actionButtons.push(`<button class="btn btn-primary" style="background:#25D366;border-color:#25D366;" onclick="apresentarNaCong('${assignment.key}')">ðŸ“± Me apresentar na congregaÃ§Ã£o</button>`);
         }
       }
       document.getElementById('assignment-actions').innerHTML = actionButtons.join('');
@@ -966,7 +966,7 @@
     function getEscolhaResumo(item) {
       if (!item) return 'Nenhum horario escolhido ainda.';
       const posto = DB.get('postos', []).find(p => p.id === item.postoId);
-      return `${posto?.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey}${item.overnightNote ? ` · ${item.overnightNote}` : ''}`;
+      return `${posto?.nome || 'Posto'} Â· ${item.data || 'â€”'} Â· ${item.slotLabel || item.slotKey}${item.overnightNote ? ` Â· ${item.overnightNote}` : ''}`;
     }
 
     function atualizarPedidoTapaBuraco(pedidoId, inviteNome) {
@@ -992,7 +992,7 @@
     window.responderTapaBuraco = function(assignmentId, aceitar) {
       const invite = getInvite();
       if (!invite) {
-        showToast('Sessão expirada ou convite não encontrado. Recarregue a página.', 'warning');
+        showToast('SessÃ£o expirada ou convite nÃ£o encontrado. Recarregue a pÃ¡gina.', 'warning');
         return;
       }
       const cfg = getTapaBuracoConfig();
@@ -1055,7 +1055,7 @@
       }
       saveTapaBuracoConfig(cfg);
       atualizarPedidoTapaBuraco(assignment.pedidoId, invite.nome);
-      showToast('Designacao aceita! Toque em "Me apresentar na congregação" para avisar o responsavel.', 'success');
+      showToast('Designacao aceita! Toque em "Me apresentar na congregaÃ§Ã£o" para avisar o responsavel.', 'success');
       render();
     };
 
@@ -1075,9 +1075,9 @@
         `Meu nome e ${invite.nome}. Fui designado(a) para complementar a equipe de voces na Corrida Internacional de Praia Grande.`,
         '',
         `Posto: ${assignment.postoNome || 'Nao informado'}`,
-        `Setor: ${assignment.categoriaNome || '—'}`,
-        `Data: ${assignment.dataFmt || assignment.data || '—'}`,
-        `Horario: ${assignment.slotLabel || '—'}`,
+        `Setor: ${assignment.categoriaNome || 'â€”'}`,
+        `Data: ${assignment.dataFmt || assignment.data || 'â€”'}`,
+        `Horario: ${assignment.slotLabel || 'â€”'}`,
         '',
         `Estou disponivel para esse horario. Por favor, confirme o recebimento respondendo esta mensagem. Obrigado!`,
       ].join('\n');
@@ -1087,7 +1087,7 @@
     function render() {
       const invite = getInvite();
       if (!invite) {
-        showStatus('❌', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
+        showStatus('âŒ', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
         return;
       }
       if (LIVE_MODE === 'tapa_buraco') {
@@ -1131,12 +1131,12 @@
           <div class="live-slot-card">
             <div class="live-slot-head">
               <div>
-                <strong>Designacao ${String(index + 1).padStart(2, '0')} · ${item.postoNome || item.posto?.nome || 'Posto'}</strong>
-                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.localLabel || item.posto?.local || 'Local nao informado'}</div>
+                <strong>Designacao ${String(index + 1).padStart(2, '0')} Â· ${item.postoNome || item.posto?.nome || 'Posto'}</strong>
+                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">ðŸ“ ${item.localLabel || item.posto?.local || 'Local nao informado'}</div>
                 <div class="live-slot-meta">
-                  <span>📅 ${item.dataFmt || item.data || '—'}</span>
-                  <span>🧭 ${item.categoriaNome || item.categoria?.nome || 'Sem setor'}</span>
-                  <span>⏱️ ${item.slotLabel || item.slotKey || '—'}</span>
+                  <span>ðŸ“… ${item.dataFmt || item.data || 'â€”'}</span>
+                  <span>ðŸ§­ ${item.categoriaNome || item.categoria?.nome || 'Sem setor'}</span>
+                  <span>â±ï¸ ${item.slotLabel || item.slotKey || 'â€”'}</span>
                 </div>
               </div>
             </div>
@@ -1154,11 +1154,11 @@
       const cong = getCongregacao();
       const cfg = getCongConfigById(CONG_ID);
       if (!cong) {
-        showStatus('❌', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
+        showStatus('âŒ', 'Acesso nao encontrado', 'Este convite nao existe mais ou foi removido pela congregacao.');
         return;
       }
       if (!cfg.liveRequests.enabled || invite.ativo === false) {
-        showStatus('⛔', 'Acesso indisponivel', 'Os pedidos ao vivo desta congregacao nao estao disponiveis no momento.');
+        showStatus('â›”', 'Acesso indisponivel', 'Os pedidos ao vivo desta congregacao nao estao disponiveis no momento.');
         return;
       }
 
@@ -1216,7 +1216,7 @@
 
       let opcaoIndex = 0;
       listEl.innerHTML = entries.map((item, designacaoIndex) => {
-        const dataFmt = item.desig.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—';
+        const dataFmt = item.desig.data ? new Date(item.desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : 'â€”';
         const designacaoLabel = `Designacao ${String(designacaoIndex + 1).padStart(2, '0')}`;
         return `
           <div class="live-slot-card">
@@ -1224,12 +1224,12 @@
               <div>
                 <div class="live-slot-label"># ${designacaoLabel}</div>
                 <strong>${item.posto.nome}</strong>
-                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.posto.local || 'Local nao informado'}</div>
+                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">ðŸ“ ${item.posto.local || 'Local nao informado'}</div>
                 <div class="live-slot-meta">
-                  <span>📅 ${dataFmt}</span>
-                  <span>🧭 ${item.categoria?.nome || 'Sem setor'}</span>
-                  <span>⏱️ ${item.desig.inicio}–${item.desig.fim}</span>
-                  ${item.overnightInfo ? `<span>🌙 ${item.overnightInfo.badge}</span>` : ''}
+                  <span>ðŸ“… ${dataFmt}</span>
+                  <span>ðŸ§­ ${item.categoria?.nome || 'Sem setor'}</span>
+                  <span>â±ï¸ ${item.desig.inicio}â€“${item.desig.fim}</span>
+                  ${item.overnightInfo ? `<span>ðŸŒ™ ${item.overnightInfo.badge}</span>` : ''}
                 </div>
                 ${item.overnightInfo ? `<div class="live-slot-note" style="margin-top:.6rem;">${item.overnightInfo.texto}</div>` : ''}
               </div>
@@ -1241,7 +1241,7 @@
                 return `
                 <div class="live-slot-option ${slot.selected ? 'current' : ''}">
                   <div class="live-slot-label option"># ${opcaoLabel}</div>
-                  <strong>${slot.inicio}–${slot.fim}</strong>
+                  <strong>${slot.inicio}â€“${slot.fim}</strong>
                   <div class="meta">${slot.selected ? 'Esta e sua escolha atual.' : `${slot.vagas} vaga(s) restante(s)`}</div>
                   ${slot.overnightInfo ? `<div class="live-slot-note">${slot.overnightInfo.texto}</div>` : ''}
                   <button class="btn ${slot.selected ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="confirmarEscolha('${item.desig.id}','${slot.inicio}')">${slot.selected ? 'Manter este horario' : 'Escolher este horario'}</button>
@@ -1293,7 +1293,7 @@
       if (inviteRef) {
         inviteRef.confirmadoEm = new Date().toLocaleString('pt-BR');
         inviteRef.escolha = { desigId, slotKey, postoId: entry.posto.id };
-        inviteRef.escolhaResumo = `${entry.posto.nome} · ${entry.desig.data || '—'} · ${slotKey}${slotFim ? `–${slotFim}` : ''}${overnightInfo ? ` · ${overnightInfo.badge}` : ''}`;
+        inviteRef.escolhaResumo = `${entry.posto.nome} Â· ${entry.desig.data || 'â€”'} Â· ${slotKey}${slotFim ? `â€“${slotFim}` : ''}${overnightInfo ? ` Â· ${overnightInfo.badge}` : ''}`;
       }
 
       saveCongConfigById(CONG_ID, cfg);

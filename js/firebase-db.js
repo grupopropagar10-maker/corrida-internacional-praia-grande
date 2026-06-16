@@ -24,7 +24,7 @@ const BACKUP_STORAGE_KEY = 'firebase_sync_backups_v1';
 const BACKUP_LATEST_KEY = 'firebase_sync_backup_latest';
 const PREWRITE_BACKUP_KEY = 'firebase_prewrite_backup_latest';
 const PENDING_WRITE_STORAGE_KEY = 'firebase_pending_writes_v1';
-const BACKUP_LIMIT = 8;
+const BACKUP_LIMIT = 2;
 let restoreInFlight = false;
 
 function safeJsonParse(raw, fallback = null) {
@@ -63,7 +63,7 @@ function savePrewriteSnapshot(triggerKey) {
     key: triggerKey,
     payload: getBackupPayload(),
   };
-  localStorage.setItem(PREWRITE_BACKUP_KEY, JSON.stringify(snapshot));
+  try { localStorage.setItem(PREWRITE_BACKUP_KEY, JSON.stringify(snapshot)); } catch (e) { /* quota */ }
   return snapshot;
 }
 
@@ -135,10 +135,12 @@ function saveLocalBackup(source, key) {
     key,
     payload: getBackupPayload(),
   };
-  localStorage.setItem(BACKUP_LATEST_KEY, JSON.stringify(snapshot));
-  const history = safeJsonParse(localStorage.getItem(BACKUP_STORAGE_KEY), []);
-  history.unshift(snapshot);
-  localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(history.slice(0, BACKUP_LIMIT)));
+  try { localStorage.setItem(BACKUP_LATEST_KEY, JSON.stringify(snapshot)); } catch (e) { /* quota */ }
+  try {
+    const history = safeJsonParse(localStorage.getItem(BACKUP_STORAGE_KEY), []);
+    history.unshift(snapshot);
+    localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(history.slice(0, BACKUP_LIMIT)));
+  } catch (e) { /* quota */ }
 }
 
 function getPendingWrites() {

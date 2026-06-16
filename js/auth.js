@@ -191,7 +191,7 @@ const Auth = {
       if (invite) {
         invite.loginCount      = Number(invite.loginCount || 0) + 1;
         invite.ultimoAcessoEm  = new Date().toLocaleString('pt-BR');
-        DB.set('evento_config', evento);
+        try { DB.set('evento_config', evento); } catch (e) { /* quota — login prossegue */ }
       }
       this.setSession({
         type: 'live', nome: found.invite.nome, congId: null,
@@ -212,7 +212,7 @@ const Auth = {
         ...cfg,
         liveRequests: { enabled: !!cfg?.liveRequests?.enabled, invites },
       };
-      DB.set('cong_config', all);
+      try { DB.set('cong_config', all); } catch (e) { /* quota — login prossegue */ }
     }
     this.setSession({
       type: 'live', nome: found.invite.nome, congId: found.congId,

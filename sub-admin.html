@@ -595,7 +595,7 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
   crossorigin=""
 ></script>
-<script src="js/firebase-db.js?v=20260616j"></script>
+<script src="js/firebase-db.js?v=20260616l"></script>
 <script src="js/app.js?v=20260616f"></script>
 <script src="js/auth.js?v=20260616f"></script>
 <script>
@@ -751,9 +751,13 @@
     const postosSetor = getPostosDoSetor();
     const postoIds = new Set(postosSetor.map(p => p.id));
     const manuais = DB.get('designacoes', []).filter(d => !d.autoGerada && postoIds.has(d.postoId));
+    const congCfgAll = DB.get('cong_config', {});
     const automaticas = postosSetor
       .filter(p => p.congId && p.categoriaId)
-      .flatMap(buildAutoDesignacoesForPosto);
+      .flatMap(posto => buildAutoDesignacoesForPosto(posto).filter(desig => {
+        const escalaKey = getEscalaKey(desig, posto);
+        return !congCfgAll?.[posto.congId]?.agendaConfig?.[escalaKey]?.deletadoPeloAdmin;
+      }));
     return manuais.concat(automaticas);
   }
 

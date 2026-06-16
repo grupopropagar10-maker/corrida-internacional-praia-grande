@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minha Congregação — Corrida PG</title>
-  <link rel="stylesheet" href="css/style.css?v=20260616j"/>
+  <link rel="stylesheet" href="css/style.css?v=20260616k"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     /* ══ BANNER ══ */
@@ -1244,9 +1244,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="js/firebase-db.js?v=20260616j"></script>
-<script src="js/app.js?v=20260616j"></script>
-<script src="js/auth.js?v=20260616j"></script>
+<script src="js/firebase-db.js?v=20260616k"></script>
+<script src="js/app.js?v=20260616k"></script>
+<script src="js/auth.js?v=20260616k"></script>
 <script>
 (async function() {
 await (window.DB_SYNC_READY || Promise.resolve());
@@ -3261,6 +3261,24 @@ window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada, postoIdRaw) {
   if (typeof showToast === 'function') showToast('Ponto deletado com sucesso.', 'success');
 };
 
+// Detecta postos que deveriam ter congId:null mas ainda têm congId===CONG_ID
+// (cascade falhou em deleções anteriores) e corrige via REST.
+function repararPostosOrfaos() {
+  if (typeof clearPostoCongId !== 'function') return;
+  const agendaMap = getAgendaConfigMap();
+  const desigs = DB.get('designacoes', []);
+  todosPos.filter(p => Number(p.congId) === Number(CONG_ID)).forEach(posto => {
+    const temManual = desigs.some(d =>
+      String(d.postoId) === String(posto.id) && Number(d.congId) === Number(CONG_ID)
+    );
+    if (temManual) return;
+    const autoDesigs = buildAutoDesignacoesForPosto(posto);
+    const temAutoAtiva = autoDesigs.some(desig => !agendaMap[getEscalaKey(desig, posto)]?.deletadoPeloAdmin);
+    if (temAutoAtiva) return;
+    clearPostoCongId(posto.id);
+  });
+}
+
 window.toggleAjudaHorario = function(desigId, slotKey) {
   const chave = getChaveAjuda(desigId, slotKey);
   window._ajudaAbertaKey = window._ajudaAbertaKey === chave ? null : chave;
@@ -3538,6 +3556,7 @@ async function exportarEscalaPDF() {
 
 renderMembros();
 renderPostosTurnos();
+repararPostosOrfaos();
 renderLiveRequests();
 renderLiveMemberOptions();
 renderSolicitacoesManuais();

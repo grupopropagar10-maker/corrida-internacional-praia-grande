@@ -818,7 +818,9 @@
         const fechadoCom2 = agenda.slotsOverride[slot.inicio] === true && pessoas.length >= 2;
         const efetivo = fechadoCom2 ? pessoas.length : agenda.maxPorTurno;
         const faltam = slotFinalizado ? 0 : Math.max(0, efetivo - pessoas.length);
-        const pedidoAberto = slotFinalizado ? null : pedidos.find(p => String(p.designacaoId) === escalaKey && p.slotKey === slot.inicio && p.status === 'aberto');
+        // Slot resolvido (finalizado, fechado com 2 ou preenchido) zera faltam; nesse caso nao ha pedido em aberto valido,
+        // mesmo que o registro do pedido tenha ficado com status 'aberto' no banco.
+        const pedidoAberto = faltam === 0 ? null : pedidos.find(p => String(p.designacaoId) === escalaKey && p.slotKey === slot.inicio && p.status === 'aberto');
         return {
           ...slot,
           pessoas,
@@ -1274,7 +1276,9 @@
     const avisosDatas = getAvisosRemocaoDatasDoSetor();
     const cobertura = getCoberturaDoSetor();
     const postos = getPostosDoSetor();
-    const pedidosAbertos = getPedidosDoSetor().filter(p => p.status === 'aberto').length;
+    // Soma apenas pedidos em slots ainda nao resolvidos (mesma regra do detalhe), evitando contar pedidos cujo slot
+    // ja foi preenchido/fechado com 2/finalizado mas que ficaram com status 'aberto' no banco.
+    const pedidosAbertos = cobertura.reduce((sum, item) => sum + item.pedidosAbertos, 0);
     const faltando = cobertura.reduce((sum, item) => sum + item.faltando, 0);
     const horarios = cobertura.reduce((sum, item) => sum + item.slots.length, 0);
     const concluidos = cobertura.filter(item => item.completa).length;

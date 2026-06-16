@@ -1405,10 +1405,8 @@
     const all = DB.get('cong_config', {});
     all[congId] = cfg;
     localStorage.setItem('cong_config', JSON.stringify(all));
-    if (typeof rtdb !== 'undefined' && !IS_LOCAL_FILE) {
-      rtdb.ref('cong_config/' + String(congId)).set(cfg).catch(err => {
-        console.warn('[Firebase] Erro ao salvar cong_config/' + congId + ':', err);
-      });
+    if (typeof setPathResilient === 'function') {
+      setPathResilient('cong_config/' + String(congId), cfg);
     }
   }
 
@@ -1435,10 +1433,8 @@
     const evento = DB.get('evento_config', {});
     evento.tapaBuraco = tapaBuraco;
     localStorage.setItem('evento_config', JSON.stringify(evento));
-    if (typeof rtdb !== 'undefined' && !IS_LOCAL_FILE) {
-      rtdb.ref('evento_config/tapaBuraco').set(tapaBuraco).catch(err => {
-        console.warn('[Firebase] Erro ao salvar evento_config/tapaBuraco:', err);
-      });
+    if (typeof setPathResilient === 'function') {
+      setPathResilient('evento_config/tapaBuraco', tapaBuraco);
     }
   }
 

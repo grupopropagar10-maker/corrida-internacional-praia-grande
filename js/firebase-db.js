@@ -297,16 +297,67 @@ function pushToFirebase(key, value, options = {}) {
     });
 }
 
+// URL base do banco para fallback via REST (HTTPS), independente do WebSocket.
+const DATABASE_REST_URL = String(firebaseConfig.databaseURL || '').replace(/\/$/, '');
+const PULL_SDK_TIMEOUT_MS = 5000;
+
+// Busca uma chave via REST (HTTPS GET). O WebSocket do Firebase trava em
+// algumas redes moveis / WKWebView (iOS/Android); o REST nao depende dele.
+function pullKeyViaRest(key) {
+  if (!DATABASE_REST_URL) return Promise.resolve(undefined);
+  return fetch(`${DATABASE_REST_URL}/${key}.json`, { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : undefined))
+    .catch(() => undefined);
+}
+
+// Le uma chave pelo SDK; se o WebSocket travar (timeout), cai para REST.
+function pullKeyResilient(key) {
+  const sdkPromise = rtdb.ref(key).once('value')
+    .then(snap => ({ via: 'sdk', val: snap.val() }))
+    .catch(() => ({ via: 'sdk-error', val: undefined }));
+  const timeoutPromise = new Promise(resolve =>
+    setTimeout(() => resolve({ via: 'timeout', val: undefined }), PULL_SDK_TIMEOUT_MS)
+  );
+  return Promise.race([sdkPromise, timeoutPromise]).then(result => {
+    if (result.via === 'sdk') {
+      // SDK respondeu (mesmo que null = chave vazia) — confia no SDK.
+      if (result.val !== null) localStorage.setItem(key, JSON.stringify(result.val));
+      return;
+    }
+    // SDK travou (timeout) ou deu erro — tenta REST.
+    return pullKeyViaRest(key).then(restVal => {
+      if (restVal !== null && restVal !== undefined) {
+        localStorage.setItem(key, JSON.stringify(restVal));
+      }
+    });
+  });
+}
+
+// Escreve em um caminho especifico (set/PUT). Tenta o SDK; se o WebSocket
+// travar (timeout) ou falhar, grava via REST PUT. A escrita fica SEMPRE
+// restrita ao no informado — nunca toca nos nos irmaos, preservando a
+// protecao contra race condition entre sessoes concorrentes.
+function setPathResilient(path, value) {
+  if (IS_LOCAL_FILE) return Promise.resolve();
+  const sdkPromise = rtdb.ref(path).set(value).then(() => true).catch(() => false);
+  const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 6000));
+  return Promise.race([sdkPromise, timeoutPromise]).then(ok => {
+    if (ok) return;
+    if (!DATABASE_REST_URL) return;
+    return fetch(`${DATABASE_REST_URL}/${path}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(value),
+    })
+      .then(() => {})
+      .catch(err => console.warn('[Firebase] REST PUT falhou em', path, err));
+  });
+}
+window.setPathResilient = setPathResilient;
+
 // Carrega dados do Firebase uma vez ao iniciar (garante dados frescos)
 function pullFromFirebase() {
-  return Promise.all(
-    SYNC_KEYS.map(key =>
-      rtdb.ref(key).once('value').then(snap => {
-        const val = snap.val();
-        if (val !== null) localStorage.setItem(key, JSON.stringify(val));
-      })
-    )
-  ).then(() => {
+  return Promise.all(SYNC_KEYS.map(pullKeyResilient)).then(() => {
     applyPendingWritesToLocal();
     saveLocalBackup('bootstrap', 'all');
     return flushPendingWrites();

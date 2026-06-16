@@ -487,13 +487,19 @@
     const usuario = document.getElementById('live-usuario').value.trim();
     const senha = document.getElementById('live-senha').value;
     if (!usuario || !senha) { mostrarErro('Informe usuário e senha do pedido ao vivo!'); return; }
-    btn.innerHTML = '<span class="spin"></span>';
-    await (window.DB_SYNC_READY || Promise.resolve());
-    if (Auth.loginLiveInvite(usuario, senha)) {
-      window.location.href = 'pedidos-ao-vivo.html';
-    } else {
-      btn.innerHTML = '<span>Entrar no pedido ao vivo</span>';
+    setLiveButtonState('loading');
+    try {
+      await (window.DB_SYNC_READY || Promise.resolve());
+      if (Auth.loginLiveInvite(usuario, senha)) {
+        redirectToLiveArea();
+        return;
+      }
+      setLiveButtonState('idle');
       mostrarErro('Acesso ao vivo inválido ou expirado!');
+    } catch (err) {
+      console.error('[Login Live] Falha ao autenticar manualmente:', err);
+      setLiveButtonState('idle');
+      mostrarErro('Não foi possível concluir o login agora. Tente novamente.');
     }
   }
 
@@ -510,52 +516,114 @@
     history.replaceState({}, '', window.location.pathname);
 
     if (_u && _p) {
-      // Login automático: tenta imediatamente e em cada sync do Firebase
-      const btn = document.getElementById('btn-login-live');
-      btn.innerHTML = '<span class="spin"></span> Conectando...';
-      btn.disabled = true;
-      let _autoLogado = false;
-
-      function _tentarAutoLogin() {
-        if (_autoLogado) return;
-        if (Auth.loginLiveInvite(_u, _p)) {
-          _autoLogado = true;
-          window.location.href = 'pedidos-ao-vivo.html';
-        }
-      }
-
-      function _falhouAutoLogin() {
-        if (_autoLogado) return;
-        btn.innerHTML = '<span>Entrar no pedido ao vivo</span>';
-        btn.disabled = false;
-        // Notificação persistente — não desaparece, orienta o usuário a tocar
-        const el = document.getElementById('error-msg');
-        el.textContent = 'Toque no botão "Entrar" para fazer login.';
-        el.style.display = 'block';
-      }
-
-      // Tenta com cache imediato (pode já ter dados de sessão anterior)
-      _tentarAutoLogin();
-
-      // Tenta novamente a cada sync do Firebase (funciona em redes lentas)
-      window.addEventListener('db-sync', function _onSyncLogin(e) {
-        if (!['evento_config', 'cong_config'].includes(e.detail?.key)) return;
-        _tentarAutoLogin();
-        if (_autoLogado) window.removeEventListener('db-sync', _onSyncLogin);
-      });
-
-      // Aguarda DB_SYNC_READY e tenta de novo
-      (window.DB_SYNC_READY || Promise.resolve()).finally(async () => {
-        _tentarAutoLogin();
-        // Última tentativa após 4 s — margem extra para redes muito lentas
-        await new Promise(r => setTimeout(r, 4000));
-        _tentarAutoLogin();
-        if (!_autoLogado) _falhouAutoLogin();
-      });
+      startAutoLiveLogin(_u, _p);
     }
   }
 
   // ── UTILITÁRIOS ──
+  function setLiveButtonState(state) {
+    const btn = document.getElementById('btn-login-live');
+    if (!btn) return;
+    if (state === 'loading') {
+      btn.innerHTML = '<span class="spin"></span> Conectando...';
+      btn.disabled = true;
+      return;
+    }
+    btn.innerHTML = '<span>Entrar no pedido ao vivo</span>';
+    btn.disabled = false;
+  }
+
+  function redirectToLiveArea() {
+    window.location.replace('pedidos-ao-vivo.html');
+  }
+
+  function showPersistentLiveLoginHint(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function startAutoLiveLogin(usuario, senha) {
+    const AUTO_LOGIN_TIMEOUT_MS = 15000;
+    const RETRY_INTERVAL_MS = 1200;
+    let autoLogado = false;
+    let finished = false;
+    let retryTimer = null;
+    let timeoutTimer = null;
+
+    setLiveButtonState('loading');
+
+    function cleanup() {
+      finished = true;
+      window.removeEventListener('db-sync', onSync);
+      window.removeEventListener('online', onRetrySignal);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pageshow', onRetrySignal);
+      if (retryTimer) clearInterval(retryTimer);
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+    }
+
+    function finishFallback(message) {
+      if (finished || autoLogado) return;
+      cleanup();
+      setLiveButtonState('idle');
+      showPersistentLiveLoginHint(message);
+    }
+
+    function tryAutoLogin(source) {
+      if (finished || autoLogado) return false;
+      try {
+        if (Auth.loginLiveInvite(usuario, senha)) {
+          autoLogado = true;
+          cleanup();
+          redirectToLiveArea();
+          return true;
+        }
+      } catch (err) {
+        console.error('[Auto Login Live] Falha ao autenticar via', source, err);
+      }
+      return false;
+    }
+
+    function onSync(e) {
+      if (!['evento_config', 'cong_config'].includes(e.detail?.key)) return;
+      tryAutoLogin('db-sync:' + e.detail.key);
+    }
+
+    function onRetrySignal() {
+      tryAutoLogin('retry-signal');
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        tryAutoLogin('visibilitychange');
+      }
+    }
+
+    window.addEventListener('db-sync', onSync);
+    window.addEventListener('online', onRetrySignal);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pageshow', onRetrySignal);
+
+    tryAutoLogin('initial-cache');
+
+    retryTimer = setInterval(() => {
+      tryAutoLogin('retry-interval');
+    }, RETRY_INTERVAL_MS);
+
+    timeoutTimer = setTimeout(() => {
+      finishFallback('Não foi possível entrar automaticamente. Toque no botão "Entrar" para tentar novamente.');
+    }, AUTO_LOGIN_TIMEOUT_MS);
+
+    (window.DB_SYNC_READY || Promise.resolve())
+      .then(() => {
+        tryAutoLogin('db-sync-ready');
+      })
+      .catch(err => {
+        console.error('[Auto Login Live] Falha na sincronização inicial:', err);
+      });
+  }
+
   function mostrarErro(msg) {
     const el = document.getElementById('error-msg');
     el.textContent = msg;

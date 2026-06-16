@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minha Congregação — Corrida PG</title>
-  <link rel="stylesheet" href="css/style.css?v=20260616k"/>
+  <link rel="stylesheet" href="css/style.css?v=20260616l"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     /* ══ BANNER ══ */
@@ -1244,9 +1244,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="js/firebase-db.js?v=20260616k"></script>
-<script src="js/app.js?v=20260616k"></script>
-<script src="js/auth.js?v=20260616k"></script>
+<script src="js/firebase-db.js?v=20260616l"></script>
+<script src="js/app.js?v=20260616l"></script>
+<script src="js/auth.js?v=20260616l"></script>
 <script>
 (async function() {
 await (window.DB_SYNC_READY || Promise.resolve());
@@ -3099,7 +3099,7 @@ function renderPostosTurnos() {
       const people  = getPessoasDoSlot(turnos, escalaKey, key);
       const vagas   = maxSlot - people.length;
       const fechadoCom2 = agendaCfg.slotsOverride[key] === true && people.length >= 2;
-      const slotFinalizado = agendaCfg.slotFinalizado[key] === true;
+      const slotFinalizado = !!getSlotFinalizadoInfo(agendaCfg, key)?.ativo;
       const slotOvernight = getResumoVirada(desig.data, slot.inicio, slot.fim);
       const pedidoAjuda = getPedidoAjudaAberto(escalaKey, key);
       const safeId = getDomIdSeguro(getChaveAjuda(escalaKey, key));

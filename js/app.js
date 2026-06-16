@@ -112,8 +112,6 @@ function removePostosAndDependencies(postoIds) {
     .map(designacao => Number(designacao?.id))
     .filter(Number.isFinite);
   const removedDesignacaoIdSet = new Set(removedDesignacaoIds);
-  // Também indexa como string para cobrir designacaoIds no formato "postoId-dataIdx" (ex: "5-0")
-  const removedDesignacaoStrSet = new Set(removedDesignacoes.map(d => String(d?.id || '')).filter(Boolean));
 
   const allCongConfigs = DB.get('cong_config', {});
   let congConfigChanged = false;
@@ -146,10 +144,8 @@ function removePostosAndDependencies(postoIds) {
   const keptPedidos = pedidos.filter(pedido => {
     const pedidoPostoId = Number(pedido?.postoId);
     const pedidoDesignacaoId = Number(pedido?.designacaoId);
-    const pedidoDesignacaoStr = String(pedido?.designacaoId || '');
     if (postoIdSet.has(pedidoPostoId)) return false;
     if (removedDesignacaoIdSet.has(pedidoDesignacaoId)) return false;
-    if (pedidoDesignacaoStr && removedDesignacaoStrSet.has(pedidoDesignacaoStr)) return false;
     return true;
   });
   if (keptPedidos.length !== pedidos.length) {

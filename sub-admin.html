@@ -1772,8 +1772,7 @@
       return;
     }
     const _postoIdsOk = new Set(DB.get('postos', []).map(p => Number(p.id)).filter(Number.isFinite));
-    const _desigIdsOk = new Set(DB.get('designacoes', []).map(d => String(d.id || '')).filter(Boolean));
-    const _pedidoOk = p => _postoIdsOk.has(Number(p.postoId)) && _desigIdsOk.has(String(p.designacaoId || ''));
+    const _pedidoOk = p => _postoIdsOk.has(Number(p.postoId));
     const pedidos = isTapaBuracoAdmin
       ? getPedidosAjuda().filter(p => _pedidoOk(p) && (p.status === 'aberto' || p.status === 'fechado'))
       : getPedidosDoSetor().filter(p => _pedidoOk(p) && p.subAdminId === session.subAdminId);
@@ -1957,8 +1956,7 @@
     if (!window._tbCatSel && catsFiltro.length) window._tbCatSel = null; // null = todas
 
     const _postoIdsValidos = new Set(DB.get('postos', []).map(p => Number(p.id)).filter(Number.isFinite));
-    const _desigIdsValidas = new Set(DB.get('designacoes', []).map(d => String(d.id || '')).filter(Boolean));
-    const _pedidoValido = p => _postoIdsValidos.has(Number(p.postoId)) && _desigIdsValidas.has(String(p.designacaoId || ''));
+    const _pedidoValido = p => _postoIdsValidos.has(Number(p.postoId));
     const _isResolvido = p => p.status !== 'aberto' || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status)).length >= (p.faltaQtd || 0);
     const pedidosTodos = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado' && (p.status === 'aberto' || p.status === 'fechado'));
     const pedidosProntos = pedidosTodos.filter(p => _isResolvido(p));

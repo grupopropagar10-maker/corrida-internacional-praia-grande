@@ -2003,6 +2003,7 @@
     const pedidosHtml = pedidosEncaminhados.length
       ? pedidosEncaminhados.map(pedido => {
           const sugestoes = suggestions.filter(item => item.pedidoId === pedido.id);
+          const sugestoesAtivas = sugestoes.filter(s => ['sugerido','designado','aceito'].includes(s.status)).length;
           const inviteOptions = invites
             .filter(invite => invite.ativo !== false)
             .filter(invite => { if (!invite.catId && !(invite.categoriasExtra?.length)) return true; const ids = [invite.catId, ...(invite.categoriasExtra||[]).map(c=>c.id)].filter(Boolean).map(Number); return ids.includes(Number(pedido.categoriaId)); })
@@ -2030,7 +2031,10 @@
                   <div class="mini-note">📍 ${pedido.postoNome || 'Posto'} · ${pedido.categoriaNome || 'Categoria'} · ${pedido.dataFmt || pedido.data || '—'} · ${pedido.slotLabel}</div>
                   <div class="mini-note">Encaminhado por ${pedido.tapaBuracoEncaminhadoPorNome || pedido.subAdminNome || 'sub-admin'} em ${pedido.tapaBuracoEncaminhadoEm || pedido.criadoEm || '—'}.</div>
                 </div>
-                <span class="badge badge-standby">Faltam ${pedido.faltaQtd} pessoa(s)</span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
+                  <span class="badge badge-standby">Faltam ${pedido.faltaQtd} pessoa(s)</span>
+                  ${sugestoesAtivas > 0 ? `<span class="badge ${sugestoesAtivas >= pedido.faltaQtd ? 'badge-ativo' : 'badge-primary'}" style="font-size:.72rem;">📲 ${sugestoesAtivas} de ${pedido.faltaQtd} enviado(s)</span>` : ''}
+                </div>
               </div>
               <div class="mini-note" style="margin-top:.5rem;">Escolha um tapa-buraco para sugerir ao setor. O voluntário receberá o login particular pelo WhatsApp e só precisará responder se aceita a designação.</div>
               <div class="help-grid">
@@ -2086,7 +2090,12 @@
         </div>
       </div>` : '';
 
-    el.innerHTML = catPillsHtml + `
+    const _tbNome = document.getElementById('tb-nome')?.value || '';
+    const _tbWhats = document.getElementById('tb-whatsapp')?.value || '';
+    const _tbCat = document.getElementById('tb-categoria')?.value || '';
+    const _tbFocused = document.activeElement?.closest('#body-tapa-buraco') ? document.activeElement.id : null;
+
+    el.innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1rem;">
         <div class="setor-stat"><strong>${invites.length}</strong><span>Tapa-buracos ativos</span></div>
         <div class="setor-stat warn"><strong>${pedidosEncaminhados.length}</strong><span>Pedidos encaminhados</span></div>
@@ -2117,8 +2126,14 @@
       </div>
       <div class="help-card">
         <strong>Pedidos encaminhados pelos setores</strong>
+        ${catPillsHtml ? `<div style="margin-top:.75rem;margin-bottom:-.2rem;">${catPillsHtml}</div>` : ''}
         <div style="margin-top:.8rem;">${pedidosHtml}</div>
       </div>`;
+
+    if (_tbNome) { const el2 = document.getElementById('tb-nome'); if (el2) el2.value = _tbNome; }
+    if (_tbWhats) { const el2 = document.getElementById('tb-whatsapp'); if (el2) el2.value = _tbWhats; }
+    if (_tbCat) { const el2 = document.getElementById('tb-categoria'); if (el2) el2.value = _tbCat; }
+    if (_tbFocused) { const el2 = document.getElementById(_tbFocused); if (el2) { el2.focus(); const len = el2.value.length; if (el2.setSelectionRange) el2.setSelectionRange(len, len); } }
   }
 
   window.salvarNovoTapaBuraco = function() {

@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Minha CongregaÃ§Ã£o â€” Corrida PG</title>
+  <title>Minha Congregação — Corrida PG</title>
   <link rel="stylesheet" href="css/style.css?v=20260616f"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
-    /* â•â• BANNER â•â• */
+    /* ══ BANNER ══ */
     .cong-banner {
       background: linear-gradient(135deg, var(--primary-dark), var(--primary));
       color: white; padding: 1.5rem 1.8rem;
@@ -32,14 +32,14 @@
     .chip.green  { background: rgba(40,167,69,.35);  border-color: rgba(40,167,69,.6); }
     .chip.yellow { background: rgba(255,193,7,.35);  border-color: rgba(255,193,7,.6); }
 
-    /* â•â• STATUS â•â• */
+    /* ══ STATUS ══ */
     .status-screen { max-width: 520px; margin: 3rem auto; padding: 0 1.5rem; text-align: center; }
     .status-screen .s-icon { font-size: 5rem; margin-bottom: 1rem; }
     .status-screen h2 { color: var(--primary-dark); font-size: 1.4rem; margin-bottom: .8rem; }
     .status-screen p  { color: var(--gray); line-height: 1.7; margin-bottom: 1.2rem; }
     .status-hint { border-radius: var(--radius); padding: 1rem; font-size: .85rem; margin-bottom: 1.2rem; }
 
-    /* â•â• TABS â•â• */
+    /* ══ TABS ══ */
     .tab-bar {
       display: flex; background: white; border-bottom: 3px solid var(--primary);
       overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,.07);
@@ -474,13 +474,13 @@
       font-size: .84rem;
     }
 
-    /* â•â• POSTO HERO â•â• */
+    /* ══ POSTO HERO ══ */
     .posto-hero {
       background: linear-gradient(135deg, #1a5c1a, #28A745);
       color: white; border-radius: var(--radius); padding: 1.5rem;
       margin-bottom: 1.2rem; position: relative; overflow: hidden;
     }
-    .posto-hero::after { content:'ðŸ“'; position:absolute; font-size:7rem; right:-1rem; bottom:-1.5rem; opacity:.1; }
+    .posto-hero::after { content:'📍'; position:absolute; font-size:7rem; right:-1rem; bottom:-1.5rem; opacity:.1; }
     .posto-hero h2 { font-size: 1.2rem; margin-bottom: .4rem; }
     .posto-hero .km-badge {
       display: inline-block; background: rgba(255,255,255,.25);
@@ -490,7 +490,7 @@
     .posto-detail span { display: flex; align-items: center; gap: .5rem; }
     #mini-map { height: clamp(260px, 42vh, 430px); border-radius: var(--radius); }
 
-    /* â•â• PUBLICAÃ‡Ã•ES â•â• */
+    /* ══ PUBLICAÇÕES ══ */
     .pub-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;
     }
@@ -513,7 +513,7 @@
       margin-bottom: 1.2rem; border: 1px solid var(--gray-light);
     }
 
-    /* â•â• ESCALA / TURNOS â•â• */
+    /* ══ ESCALA / TURNOS ══ */
     .membro-chip {
       display: inline-flex; align-items: center; gap: .3rem;
       background: #e8f0fb; border: 1px solid #c0d8f5; border-radius: 2rem;
@@ -601,7 +601,7 @@
     }
     .turno-vaga-select:hover { background: #daeeff; }
 
-    /* â•â• REGISTRAR â•â• */
+    /* ══ REGISTRAR ══ */
     .reg-counter { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
     .rcbtn {
       width: 40px; height: 40px; border-radius: 50%; border: none;
@@ -753,7 +753,7 @@
       padding: .9rem;
     }
 
-    /* â•â• RESULTADO â•â• */
+    /* ══ RESULTADO ══ */
     .resultado-card { background: linear-gradient(135deg,var(--primary-dark),var(--primary)); color:white; border-radius:var(--radius); padding:1.5rem; }
     .resultado-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.8rem; margin-top:1rem; }
     .resultado-item { background:rgba(255,255,255,.15); border-radius:var(--radius-sm); padding:.8rem; text-align:center; }
@@ -837,7 +837,7 @@
       }
     }
 
-    /* â•â• MODAL PARTICIPAÃ‡ÃƒO â•â• */
+    /* ══ MODAL PARTICIPAÇÃO ══ */
     .participacao-overlay {
       position: fixed; inset: 0; z-index: 9999;
       background: rgba(0,0,0,.65); display: flex;
@@ -905,12 +905,12 @@
 <!-- OVERLAY DE FILA DE ESPERA -->
 <div id="fila-espera-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,50,120,.97);z-index:9999;
   display:none;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center;padding:2rem;">
-  <div style="font-size:3rem;margin-bottom:1rem;">â³</div>
-  <h2 style="font-size:1.4rem;margin-bottom:.5rem;">Site com muitos acessos simultÃ¢neos</h2>
-  <p style="opacity:.85;max-width:340px;margin-bottom:1.5rem;">VocÃª estÃ¡ na fila de espera. Assim que um acesso se liberar, vocÃª entrarÃ¡ automaticamente.</p>
+  <div style="font-size:3rem;margin-bottom:1rem;">⏳</div>
+  <h2 style="font-size:1.4rem;margin-bottom:.5rem;">Site com muitos acessos simultâneos</h2>
+  <p style="opacity:.85;max-width:340px;margin-bottom:1.5rem;">Você está na fila de espera. Assim que um acesso se liberar, você entrará automaticamente.</p>
   <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:1.2rem 2rem;margin-bottom:1.5rem;">
-    <div style="font-size:2.5rem;font-weight:800;" id="fila-posicao">â€”</div>
-    <div style="opacity:.8;font-size:.9rem;">posiÃ§Ã£o na fila</div>
+    <div style="font-size:2.5rem;font-weight:800;" id="fila-posicao">—</div>
+    <div style="opacity:.8;font-size:.9rem;">posição na fila</div>
   </div>
   <div style="opacity:.7;font-size:.85rem;" id="fila-tempo">Verificando disponibilidade...</div>
 </div>
@@ -919,7 +919,7 @@
 <nav class="navbar">
   <a href="minha-congregacao.html" class="navbar-brand">
     <span class="logo-icon">Corrida</span>
-    <span id="nav-cong-nome">Minha CongregaÃ§Ã£o</span>
+    <span id="nav-cong-nome">Minha Congregação</span>
   </a>
 </nav>
 
@@ -940,110 +940,110 @@
     <h2 id="s-titulo"></h2>
     <p  id="s-msg"></p>
     <div id="s-hint"></div>
-    <button onclick="Auth.logout()" class="btn btn-outline" style="margin-top:.5rem;">â†© Sair</button>
+    <button onclick="Auth.logout()" class="btn btn-outline" style="margin-top:.5rem;">↩ Sair</button>
   </div>
 </div>
 
-<!-- CONTEÃšDO PRINCIPAL -->
+<!-- CONTEÚDO PRINCIPAL -->
 <div id="conteudo-principal" style="display:none;">
 
   <!-- TABS -->
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="tab-posto">ðŸ“ Meu Posto</button>
+    <button class="tab-btn active" data-tab="tab-posto">📍 Meu Posto</button>
     <button class="tab-btn" data-tab="tab-pubs">
-      ðŸ“š PublicaÃ§Ãµes <span class="tab-badge" id="badge-pubs" style="display:none;"></span>
+      📚 Publicações <span class="tab-badge" id="badge-pubs" style="display:none;"></span>
     </button>
     <button class="tab-btn" data-tab="tab-escala">
-      ðŸ‘¥ Adicionar nomes <span class="tab-badge" id="badge-escala-tab" style="display:none;"></span>
+      👥 Adicionar nomes <span class="tab-badge" id="badge-escala-tab" style="display:none;"></span>
     </button>
     <button class="tab-btn" data-tab="tab-live">
-      ðŸ“² Pedidos ao vivo <span class="tab-badge" id="badge-live-tab" style="display:none;"></span>
+      📲 Pedidos ao vivo <span class="tab-badge" id="badge-live-tab" style="display:none;"></span>
     </button>
-    <button class="tab-btn" data-tab="tab-reg">ðŸ“– Registrar <span class="tab-badge" id="badge-reg-tab" style="display:none;background:#dc3545;">!</span></button>
+    <button class="tab-btn" data-tab="tab-reg">📖 Registrar <span class="tab-badge" id="badge-reg-tab" style="display:none;background:#dc3545;">!</span></button>
   </div>
 
-  <!-- â•â• ABA 1 â€” MEU POSTO â•â• -->
+  <!-- ══ ABA 1 — MEU POSTO ══ -->
   <div class="tab-pane active" id="tab-posto">
     <div class="posto-layout">
         <div class="posto-stack">
           <div class="posto-hero">
-            <span class="km-badge" id="ph-km">ðŸ“ Km ?</span>
+            <span class="km-badge" id="ph-km">📏 Km ?</span>
             <h2 id="ph-nome">Carregando...</h2>
             <div class="posto-detail" id="ph-detail"></div>
           </div>
           <div class="card" id="card-desig"></div>
           <div class="card">
-            <div class="card-header"><span class="icon">ðŸ“‹</span><h2>OrientaÃ§Ãµes do dia</h2></div>
+            <div class="card-header"><span class="icon">📋</span><h2>Orientações do dia</h2></div>
             <div style="display:flex;flex-direction:column;gap:.6rem;">
               <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
                 <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">1</div>
-                <span style="font-size:.85rem;">ðŸ• Chegue ao posto <strong>30 minutos antes</strong> para montar o carrinho.</span>
+                <span style="font-size:.85rem;">🕐 Chegue ao posto <strong>30 minutos antes</strong> para montar o carrinho.</span>
               </div>
               <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
                 <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">2</div>
-                <span style="font-size:.85rem;">ðŸª§ Posicione o display visÃ­vel para os corredores, <strong>sem obstruir a pista</strong>.</span>
+                <span style="font-size:.85rem;">🪧 Posicione o display visível para os corredores, <strong>sem obstruir a pista</strong>.</span>
               </div>
               <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
                 <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">3</div>
-                <span style="font-size:.85rem;">ðŸ“± Registre cada distribuiÃ§Ã£o na aba <strong>"Registrar"</strong>.</span>
+                <span style="font-size:.85rem;">📱 Registre cada distribuição na aba <strong>"Registrar"</strong>.</span>
               </div>
               <div style="display:flex;gap:.7rem;padding:.7rem;background:var(--light);border-radius:6px;align-items:flex-start;">
                 <div style="min-width:26px;height:26px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;">4</div>
-                <span style="font-size:.85rem;">ðŸ”„ DÃºvida? Contate imediatamente o <strong>coordenador do evento</strong>.</span>
+                <span style="font-size:.85rem;">🔄 Dúvida? Contate imediatamente o <strong>coordenador do evento</strong>.</span>
               </div>
             </div>
           </div>
           <div id="card-categoria-info"></div>
         </div>
         <div class="card map-card-shell">
-          <div style="padding:.8rem 1.2rem;background:var(--primary-dark);color:white;font-size:.88rem;font-weight:600;">ðŸ—ºï¸ Sua localizaÃ§Ã£o no percurso</div>
+          <div style="padding:.8rem 1.2rem;background:var(--primary-dark);color:white;font-size:.88rem;font-weight:600;">🗺️ Sua localização no percurso</div>
           <div id="mini-map"></div>
-          <div style="padding:.6rem 1rem;font-size:.78rem;color:var(--gray);">ðŸ’¡ Marcador colorido = seu posto.</div>
+          <div style="padding:.6rem 1rem;font-size:.78rem;color:var(--gray);">💡 Marcador colorido = seu posto.</div>
         </div>
     </div>
   </div>
 
-  <!-- â•â• ABA 2 â€” PUBLICAÃ‡Ã•ES â•â• -->
+  <!-- ══ ABA 2 — PUBLICAÇÕES ══ -->
   <div class="tab-pane" id="tab-pubs">
     <div style="max-width:760px;margin:0 auto;">
       <div style="margin-bottom:1.2rem;">
-        <h2 style="color:var(--primary-dark);font-size:1.1rem;margin-bottom:.3rem;">ðŸ“š PublicaÃ§Ãµes que vou levar</h2>
-        <p style="color:var(--gray);font-size:.85rem;">Informe quantas unidades de cada publicaÃ§Ã£o sua congregaÃ§Ã£o vai disponibilizar no posto.</p>
+        <h2 style="color:var(--primary-dark);font-size:1.1rem;margin-bottom:.3rem;">📚 Publicações que vou levar</h2>
+        <p style="color:var(--gray);font-size:.85rem;">Informe quantas unidades de cada publicação sua congregação vai disponibilizar no posto.</p>
       </div>
       <div class="pub-grid" id="pub-grid"></div>
       <div class="pub-total-bar">
         <div>
           <strong style="color:var(--primary-dark);">Total:</strong>
           <span id="pub-total" style="font-size:1.4rem;font-weight:800;color:var(--primary);margin-left:.5rem;">0</span>
-          <span style="color:var(--gray);font-size:.85rem;"> publicaÃ§Ãµes</span>
+          <span style="color:var(--gray);font-size:.85rem;"> publicações</span>
         </div>
-        <button class="btn btn-primary" id="btn-salvar-pubs">ðŸ’¾ Salvar</button>
+        <button class="btn btn-primary" id="btn-salvar-pubs">💾 Salvar</button>
       </div>
       <div id="pubs-salvas-card" style="display:none;" class="card">
-        <div class="card-header"><span class="icon">âœ…</span><h2>PublicaÃ§Ãµes confirmadas</h2></div>
+        <div class="card-header"><span class="icon">✅</span><h2>Publicações confirmadas</h2></div>
         <div id="pubs-salvas-lista" style="display:flex;flex-wrap:wrap;gap:.6rem;padding-top:.5rem;"></div>
       </div>
     </div>
   </div>
 
-  <!-- â•â• ABA 3 â€” NOMES / TURNOS â•â• -->
+  <!-- ══ ABA 3 — NOMES / TURNOS ══ -->
   <div class="tab-pane" id="tab-escala">
     <div style="max-width:960px;margin:0 auto;">
 
-      <!-- Publicadores da congregaÃ§Ã£o -->
+      <!-- Publicadores da congregação -->
       <div class="card" style="margin-bottom:1.2rem;">
         <div class="card-header">
-          <span class="icon">ðŸ‘¥</span>
+          <span class="icon">👥</span>
           <h2>Adicionar nomes</h2>
           <span id="badge-escala-card" class="badge" style="display:none;">0</span>
         </div>
-        <p style="color:var(--gray);font-size:.84rem;margin:.1rem 0 .8rem;">Cadastre quem vai trabalhar no posto e marque a funÃ§Ã£o: Pioneiro Regular, Pioneiro Auxiliar ou Publicador.</p>
+        <p style="color:var(--gray);font-size:.84rem;margin:.1rem 0 .8rem;">Cadastre quem vai trabalhar no posto e marque a função: Pioneiro Regular, Pioneiro Auxiliar ou Publicador.</p>
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.4rem 0;min-height:2.2rem;" id="membros-chips">
           <span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>
         </div>
         <div id="live-request-note"></div>
         <div style="display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap;">
-          <input id="input-membro" class="form-control" placeholder="Nome do publicador (Ex: IrmÃ£o Carlos)" style="flex:1;min-width:200px;"/>
+          <input id="input-membro" class="form-control" placeholder="Nome do publicador (Ex: Irmão Carlos)" style="flex:1;min-width:200px;"/>
           <select id="select-funcao-membro" class="form-control" style="min-width:220px;flex:.8;">
             <option value="Pioneiro Regular">Pioneiro Regular</option>
             <option value="Pioneiro Auxiliar">Pioneiro Auxiliar</option>
@@ -1051,9 +1051,9 @@
           </select>
           <label class="repeat-toggle">
             <input type="checkbox" id="membro-pode-repetir"/>
-            Ela gostaria de repetir outro horÃ¡rio?
+            Ela gostaria de repetir outro horário?
           </label>
-          <button class="btn btn-primary" id="btn-add-membro" style="white-space:nowrap;">âž• Adicionar</button>
+          <button class="btn btn-primary" id="btn-add-membro" style="white-space:nowrap;">➕ Adicionar</button>
         </div>
       </div>
 
@@ -1065,10 +1065,10 @@
       <div id="escala-sector-actions" class="escala-sector-actions"></div>
       <div id="postos-turnos"></div>
 
-      <!-- BotÃµes de aÃ§Ã£o -->
+      <!-- Botões de ação -->
       <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
-        <button class="btn btn-outline" id="btn-salvar-escala">ðŸ’¾ Salvar</button>
-        <button class="btn btn-primary" id="btn-export-pdf">ðŸ–¨ï¸ Baixar PDF geral</button>
+        <button class="btn btn-outline" id="btn-salvar-escala">💾 Salvar</button>
+        <button class="btn btn-primary" id="btn-export-pdf">🖨️ Baixar PDF geral</button>
       </div>
     </div>
   </div>
@@ -1076,21 +1076,21 @@
   <div class="tab-pane" id="tab-live">
     <div class="live-wrap">
       <div class="live-hero">
-        <strong style="font-size:1.05rem;">ðŸ“² Pedidos ao vivo</strong>
-        <p>Libere um acesso simples para a pessoa escolher posto e horÃ¡rio disponÃ­vel. A confirmaÃ§Ã£o volta direto para a escala desta congregaÃ§Ã£o.</p>
+        <strong style="font-size:1.05rem;">📲 Pedidos ao vivo</strong>
+        <p>Libere um acesso simples para a pessoa escolher posto e horário disponível. A confirmação volta direto para a escala desta congregação.</p>
       </div>
       <div class="card">
         <div class="live-toggle">
           <div>
             <strong style="color:var(--primary-dark);font-size:1rem;">Ativar pedidos ao vivo</strong>
-            <div style="color:var(--gray);font-size:.82rem;margin-top:.2rem;">Quando ativo, esta congregaÃ§Ã£o pode enviar acessos individuais por WhatsApp.</div>
+            <div style="color:var(--gray);font-size:.82rem;margin-top:.2rem;">Quando ativo, esta congregação pode enviar acessos individuais por WhatsApp.</div>
           </div>
           <label><input type="checkbox" id="live-enabled-toggle"/> Liberar acesso</label>
         </div>
       </div>
       <div class="live-summary-grid" id="live-summary-grid"></div>
       <div class="card">
-        <div class="card-header"><span class="icon">âž•</span><h2>Novo acesso ao vivo</h2></div>
+        <div class="card-header"><span class="icon">➕</span><h2>Novo acesso ao vivo</h2></div>
         <div class="live-form-grid">
           <div class="form-group" style="margin:0;">
             <label>Nome</label>
@@ -1102,59 +1102,59 @@
             <label>WhatsApp</label>
             <input id="live-whatsapp" class="form-control" placeholder="Ex: 13 99999-8888"/>
           </div>
-          <button class="btn btn-primary" id="btn-live-add" style="white-space:nowrap;">âž• Criar acesso</button>
+          <button class="btn btn-primary" id="btn-live-add" style="white-space:nowrap;">➕ Criar acesso</button>
         </div>
         <div class="live-note" id="live-member-source-note" style="margin-top:1rem;">Os nomes aqui sao puxados da aba <strong>Adicionar nomes</strong>. Assim o pedido ao vivo sempre usa pessoas ja cadastradas pela congregacao.</div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="icon">ðŸ“‹</span><h2>Acessos criados</h2></div>
+        <div class="card-header"><span class="icon">📋</span><h2>Acessos criados</h2></div>
         <div class="live-list" id="live-requests-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- â•â• ABA 4 â€” REGISTRAR â•â• -->
+  <!-- ══ ABA 4 — REGISTRAR ══ -->
   <div class="tab-pane" id="tab-reg">
     <div class="reg-shell">
       <div class="reg-alert" id="reg-alert"></div>
       <div class="reg-grid">
         <div style="display:grid;gap:1rem;">
           <div class="card">
-            <div class="card-header"><span class="icon">ðŸ“</span><h2>Qual arranjo deseja fechar?</h2></div>
-            <p style="color:var(--gray);font-size:.84rem;margin-bottom:.85rem;">Escolha o posto pelo horÃ¡rio, local e referÃªncia. Assim nÃ£o aparecem opÃ§Ãµes iguais sem contexto.</p>
+            <div class="card-header"><span class="icon">📍</span><h2>Qual arranjo deseja fechar?</h2></div>
+            <p style="color:var(--gray);font-size:.84rem;margin-bottom:.85rem;">Escolha o posto pelo horário, local e referência. Assim não aparecem opções iguais sem contexto.</p>
             <div id="assignment-picker" class="assignment-picker"></div>
           </div>
 
           <div class="card">
-            <div class="card-header"><span class="icon">ðŸ“š</span><h2>PublicaÃ§Ãµes que saÃ­ram no dia</h2></div>
+            <div class="card-header"><span class="icon">📚</span><h2>Publicações que saíram no dia</h2></div>
             <div class="reg-summary-box" id="reg-assignment-summary"></div>
             <div class="form-group" style="margin-top:1rem;">
-              <label>Quantidade total distribuÃ­da nesse arranjo</label>
+              <label>Quantidade total distribuída nesse arranjo</label>
               <input class="reg-input-lg" id="reg-total-publicacoes" type="number" min="0" step="1" value="0" placeholder="Ex: 42" />
             </div>
             <div class="reg-inline-actions">
-              <button class="btn btn-accent" id="btn-salvar-publicacoes">ðŸ’¾ Salvar total do dia</button>
-              <button class="btn btn-outline" id="btn-abrir-maps-reg">ðŸ“ Ver ponto no mapa</button>
+              <button class="btn btn-accent" id="btn-salvar-publicacoes">💾 Salvar total do dia</button>
+              <button class="btn btn-outline" id="btn-abrir-maps-reg">📍 Ver ponto no mapa</button>
             </div>
           </div>
 
           <div class="card">
-            <div class="card-header"><span class="icon">âœ¨</span><h2>ExperiÃªncias</h2></div>
+            <div class="card-header"><span class="icon">✨</span><h2>Experiências</h2></div>
             <p style="color:var(--gray);font-size:.84rem;margin-bottom:.85rem;">Envie uma foto e descreva rapidamente o que aconteceu nesse posto.</p>
             <div class="form-group">
-              <label>Detalhes da experiÃªncia</label>
+              <label>Detalhes da experiência</label>
               <textarea class="form-control" id="exp-detalhes" rows="3" placeholder="Ex: boa receptividade, conversa marcante, interesse no site..."></textarea>
             </div>
             <div class="reg-inline-actions">
               <input id="exp-image-input" type="file" accept="image/*" style="display:none;" />
-              <button class="btn btn-outline" id="btn-escolher-imagem">ðŸ–¼ï¸ Escolher imagem</button>
-              <button class="btn btn-primary" id="btn-salvar-experiencia">ðŸ“¤ Salvar experiÃªncia</button>
+              <button class="btn btn-outline" id="btn-escolher-imagem">🖼️ Escolher imagem</button>
+              <button class="btn btn-primary" id="btn-salvar-experiencia">📤 Salvar experiência</button>
             </div>
             <div class="exp-preview" id="exp-preview">
-              <img id="exp-preview-img" alt="PrÃ©via da experiÃªncia" />
+              <img id="exp-preview-img" alt="Prévia da experiência" />
               <div>
                 <strong id="exp-preview-name">Imagem selecionada</strong>
-                <div style="color:var(--gray);font-size:.8rem;">A foto serÃ¡ reduzida antes de salvar.</div>
+                <div style="color:var(--gray);font-size:.8rem;">A foto será reduzida antes de salvar.</div>
               </div>
             </div>
           </div>
@@ -1163,18 +1163,18 @@
         <div style="display:flex;flex-direction:column;gap:1.2rem;">
           <div class="resultado-card">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-              <strong style="font-size:.95rem;">ðŸ“Š Fechamento do campo</strong>
+              <strong style="font-size:.95rem;">📊 Fechamento do campo</strong>
               <button onclick="imprimirResultado()" class="btn btn-sm"
                 style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.4);">
-                ðŸ–¨ï¸ Imprimir
+                🖨️ Imprimir
               </button>
             </div>
             <div class="resultado-grid" id="resultado-grid"></div>
           </div>
           <div class="card">
             <div class="card-header" style="justify-content:space-between;">
-              <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">ðŸ•“</span><h2>Ãšltimos registros</h2></div>
-              <button class="btn btn-outline btn-sm" onclick="limparHistorico()">ðŸ—‘ï¸ Limpar</button>
+              <div style="display:flex;align-items:center;gap:.5rem;"><span class="icon">🕓</span><h2>Últimos registros</h2></div>
+              <button class="btn btn-outline btn-sm" onclick="limparHistorico()">🗑️ Limpar</button>
             </div>
             <div id="meu-historico" style="display:flex;flex-direction:column;gap:.4rem;max-height:360px;overflow-y:auto;"></div>
           </div>
@@ -1185,40 +1185,40 @@
 
 </div><!-- /conteudo-principal -->
 
-<!-- MODAL PARTICIPAÃ‡ÃƒO -->
+<!-- MODAL PARTICIPAÇÃO -->
 <div class="participacao-overlay" id="modal-participacao" style="display:none;">
   <div class="participacao-card">
-    <h2>ðŸ“‹ Confirme sua participaÃ§Ã£o</h2>
-    <p>Para organizar melhor o evento, precisamos saber o que sua congregaÃ§Ã£o vai trazer. Responda abaixo:</p>
+    <h2>📋 Confirme sua participação</h2>
+    <p>Para organizar melhor o evento, precisamos saber o que sua congregação vai trazer. Responda abaixo:</p>
 
     <div class="qty-field">
-      <div class="qty-field-icon">ðŸ›’</div>
+      <div class="qty-field-icon">🛒</div>
       <div class="qty-field-label">
         <strong>Carrinhos</strong>
-        <span>Quantos carrinhos de publicaÃ§Ãµes?</span>
+        <span>Quantos carrinhos de publicações?</span>
       </div>
       <div class="qty-spinner">
-        <button class="qty-btn" onclick="adjustQty('carrinhos', -1)">âˆ’</button>
+        <button class="qty-btn" onclick="adjustQty('carrinhos', -1)">−</button>
         <div class="qty-val" id="val-carrinhos">0</div>
         <button class="qty-btn" onclick="adjustQty('carrinhos', +1)">+</button>
       </div>
     </div>
 
     <div class="qty-field">
-      <div class="qty-field-icon">ðŸª§</div>
+      <div class="qty-field-icon">🪧</div>
       <div class="qty-field-label">
         <strong>Displays</strong>
         <span>Quantos displays/banners?</span>
       </div>
       <div class="qty-spinner">
-        <button class="qty-btn" onclick="adjustQty('displays', -1)">âˆ’</button>
+        <button class="qty-btn" onclick="adjustQty('displays', -1)">−</button>
         <div class="qty-val" id="val-displays">0</div>
         <button class="qty-btn" onclick="adjustQty('displays', +1)">+</button>
       </div>
     </div>
 
     <button class="btn-confirmar-part" id="btn-confirmar-part">
-      âœ… Confirmar participaÃ§Ã£o
+      ✅ Confirmar participação
     </button>
   </div>
 </div>
@@ -1250,9 +1250,9 @@
 <script>
 (async function() {
 await (window.DB_SYNC_READY || Promise.resolve());
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
 //  INIT + AUTH
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
 const user = Auth.check();
 if (!user) return;
 if (user.type === 'admin') { window.location.href = 'admin.html'; return; }
@@ -1306,14 +1306,14 @@ function getEscalaKey(desig, posto = null) {
 
 window.cong = cong;
 
-// â•â• CONTROLE DE SESSÃƒO AO VIVO â•â•
+// ══ CONTROLE DE SESSÃO AO VIVO ══
 (function initSessionTracking() {
   if (!cong || user.type !== 'cong') return;
   const LIMITE = 50;
   const INATIVIDADE = 5 * 60 * 1000;
   const HEARTBEAT_MS = 60 * 1000;
 
-  // ID Ãºnico por aba/tab
+  // ID único por aba/tab
   let sid = sessionStorage.getItem('_ao_vivo_sid');
   if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem('_ao_vivo_sid', sid); }
 
@@ -1336,7 +1336,7 @@ window.cong = cong;
   function mostrarFila(posicao) {
     const el = document.getElementById('fila-espera-overlay');
     el.style.display = 'flex';
-    document.getElementById('fila-posicao').textContent = posicao || 'â€”';
+    document.getElementById('fila-posicao').textContent = posicao || '—';
     document.getElementById('fila-tempo').textContent = `Verificando a cada 15 segundos...`;
   }
 
@@ -1413,7 +1413,7 @@ function getCongConfig() {
 }
 function saveCongConfig(cfg) {
   // Grava SOMENTE o no desta congregacao (cong_config/{id}), nunca o blob
-  // inteiro â€” elimina a race condition entre congregacoes concorrentes e a
+  // inteiro — elimina a race condition entre congregacoes concorrentes e a
   // falsa deteccao de "escrita suspeita" sobre o objeto inteiro.
   const all = DB.get('cong_config', {});
   all[CONG_ID] = cfg;
@@ -1426,19 +1426,19 @@ function saveCongConfig(cfg) {
   }
 }
 
-// â”€â”€ Banner â”€â”€
-document.getElementById('nav-cong-nome').textContent = cong?.nome || 'CongregaÃ§Ã£o';
+// ── Banner ──
+document.getElementById('nav-cong-nome').textContent = cong?.nome || 'Congregação';
 document.getElementById('wb-nome').textContent       = cong?.nome || 'Bem-vindo!';
-document.getElementById('wb-cidade').textContent     = cong ? `ðŸ“ ${cong.cidade}` : '';
+document.getElementById('wb-cidade').textContent     = cong ? `📍 ${cong.cidade}` : '';
 document.getElementById('cong-banner-icon').textContent = getCongInitials(cong?.nome);
 if (cong?.cor) {
   document.getElementById('cong-banner').style.background =
     `linear-gradient(135deg, ${cong.cor}dd, ${cong.cor})`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
 //  CONTROLE DE ACESSO
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
 function showStatus(icon, titulo, msg, hint, hintType) {
   document.getElementById('tela-status').style.display       = 'block';
   document.getElementById('conteudo-principal').style.display = 'none';
@@ -1454,20 +1454,20 @@ function showStatus(icon, titulo, msg, hint, hintType) {
 }
 
 if (!cong) {
-  document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">âŒ NÃ£o encontrada</span>';
-  showStatus('âŒ','CongregaÃ§Ã£o nÃ£o encontrada','NÃ£o foi possÃ­vel localizar sua congregaÃ§Ã£o. Contate o administrador.');
+  document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">❌ Não encontrada</span>';
+  showStatus('❌','Congregação não encontrada','Não foi possível localizar sua congregação. Contate o administrador.');
   return;
 }
 
 if (!cong.confirmada) {
-  document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">â³ Aguardando confirmaÃ§Ã£o</span>';
-  showStatus('â³','Aguardando confirmaÃ§Ã£o',
-    `Sua congregaÃ§Ã£o <strong>${cong.nome}</strong> estÃ¡ cadastrada, mas a participaÃ§Ã£o ainda <strong>nÃ£o foi confirmada</strong> pelo administrador.<br><br>Assim que for confirmada, vocÃª terÃ¡ acesso completo ao seu posto.`,
-    'ðŸ’¡ JÃ¡ acertou com o coordenador? PeÃ§a para ele confirmar no <strong>Painel Admin</strong>.', 'yellow');
+  document.getElementById('banner-chips').innerHTML = '<span class="chip yellow">⏳ Aguardando confirmação</span>';
+  showStatus('⏳','Aguardando confirmação',
+    `Sua congregação <strong>${cong.nome}</strong> está cadastrada, mas a participação ainda <strong>não foi confirmada</strong> pelo administrador.<br><br>Assim que for confirmada, você terá acesso completo ao seu posto.`,
+    '💡 Já acertou com o coordenador? Peça para ele confirmar no <strong>Painel Admin</strong>.', 'yellow');
   return;
 }
 
-// â•â• FORMULÃRIO DE PARTICIPAÃ‡ÃƒO (carrinhos + displays) â•â•
+// ══ FORMULÁRIO DE PARTICIPAÇÃO (carrinhos + displays) ══
 let _carrinhos = cong.participacao?.carrinhos ?? 0;
 let _displays  = cong.participacao?.displays  ?? 0;
 
@@ -1507,7 +1507,7 @@ function salvarParticipacao() {
   fecharModalParticipacao();
   // Atualiza chip no banner
   atualizarChipParticipacao(congs[idx].participacao);
-  showToast('ParticipaÃ§Ã£o confirmada! âœ…', 'success');
+  showToast('Participação confirmada! ✅', 'success');
 }
 
 function atualizarChipParticipacao(part) {
@@ -1515,13 +1515,13 @@ function atualizarChipParticipacao(part) {
   chips.querySelector('.chip.blue')?.remove();
   const chip = document.createElement('span');
   chip.className = 'chip blue';
-  chip.innerHTML = `ðŸ›’ ${part.carrinhos} carr. Â· ðŸª§ ${part.displays} disp. <button onclick="abrirModalParticipacao()" style="background:none;border:none;color:white;cursor:pointer;font-size:.75rem;margin-left:.3rem;opacity:.8;">âœï¸</button>`;
+  chip.innerHTML = `🛒 ${part.carrinhos} carr. · 🪧 ${part.displays} disp. <button onclick="abrirModalParticipacao()" style="background:none;border:none;color:white;cursor:pointer;font-size:.75rem;margin-left:.3rem;opacity:.8;">✏️</button>`;
   chips.appendChild(chip);
 }
 
 document.getElementById('btn-confirmar-part').addEventListener('click', salvarParticipacao);
 
-// Mostra modal se ainda nÃ£o respondeu
+// Mostra modal se ainda não respondeu
 if (!cong.participacao?.respondeu) {
   abrirModalParticipacao();
 } else {
@@ -1530,32 +1530,32 @@ if (!cong.participacao?.respondeu) {
 
 if (desigs.length === 0) {
   document.getElementById('banner-chips').innerHTML =
-    '<span class="chip green">âœ… Confirmada</span>' +
-    '<span class="chip yellow">ðŸ“ Sem posto ainda</span>' +
+    '<span class="chip green">✅ Confirmada</span>' +
+    '<span class="chip yellow">📍 Sem posto ainda</span>' +
     (cong.participacao?.respondeu
-      ? `<span class="chip blue" style="cursor:pointer;" onclick="abrirModalParticipacao()">ðŸ›’${cong.participacao.carrinhos} ðŸª§${cong.participacao.displays} âœï¸</span>`
-      : '<span class="chip" style="cursor:pointer;background:#e8f4fd;color:#0057A8;" onclick="abrirModalParticipacao()">ðŸ“‹ Informar participaÃ§Ã£o</span>');
-  showStatus('ðŸŽ‰','ParticipaÃ§Ã£o confirmada!',
-    `<strong>${cong.nome}</strong> estÃ¡ confirmada para o evento! O administrador ainda nÃ£o designou seu <strong>posto no percurso</strong>. Assim que for definido vocÃª verÃ¡ aqui todas as informaÃ§Ãµes.<br><br>
+      ? `<span class="chip blue" style="cursor:pointer;" onclick="abrirModalParticipacao()">🛒${cong.participacao.carrinhos} 🪧${cong.participacao.displays} ✏️</span>`
+      : '<span class="chip" style="cursor:pointer;background:#e8f4fd;color:#0057A8;" onclick="abrirModalParticipacao()">📋 Informar participação</span>');
+  showStatus('🎉','Participação confirmada!',
+    `<strong>${cong.nome}</strong> está confirmada para o evento! O administrador ainda não designou seu <strong>posto no percurso</strong>. Assim que for definido você verá aqui todas as informações.<br><br>
     <button onclick="abrirModalParticipacao()" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-size:.9rem;">
-      ðŸ“‹ Informar carrinhos e displays
+      📋 Informar carrinhos e displays
     </button>`,
-    'âœ… Fique tranquilo â€” vocÃª serÃ¡ avisado assim que o posto for designado.', 'green');
+    '✅ Fique tranquilo — você será avisado assim que o posto for designado.', 'green');
   return;
 }
 
-// âœ… ACESSO TOTAL
+// ✅ ACESSO TOTAL
 document.getElementById('banner-chips').innerHTML =
-  '<span class="chip green">âœ… Confirmada e designada</span>' +
-  `<span class="chip">ðŸ“ ${desigs.length} posto(s)</span>`;
+  '<span class="chip green">✅ Confirmada e designada</span>' +
+  `<span class="chip">📍 ${desigs.length} posto(s)</span>`;
 document.getElementById('conteudo-principal').style.display = 'block';
 
 const desigP = desigs[0];
 const postoP = meusPostos[0] || todosPos.find(p => p.id === desigP.postoId);
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
 //  TABS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1578,50 +1578,50 @@ document.querySelectorAll('[data-tab]').forEach(a => {
   });
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  ABA 1 â€” MEU POSTO
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
+//  ABA 1 — MEU POSTO
+// ══════════════════════════════════════════
 (function renderPosto() {
   if (!postoP) return;
-  document.getElementById('ph-km').textContent   = postoP.km ? `ðŸ“ Km ${postoP.km}` : `ðŸ“ Ponto personalizado`;
+  document.getElementById('ph-km').textContent   = postoP.km ? `📏 Km ${postoP.km}` : `📍 Ponto personalizado`;
   document.getElementById('ph-nome').textContent = postoP.nome;
   const categoria = getCategoriaById(postoP.categoriaId);
   const resumoCategoria = categoria
-    ? `ðŸ“… ${categoria.nome}${categoria.horario && categoria.horarioFim ? ` Â· ${categoria.horario}-${categoria.horarioFim}` : ''}`
+    ? `📅 ${categoria.nome}${categoria.horario && categoria.horarioFim ? ` · ${categoria.horario}-${categoria.horarioFim}` : ''}`
     : '';
   const mapsUrlPosto = (typeof postoP.lat === 'number' && typeof postoP.lng === 'number')
     ? `https://www.google.com/maps?q=${postoP.lat},${postoP.lng}`
     : postoP.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(postoP.local)}` : '';
   document.getElementById('ph-detail').innerHTML = `
-    ${postoP.numero != null ? `<span>ðŸ”¢ Posto NÂº ${String(postoP.numero).padStart(2,'0')}</span>` : ''}
-    <span>ðŸ“Œ ${postoP.local || 'Local nÃ£o informado'}</span>
-    <span>ðŸ“Š Status: ${postoP.status==='ativo'?'ðŸŸ¢ Ativo':postoP.status==='standby'?'ðŸŸ¡ Standby':'ðŸ”´ Inativo'}</span>
-    ${postoP.responsavel ? `<span>ðŸ‘¤ ResponsÃ¡vel geral: ${postoP.responsavel}</span>` : ''}
+    ${postoP.numero != null ? `<span>🔢 Posto Nº ${String(postoP.numero).padStart(2,'0')}</span>` : ''}
+    <span>📌 ${postoP.local || 'Local não informado'}</span>
+    <span>📊 Status: ${postoP.status==='ativo'?'🟢 Ativo':postoP.status==='standby'?'🟡 Standby':'🔴 Inativo'}</span>
+    ${postoP.responsavel ? `<span>👤 Responsável geral: ${postoP.responsavel}</span>` : ''}
     ${resumoCategoria ? `<span>${resumoCategoria}</span>` : ''}
-    ${mapsUrlPosto ? `<a href="${mapsUrlPosto}" target="_blank" rel="noopener" style="color:white;text-decoration:underline;font-weight:600;">ðŸ—ºï¸ Ver no mapa</a>` : ''}`;
+    ${mapsUrlPosto ? `<a href="${mapsUrlPosto}" target="_blank" rel="noopener" style="color:white;text-decoration:underline;font-weight:600;">🗺️ Ver no mapa</a>` : ''}`;
 
   const rows = desigs.map(d => {
     const p  = todosPos.find(x => x.id === d.postoId);
-    const dt = d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}) : 'â€”';
+    const dt = d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'long',year:'numeric'}) : '—';
     return `<tr>
-      <td><strong>${p?.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.72rem;font-weight:800;margin-right:.35rem;">NÂº ${String(p.numero).padStart(2,'0')}</span>` : ''}${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
-      <td>${dt}</td><td>${d.inicio}â€“${d.fim}</td>
-      <td>${(() => { const cat = getCategoriaById(p?.categoriaId); return cat ? `${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:4px;padding:.05rem .35rem;font-size:.7rem;font-weight:800;margin-right:.3rem;">NÂº ${String(cat.numero).padStart(2,'0')}</span>` : ''}${cat.nome}` : 'â€”'; })()}</td>
+      <td><strong>${p?.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.72rem;font-weight:800;margin-right:.35rem;">Nº ${String(p.numero).padStart(2,'0')}</span>` : ''}${p?.nome||'?'}</strong><div style="font-size:.75rem;color:var(--gray);">${p?.km ? `Km ${p.km}` : 'Ponto personalizado'}</div></td>
+      <td>${dt}</td><td>${d.inicio}–${d.fim}</td>
+      <td>${(() => { const cat = getCategoriaById(p?.categoriaId); return cat ? `${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:4px;padding:.05rem .35rem;font-size:.7rem;font-weight:800;margin-right:.3rem;">Nº ${String(cat.numero).padStart(2,'0')}</span>` : ''}${cat.nome}` : '—'; })()}</td>
       <td>
         ${d.obs ? `<div style="font-size:.8rem;color:var(--gray);margin-bottom:.3rem;">${d.obs}</div>` : ''}
-        ${(() => { const url = (typeof p?.lat === 'number' && typeof p?.lng === 'number') ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving` : p?.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.local)}` : ''; return url ? `<a href="${url}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.2rem .55rem;">ðŸ—ºï¸ Ver</a>` : 'â€”'; })()}
+        ${(() => { const url = (typeof p?.lat === 'number' && typeof p?.lng === 'number') ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving` : p?.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.local)}` : ''; return url ? `<a href="${url}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.2rem .55rem;">🗺️ Ver</a>` : '—'; })()}
       </td>
     </tr>`;
   }).join('');
 
   document.getElementById('card-desig').innerHTML = `
-    <div class="card-header"><span class="icon">ðŸ—“ï¸</span><h2>Minhas DesignaÃ§Ãµes</h2></div>
+    <div class="card-header"><span class="icon">🗓️</span><h2>Minhas Designações</h2></div>
     <div style="overflow-x:auto;">
       <table style="width:100%;font-size:.85rem;border-collapse:collapse;">
         <thead><tr style="background:var(--primary-dark);color:white;">
           <th style="padding:.5rem .8rem;text-align:left;">Posto</th>
           <th style="padding:.5rem .8rem;">Data</th>
-          <th style="padding:.5rem .8rem;">HorÃ¡rio</th>
+          <th style="padding:.5rem .8rem;">Horário</th>
           <th style="padding:.5rem .8rem;">Categoria</th>
           <th style="padding:.5rem .8rem;">Obs.</th>
         </tr></thead>
@@ -1629,7 +1629,7 @@ document.querySelectorAll('[data-tab]').forEach(a => {
       </table>
     </div>`;
 
-  // Card de categorias â€” coleta todas Ãºnicas das designaÃ§Ãµes
+  // Card de categorias — coleta todas únicas das designações
   const catInfoEl = document.getElementById('card-categoria-info');
   if (catInfoEl) {
     const categoriaIds = [...new Set(desigs.map(d => {
@@ -1640,26 +1640,26 @@ document.querySelectorAll('[data-tab]').forEach(a => {
     if (categorias.length) {
       const linhas = categorias.map(cat => {
         const datasStr = Array.isArray(cat.datas) && cat.datas.filter(Boolean).length
-          ? cat.datas.filter(Boolean).map(d => new Date(d + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })).join(' Â· ')
-          : 'â€”';
-        const horarioStr = cat.horario && cat.horarioFim ? `${cat.horario}â€“${cat.horarioFim}` : 'â€”';
+          ? cat.datas.filter(Boolean).map(d => new Date(d + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })).join(' · ')
+          : '—';
+        const horarioStr = cat.horario && cat.horarioFim ? `${cat.horario}–${cat.horarioFim}` : '—';
         return `
           <div style="padding:.7rem 0;border-bottom:1px solid var(--border);">
             <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem;">
               <span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${cat.cor || '#0057A8'};flex-shrink:0;"></span>
-              ${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.75rem;font-weight:800;">NÂº ${String(cat.numero).padStart(2,'0')}</span>` : ''}
+              ${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.75rem;font-weight:800;">Nº ${String(cat.numero).padStart(2,'0')}</span>` : ''}
               <strong style="font-size:.92rem;color:var(--primary-dark);">${cat.nome}</strong>
             </div>
             <div style="font-size:.82rem;color:var(--gray);display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;">
-              <span>â±ï¸ HorÃ¡rio: <strong style="color:var(--dark);">${horarioStr}</strong></span>
-              <span>ðŸ“… Datas: <strong style="color:var(--dark);">${datasStr}</strong></span>
+              <span>⏱️ Horário: <strong style="color:var(--dark);">${horarioStr}</strong></span>
+              <span>📅 Datas: <strong style="color:var(--dark);">${datasStr}</strong></span>
             </div>
-            ${cat.descricao ? `<div style="font-size:.8rem;color:var(--gray);margin-top:.2rem;">ðŸ’¬ ${cat.descricao}</div>` : ''}
+            ${cat.descricao ? `<div style="font-size:.8rem;color:var(--gray);margin-top:.2rem;">💬 ${cat.descricao}</div>` : ''}
           </div>`;
       }).join('');
       catInfoEl.innerHTML = `
         <div class="card" style="margin-top:.8rem;">
-          <div class="card-header"><span class="icon">ðŸ§­</span><h2>Sua${categorias.length > 1 ? 's' : ''} categoria${categorias.length > 1 ? 's' : ''} de serviÃ§o</h2></div>
+          <div class="card-header"><span class="icon">🧭</span><h2>Sua${categorias.length > 1 ? 's' : ''} categoria${categorias.length > 1 ? 's' : ''} de serviço</h2></div>
           <div style="padding-top:.1rem;">${linhas}</div>
         </div>`;
     } else {
@@ -1681,7 +1681,7 @@ document.querySelectorAll('[data-tab]').forEach(a => {
   const center = getPos(postoP, piIdx);
   const map = L.map('mini-map').setView(center, 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {attribution:'Â© OpenStreetMap',maxZoom:18}).addTo(map);
+    {attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
   L.polyline(coordsBase,{color:'#0057A8',weight:3,opacity:.4,dashArray:'8,6'}).addTo(map);
   todosPos.forEach((p, i) => {
     const isMeu = desigs.some(d => d.postoId === p.id);
@@ -1690,14 +1690,14 @@ document.querySelectorAll('[data-tab]').forEach(a => {
       html:`<div style="background:${isMeu?cong?.cor||'#0057A8':'#9E9E9E'};color:white;border-radius:50%;
         width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;
         font-size:.62rem;font-weight:800;border:${isMeu?'3px solid white':'2px solid rgba(255,255,255,.4)'};
-        box-shadow:${isMeu?'0 3px 10px rgba(0,0,0,.4)':'none'};opacity:${isMeu?1:.4};">${p.km ? `${p.km}km` : 'ðŸ“'}</div>`,
+        box-shadow:${isMeu?'0 3px 10px rgba(0,0,0,.4)':'none'};opacity:${isMeu?1:.4};">${p.km ? `${p.km}km` : '📍'}</div>`,
       iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''
     });
     const pos = getPos(p, i);
     const m = L.marker(pos,{icon}).addTo(map);
     if (isMeu) {
       const d = desigs.find(x => x.postoId === p.id);
-      m.bindPopup(`<strong>${p.nome}</strong><br>${p.km ? `ðŸ“ Km ${p.km}<br>` : ''}ðŸ• ${d?.inicio}â€“${d?.fim}<br>ðŸ“Œ ${p.local||''}`).openPopup();
+      m.bindPopup(`<strong>${p.nome}</strong><br>${p.km ? `📏 Km ${p.km}<br>` : ''}🕐 ${d?.inicio}–${d?.fim}<br>📌 ${p.local||''}`).openPopup();
     }
   });
   if (typeof postoP.lat === 'number' && typeof postoP.lng === 'number') {
@@ -1705,16 +1705,16 @@ document.querySelectorAll('[data-tab]').forEach(a => {
   }
 })();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  ABA 2 â€” PUBLICAÃ‡Ã•ES
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
+//  ABA 2 — PUBLICAÇÕES
+// ══════════════════════════════════════════
 const PUBS = [
-  {id:'atalaias', nome:'A Sentinela',  icon:'ðŸ“°'},
-  {id:'despertar',nome:'Despertai!',   icon:'ðŸ“—'},
-  {id:'biblia',   nome:'BÃ­blia / NWT', icon:'ðŸ“–'},
-  {id:'folheto',  nome:'Folheto',      icon:'ðŸ“„'},
-  {id:'livro',    nome:'Livro',        icon:'ðŸ“˜'},
-  {id:'site',     nome:'Site (card)',  icon:'ðŸŒ'},
+  {id:'atalaias', nome:'A Sentinela',  icon:'📰'},
+  {id:'despertar',nome:'Despertai!',   icon:'📗'},
+  {id:'biblia',   nome:'Bíblia / NWT', icon:'📖'},
+  {id:'folheto',  nome:'Folheto',      icon:'📄'},
+  {id:'livro',    nome:'Livro',        icon:'📘'},
+  {id:'site',     nome:'Site (card)',  icon:'🌐'},
 ];
 
 function renderPubGrid() {
@@ -1745,7 +1745,7 @@ function renderPubsSalvas() {
   if (!keys.length) { card.style.display='none'; document.getElementById('badge-pubs').style.display='none'; return; }
   card.style.display = 'block';
   const total = keys.reduce((s,[,v])=>s+v,0);
-  const ts = cfg.pubs_ts ? `<div style="font-size:.75rem;color:var(--gray);margin-bottom:.6rem;">ðŸ’¾ Ãšltima atualizaÃ§Ã£o: <strong>${cfg.pubs_ts}</strong></div>` : '';
+  const ts = cfg.pubs_ts ? `<div style="font-size:.75rem;color:var(--gray);margin-bottom:.6rem;">💾 Última atualização: <strong>${cfg.pubs_ts}</strong></div>` : '';
   document.getElementById('pubs-salvas-lista').innerHTML = ts + keys.map(([id,qty]) => {
     const p = PUBS.find(x=>x.id===id);
     return `<span class="badge badge-primary" style="font-size:.85rem;padding:.35rem .7rem;">
@@ -1761,15 +1761,15 @@ document.getElementById('btn-salvar-pubs').addEventListener('click', () => {
   PUBS.forEach(p => { cfg.publicacoes[p.id] = parseInt(document.getElementById(`pqty-${p.id}`)?.value)||0; });
   cfg.pubs_ts = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   saveCongConfig(cfg);
-  showToast('PublicaÃ§Ãµes salvas! âœ…','success');
+  showToast('Publicações salvas! ✅','success');
   renderPubsSalvas();
 });
 
 renderPubGrid();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  ABA 3 â€” ESCALA / TURNOS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
+//  ABA 3 — ESCALA / TURNOS
+// ══════════════════════════════════════════
 
 function timeToMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
 function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
@@ -1870,8 +1870,8 @@ function getSlotFinalizadoInfo(agendaCfg, slotKey) {
 }
 
 window.setSlotFechadoCom2 = function(desigId, slotKey, valor) {
-  if (valor) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'HorÃ¡rio fechado com 2 irmÃ£os pela congregaÃ§Ã£o.');
-  // 1. Atualiza localStorage imediatamente (cumulativo â€” nÃ£o perde slots anteriores)
+  if (valor) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'Horário fechado com 2 irmãos pela congregação.');
+  // 1. Atualiza localStorage imediatamente (cumulativo — não perde slots anteriores)
   const all = DB.get('cong_config', {});
   const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
   cfg.agendaConfig = cfg.agendaConfig || {};
@@ -1881,15 +1881,15 @@ window.setSlotFechadoCom2 = function(desigId, slotKey, valor) {
   else delete cfg.agendaConfig[desigId].slotsOverride[slotKey];
   all[CONG_ID] = cfg;
 
-  // 2. Protege localStorage com pending write â€” listener nÃ£o sobrescreve enquanto pendente
+  // 2. Protege localStorage com pending write — listener não sobrescreve enquanto pendente
   if (typeof savePrewriteSnapshot === 'function') savePrewriteSnapshot('cong_config');
   localStorage.setItem('cong_config', JSON.stringify(all));
   const writeTs = typeof markPendingWrite === 'function'
     ? markPendingWrite('cong_config', all)
     : null;
 
-  // 3. Grava APENAS o campo alterado no Firebase (caminho filho especÃ­fico).
-  //    NÃ£o grava o blob inteiro â€” sem race condition; com fallback REST no celular.
+  // 3. Grava APENAS o campo alterado no Firebase (caminho filho específico).
+  //    Não grava o blob inteiro — sem race condition; com fallback REST no celular.
   if (!IS_LOCAL_FILE && typeof setPathResilient === 'function') {
     setPathResilient('cong_config/' + CONG_ID + '/agendaConfig/' + desigId + '/slotsOverride/' + slotKey, valor === true ? true : null)
       .then(() => {
@@ -1910,7 +1910,7 @@ window.setSlotFechadoCom2 = function(desigId, slotKey, valor) {
 }
 
 window.setSlotFinalizado = function(desigId, slotKey, valor, meta = null) {
-  if (valor) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'HorÃ¡rio finalizado pela congregaÃ§Ã£o.');
+  if (valor) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'Horário finalizado pela congregação.');
   const all = DB.get('cong_config', {});
   const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};
   cfg.agendaConfig = cfg.agendaConfig || {};
@@ -2035,7 +2035,7 @@ function cancelarPedidosAbertosDoHorario(desigId, slotKey, motivo) {
     if (pedido.congId === CONG_ID && pedido.designacaoId === desigId && pedido.slotKey === slotKey && pedido.status === 'aberto') {
       pedido.status = 'cancelado';
       pedido.canceladoEm = new Date().toLocaleString('pt-BR');
-      pedido.motivoCancelamento = motivo || 'Pedido cancelado pela congregaÃ§Ã£o.';
+      pedido.motivoCancelamento = motivo || 'Pedido cancelado pela congregação.';
       changed = true;
     }
   });
@@ -2083,12 +2083,12 @@ function renderAvisosAjuda() {
   el.innerHTML = pedidos.map(pedido => {
     const classe = pedido.status === 'fechado' ? 'help-alert closed' : 'help-alert pending';
     const status = pedido.status === 'fechado'
-      ? `âœ… ${pedido.resolvidoPor || 'Sub-admin'} fechou o arranjo${pedido.ajudanteCongNome ? ` com apoio de ${pedido.ajudanteCongNome}` : ''}.`
-      : `ðŸ†˜ Ajuda solicitada para ${pedido.slotLabel} com ${pedido.subAdminNome || 'sub-admin'} .`;
+      ? `✅ ${pedido.resolvidoPor || 'Sub-admin'} fechou o arranjo${pedido.ajudanteCongNome ? ` com apoio de ${pedido.ajudanteCongNome}` : ''}.`
+      : `🆘 Ajuda solicitada para ${pedido.slotLabel} com ${pedido.subAdminNome || 'sub-admin'} .`;
     const detalhe = pedido.status === 'fechado'
-      ? `ResponsÃ¡vel avisado: ${pedido.responsavelCong || cong?.contato || cong?.nome || 'CongregaÃ§Ã£o'}.`
-      : `Faltam ${pedido.faltaQtd} pessoa(s) neste horÃ¡rio.`;
-    return `<div class="${classe}"><strong>${pedido.postoNome}</strong> Â· ${pedido.dataFmt || pedido.data || 'â€”'}<br>${status}<br><span style="opacity:.85;">${detalhe}</span></div>`;
+      ? `Responsável avisado: ${pedido.responsavelCong || cong?.contato || cong?.nome || 'Congregação'}.`
+      : `Faltam ${pedido.faltaQtd} pessoa(s) neste horário.`;
+    return `<div class="${classe}"><strong>${pedido.postoNome}</strong> · ${pedido.dataFmt || pedido.data || '—'}<br>${status}<br><span style="opacity:.85;">${detalhe}</span></div>`;
   }).join('');
 }
 
@@ -2120,9 +2120,9 @@ function renderAvisosAdministrativos() {
     const msg = aviso.mensagem || `O administrador removeu a data ${String(aviso.dataRemovida || '').split('-').reverse().join('/')} da categoria ${aviso.categoriaNome || 'Categoria'}.`;
     return `
       <div class="help-alert ${lida ? 'closed' : 'pending'}" style="border-left-color:${lida ? '#6C757D' : '#DC3545'};background:${lida ? '#f7f8fa' : '#fff6f6'};">
-        <strong>${lida ? 'ðŸ“Œ Aviso administrativo (lido)' : 'âš ï¸ Aviso administrativo'}</strong><br>
+        <strong>${lida ? '📌 Aviso administrativo (lido)' : '⚠️ Aviso administrativo'}</strong><br>
         ${msg}<br>
-        <span style="opacity:.85;">Registrado em ${aviso.criadoEm || 'â€”'}${aviso.origem ? ` por ${aviso.origem}` : ''}.</span>
+        <span style="opacity:.85;">Registrado em ${aviso.criadoEm || '—'}${aviso.origem ? ` por ${aviso.origem}` : ''}.</span>
         ${lida ? '' : `<div style="margin-top:.45rem;"><button class="btn btn-outline btn-sm" onclick="marcarAvisoAdminComoLido('${String(aviso.id).replace(/'/g, "\\'")}')">Marcar como lido</button></div>`}
       </div>`;
   }).join('');
@@ -2145,44 +2145,44 @@ function renderSolicitacoesManuais() {
   el.innerHTML = requests.map(request => {
     const stateClass = request.status === 'aceito' ? 'accepted' : request.status === 'recusado' ? 'declined' : 'pending';
     const titulo = request.status === 'aceito'
-      ? 'SolicitaÃ§Ã£o aceita'
+      ? 'Solicitação aceita'
       : request.status === 'recusado'
-        ? 'SolicitaÃ§Ã£o recusada'
-        : 'SolicitaÃ§Ã£o pendente';
-    const texto = request.aviso || `Sua congregaÃ§Ã£o foi escolhida para ${request.tipoLabel || 'ajuste manual'} em ${request.dataAlvoFmt || request.dataAlvo || 'â€”'}. VocÃª aceita?`;
+        ? 'Solicitação recusada'
+        : 'Solicitação pendente';
+    const texto = request.aviso || `Sua congregação foi escolhida para ${request.tipoLabel || 'ajuste manual'} em ${request.dataAlvoFmt || request.dataAlvo || '—'}. Você aceita?`;
     const idSafe = String(request.id).replace(/'/g, "\\'");
     const acoes = request.status === 'pendente'
-      ? `<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.65rem;"><button class="btn btn-primary btn-sm" onclick="responderManualCongregacao('${idSafe}', true)">âœ… Aceitar</button><button class="btn btn-outline btn-sm" onclick="responderManualCongregacao('${idSafe}', false)">âŒ Recusar</button></div>`
+      ? `<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.65rem;"><button class="btn btn-primary btn-sm" onclick="responderManualCongregacao('${idSafe}', true)">✅ Aceitar</button><button class="btn btn-outline btn-sm" onclick="responderManualCongregacao('${idSafe}', false)">❌ Recusar</button></div>`
       : '';
     const detalheExtra = request.status === 'aceito' && request.designacaoCriadaId
       ? `<br><span style="opacity:.8;">Escala criada para o dia escolhido.</span>`
       : request.respondidoEm
         ? `<br><span style="opacity:.8;">Respondido em ${request.respondidoEm}.</span>`
         : '';
-    return `<div class="manual-request-card ${stateClass}"><strong>${titulo}</strong><br>${texto}<br><span style="opacity:.85;">${request.postoNome} Â· ${request.categoriaNome} Â· ${request.dataAlvoFmt || request.dataAlvo || 'â€”'} Â· ${request.tipoLabel || 'Ajuste manual'}</span>${detalheExtra}${acoes}</div>`;
+    return `<div class="manual-request-card ${stateClass}"><strong>${titulo}</strong><br>${texto}<br><span style="opacity:.85;">${request.postoNome} · ${request.categoriaNome} · ${request.dataAlvoFmt || request.dataAlvo || '—'} · ${request.tipoLabel || 'Ajuste manual'}</span>${detalheExtra}${acoes}</div>`;
   }).join('');
 }
 
 window.responderManualCongregacao = function(requestId, aceitar) {
   const request = getManualRequestsDaCongregacao().find(item => String(item.id) === String(requestId));
   if (!request) return;
-  if (aceitar && !confirm(`Sua congregaÃ§Ã£o foi escolhida para ${request.tipoLabel || 'este ajuste'} em ${request.dataAlvoFmt || request.dataAlvo || 'essa data'}. Aceitar?`)) {
+  if (aceitar && !confirm(`Sua congregação foi escolhida para ${request.tipoLabel || 'este ajuste'} em ${request.dataAlvoFmt || request.dataAlvo || 'essa data'}. Aceitar?`)) {
     return;
   }
   const resultado = window.responderSolicitacaoManualEscala ? window.responderSolicitacaoManualEscala(requestId, aceitar) : null;
   if (!resultado?.ok) {
     const motivos = {
-      nao_encontrado: 'SolicitaÃ§Ã£o nÃ£o encontrada.',
-      ja_processada: 'Essa solicitaÃ§Ã£o jÃ¡ foi respondida.',
-      nao_pode_criar_designacao: 'NÃ£o foi possÃ­vel criar a escala para esse dia.',
-      designacao_ja_existe: 'JÃ¡ existe uma escala igual para essa data.',
+      nao_encontrado: 'Solicitação não encontrada.',
+      ja_processada: 'Essa solicitação já foi respondida.',
+      nao_pode_criar_designacao: 'Não foi possível criar a escala para esse dia.',
+      designacao_ja_existe: 'Já existe uma escala igual para essa data.',
     };
-    showToast(motivos[resultado?.reason] || 'NÃ£o foi possÃ­vel processar a solicitaÃ§Ã£o.', 'warning');
+    showToast(motivos[resultado?.reason] || 'Não foi possível processar a solicitação.', 'warning');
     return;
   }
   renderSolicitacoesManuais();
   renderAvisosAdministrativos();
-  showToast(aceitar ? 'SolicitaÃ§Ã£o aceita. A escala extra foi criada.' : 'SolicitaÃ§Ã£o recusada.', aceitar ? 'success' : 'info');
+  showToast(aceitar ? 'Solicitação aceita. A escala extra foi criada.' : 'Solicitação recusada.', aceitar ? 'success' : 'info');
 };
 
 function renderResumoEscala() {
@@ -2191,7 +2191,7 @@ function renderResumoEscala() {
   const exportBtn = document.getElementById('btn-export-pdf');
   if (!resumo.totalSlots) {
     el.className = 'escala-status-box warning';
-    el.innerHTML = 'Nenhum horÃ¡rio gerado ainda para esta congregaÃ§Ã£o.';
+    el.innerHTML = 'Nenhum horário gerado ainda para esta congregação.';
     exportBtn.disabled = true;
     exportBtn.style.opacity = '.55';
     exportBtn.style.cursor = 'not-allowed';
@@ -2199,8 +2199,8 @@ function renderResumoEscala() {
   }
   el.className = resumo.todosFechados ? 'escala-status-box' : 'escala-status-box warning';
   el.innerHTML = resumo.todosFechados
-    ? `âœ… Escala fechada: ${resumo.totalSlots} horÃ¡rio(s) completos, ${resumo.totalPessoas} escala(s) registradas. PDF liberado.`
-    : `â³ Faltam ${resumo.faltando} pessoa(s) para fechar a escala. Complete os horÃ¡rios ou peÃ§a ajuda antes de baixar o PDF.`;
+    ? `✅ Escala fechada: ${resumo.totalSlots} horário(s) completos, ${resumo.totalPessoas} escala(s) registradas. PDF liberado.`
+    : `⏳ Faltam ${resumo.faltando} pessoa(s) para fechar a escala. Complete os horários ou peça ajuda antes de baixar o PDF.`;
   exportBtn.disabled = !resumo.todosFechados;
   exportBtn.style.opacity = resumo.todosFechados ? '1' : '.55';
   exportBtn.style.cursor = resumo.todosFechados ? 'pointer' : 'not-allowed';
@@ -2363,7 +2363,7 @@ function renderLiveMemberOptions() {
   const membrosDisponiveis = membros.filter(membro => !nomesComAcessoAtivo.has(String(membro.nome || '').trim().toLowerCase()));
   const current = select.value;
   select.innerHTML = '<option value="">Selecione um nome ja cadastrado</option>' +
-    membrosDisponiveis.map(membro => `<option value="${membro.nome.replace(/"/g, '&quot;')}">${membro.nome} Â· ${membro.funcao}</option>`).join('');
+    membrosDisponiveis.map(membro => `<option value="${membro.nome.replace(/"/g, '&quot;')}">${membro.nome} · ${membro.funcao}</option>`).join('');
   if (membrosDisponiveis.some(membro => membro.nome === current)) {
     select.value = current;
   }
@@ -2399,7 +2399,7 @@ function renderLiveRequests() {
     const escolha = invite.escolhaResumo || 'Sem escolha ainda';
     const editando = window.liveEditingInviteId === invite.id;
     const options = ['<option value="">Selecione um nome ja cadastrado</option>']
-      .concat(membros.map(membro => `<option value="${escapeHtmlAttr(membro.nome)}" ${membro.nome === invite.nome ? 'selected' : ''}>${membro.nome} Â· ${membro.funcao}</option>`))
+      .concat(membros.map(membro => `<option value="${escapeHtmlAttr(membro.nome)}" ${membro.nome === invite.nome ? 'selected' : ''}>${membro.nome} · ${membro.funcao}</option>`))
       .join('');
     return `
       <div class="live-item">
@@ -2409,28 +2409,28 @@ function renderLiveRequests() {
             <div class="live-name-block">
               <div class="live-name-row">
                 <strong>${invite.nome}</strong>
-                <span class="live-presence">${jaEntrou ? `Entrou ${loginCount}x${ultimoAcesso ? ` Â· ultimo acesso ${ultimoAcesso}` : ''}` : 'Ainda nao entrou no acesso'}</span>
+                <span class="live-presence">${jaEntrou ? `Entrou ${loginCount}x${ultimoAcesso ? ` · ultimo acesso ${ultimoAcesso}` : ''}` : 'Ainda nao entrou no acesso'}</span>
               </div>
             </div>
           </div>
           <div class="live-actions">
             <span class="badge ${status.badge}">${status.label}</span>
-            <button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarAcessoLiveWhatsApp('${invite.id}')" ${!live.enabled ? 'disabled' : ''}>ðŸ“± Enviar</button>
-            <button class="btn btn-outline btn-sm" onclick="toggleLiveInviteEditor('${invite.id}')">âœï¸ Editar</button>
+            <button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarAcessoLiveWhatsApp('${invite.id}')" ${!live.enabled ? 'disabled' : ''}>📱 Enviar</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleLiveInviteEditor('${invite.id}')">✏️ Editar</button>
             <button class="btn btn-outline btn-sm" onclick="alternarAtivoLiveInvite('${invite.id}')">${invite.ativo === false ? 'Reativar' : 'Pausar'}</button>
-            <button class="btn btn-outline btn-sm" style="border-color:#f5c2c7;color:#b42318;" onclick="removerLiveInvite('${invite.id}')">ðŸ—‘ Excluir</button>
+            <button class="btn btn-outline btn-sm" style="border-color:#f5c2c7;color:#b42318;" onclick="removerLiveInvite('${invite.id}')">🗑 Excluir</button>
           </div>
         </div>
         <div class="live-meta">
-          <span>ðŸ“± ${whatsapp?.formatted || invite.whatsapp || 'sem WhatsApp valido'}</span>
-          <span>ðŸ‘¤ ${invite.usuario}</span>
-          <span class="mono">ðŸ” ${invite.senha}</span>
-          <span class="${jaNaLista ? 'success' : 'warn'}">${jaNaLista ? 'âœ… ja esta em Adicionar nomes' : 'â„¹ï¸ recomendado cadastrar em Adicionar nomes'}</span>
-          <span>${invite.enviadoEm ? `ðŸ“¤ enviado ${invite.enviadoEm}` : 'ðŸ“¤ ainda nao enviado'}</span>
+          <span>📱 ${whatsapp?.formatted || invite.whatsapp || 'sem WhatsApp valido'}</span>
+          <span>👤 ${invite.usuario}</span>
+          <span class="mono">🔐 ${invite.senha}</span>
+          <span class="${jaNaLista ? 'success' : 'warn'}">${jaNaLista ? '✅ ja esta em Adicionar nomes' : 'ℹ️ recomendado cadastrar em Adicionar nomes'}</span>
+          <span>${invite.enviadoEm ? `📤 enviado ${invite.enviadoEm}` : '📤 ainda nao enviado'}</span>
         </div>
         <div class="live-inline-detail">
-          <span class="choice">ðŸ“ ${escolha}</span>
-          <span>ðŸ”— envio direto para app do WhatsApp com fallback web</span>
+          <span class="choice">📍 ${escolha}</span>
+          <span>🔗 envio direto para app do WhatsApp com fallback web</span>
         </div>
         ${editando ? `
           <div class="live-edit-panel">
@@ -2447,7 +2447,7 @@ function renderLiveRequests() {
                 <label>Senha</label>
                 <input id="edit-live-senha-${invite.id}" type="text" value="${escapeHtmlAttr(invite.senha)}" maxlength="12" />
               </div>
-              <button class="btn btn-outline btn-sm" onclick="gerarNovaSenhaLive('${invite.id}')">ðŸ”„ Nova senha</button>
+              <button class="btn btn-outline btn-sm" onclick="gerarNovaSenhaLive('${invite.id}')">🔄 Nova senha</button>
             </div>
             <div class="live-row-actions">
               <button class="btn btn-primary btn-sm" onclick="salvarLiveInviteEdicao('${invite.id}')">Salvar edicao</button>
@@ -2455,7 +2455,7 @@ function renderLiveRequests() {
             </div>
             <small>O usuario continua o mesmo. Aqui voce ajusta nome, WhatsApp e senha quando precisar.</small>
             <div class="live-inline-detail">
-              <span class="mono">ðŸ”— ${getLiveAccessLink(invite)}</span>
+              <span class="mono">🔗 ${getLiveAccessLink(invite)}</span>
             </div>
           </div>` : ''}
       </div>`;
@@ -2602,8 +2602,8 @@ function getEscalaEntries(filterFn = null) {
       const efetivo = (fechadoCom2 || slotFinalizado) ? pessoas.length : maxSlot;
       const esperadoOriginal = Number(finalizadoInfo?.expectedQtd || (fechadoCom2 ? 2 : maxSlot));
       const ocupacaoLabel = slotFinalizado
-        ? `${pessoas.length}/${esperadoOriginal} Â· finalizado`
-        : `${pessoas.length}/${efetivo}${fechadoCom2 ? ' Â· fechado com 2' : ''}`;
+        ? `${pessoas.length}/${esperadoOriginal} · finalizado`
+        : `${pessoas.length}/${efetivo}${fechadoCom2 ? ' · fechado com 2' : ''}`;
       return {
         ...slot,
         pessoas,
@@ -2621,7 +2621,7 @@ function getEscalaEntries(filterFn = null) {
       categoriaNome: categoria?.nome || 'Sem setor',
       dataFmt: desig.data
         ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
-        : 'â€”',
+        : '—',
       duracao,
       maxSlot,
       slots,
@@ -2711,9 +2711,9 @@ async function getStaticMapImageForPosto(posto) {
 
 function parseLocalReferences(local) {
   const raw = String(local || '').trim();
-  if (!raw) return { principal: 'Local nÃ£o informado', referencias: [] };
+  if (!raw) return { principal: 'Local não informado', referencias: [] };
   const partes = raw
-    .split(/(?:\s+-\s+|;|,|\s+\/\s+|\s+pr[oÃ³]ximo a\s+|\s+perto de\s+)/i)
+    .split(/(?:\s+-\s+|;|,|\s+\/\s+|\s+pr[oó]ximo a\s+|\s+perto de\s+)/i)
     .map(part => part.trim())
     .filter(Boolean);
   return {
@@ -2756,7 +2756,7 @@ async function getLocationContextForPosto(posto) {
     context.principal = address.road || address.pedestrian || address.footway || address.cycleway || context.principal;
     context.bairroCidade = [address.suburb || address.neighbourhood || address.city_district, address.city || address.town || address.village]
       .filter(Boolean)
-      .join(' Â· ');
+      .join(' · ');
     const nearbyRoads = await getNearbyRoadNames(posto.lat, posto.lng, context.principal);
     context.referencias = [...new Set([...context.referencias, ...nearbyRoads])].slice(0, 3);
   }
@@ -2767,14 +2767,14 @@ async function getLocationContextForPosto(posto) {
 
 function getPdfOrientacoes(entry) {
   const orientacoes = [
-    'Apresente-se com 30 minutos de antecedÃªncia para organizar o carrinho e a troca de horÃ¡rio.',
-    'Utilize vestimenta discreta, adequada ao clima, e calÃ§ado confortÃ¡vel para permanÃªncia no posto.',
-    'Mantenha postura cordial e atenÃ§Ã£o constante para nÃ£o obstruir a pista, a calÃ§ada ou o fluxo do pÃºblico.',
-    'Priorize a seguranÃ§a do grupo, do carrinho e dos pertences; diante de qualquer risco, recue e informe imediatamente o responsÃ¡vel.',
-    'Registre cada distribuiÃ§Ã£o na aba "Registrar" e comunique prontamente qualquer imprevisto.',
+    'Apresente-se com 30 minutos de antecedência para organizar o carrinho e a troca de horário.',
+    'Utilize vestimenta discreta, adequada ao clima, e calçado confortável para permanência no posto.',
+    'Mantenha postura cordial e atenção constante para não obstruir a pista, a calçada ou o fluxo do público.',
+    'Priorize a segurança do grupo, do carrinho e dos pertences; diante de qualquer risco, recue e informe imediatamente o responsável.',
+    'Registre cada distribuição na aba "Registrar" e comunique prontamente qualquer imprevisto.',
   ];
   if (entry.posto?.responsavel) {
-    orientacoes.push(`Em caso de dÃºvida, alinhe qualquer mudanÃ§a com ${entry.posto.responsavel} ou com o coordenador do setor.`);
+    orientacoes.push(`Em caso de dúvida, alinhe qualquer mudança com ${entry.posto.responsavel} ou com o coordenador do setor.`);
   }
   return orientacoes;
 }
@@ -2791,7 +2791,7 @@ async function buildPdfPayload(mode, entries, options = {}) {
       : `Escala geral - ${cong?.nome || 'congregacao'}`;
   const subtitulo = mode === 'geral'
     ? `${cong?.nome || ''}`
-    : `${cong?.nome || ''} Â· ${options.setorNome || 'Sem setor'}`;
+    : `${cong?.nome || ''} · ${options.setorNome || 'Sem setor'}`;
   const filename = mode === 'posto'
     ? `escala-posto-${sanitizeFileSegment(options.postoNome)}-${dataArquivo}.pdf`
     : mode === 'setor'
@@ -2860,7 +2860,7 @@ function createPdfDoc(payload) {
     [
       `Setor: ${entry.categoriaNome}`,
       `Data: ${entry.dataFmt}`,
-      `Horario base: ${entry.desig.inicio}â€“${entry.desig.fim} Â· ${entry.duracao}h/turno`,
+      `Horario base: ${entry.desig.inicio}–${entry.desig.fim} · ${entry.duracao}h/turno`,
       entry.posto.responsavel ? `Responsavel do posto: ${entry.posto.responsavel}` : '',
     ].filter(Boolean).forEach(line => {
       const split = doc.splitTextToSize(line, 180);
@@ -2870,9 +2870,9 @@ function createPdfDoc(payload) {
 
     drawSectionTitle('Local do posto');
     [
-      `Endereco base: ${locationContext.principal || entry.posto.local || 'Local nÃ£o informado'}`,
+      `Endereco base: ${locationContext.principal || entry.posto.local || 'Local não informado'}`,
       locationContext.bairroCidade ? `Regiao: ${locationContext.bairroCidade}` : '',
-      locationContext.referencias?.length ? `Referencia proxima: ${locationContext.referencias.join(' Â· ')}` : '',
+      locationContext.referencias?.length ? `Referencia proxima: ${locationContext.referencias.join(' · ')}` : '',
     ].filter(Boolean).forEach(line => {
       ensureSpace(8);
       const split = doc.splitTextToSize(line, 180);
@@ -2915,7 +2915,7 @@ function createPdfDoc(payload) {
       margin: { left: 14, right: 14 },
       head: [['Horario', 'Publicadores', 'Ocupacao']],
       body: entry.slots.map(slot => ([
-        `${slot.inicio}â€“${slot.fim}`,
+        `${slot.inicio}–${slot.fim}`,
         slot.pessoas.length
           ? slot.pessoas.map(p => p.nome + ((p.origem === 'ajuda' || p.origem === 'tapa_buraco') && p.ajudanteCongNome ? ` (${p.ajudanteCongNome})` : '')).join(', ')
           : (slot.slotFinalizado ? 'arranjo finalizado sem novos nomes' : 'vaga'),
@@ -2955,10 +2955,10 @@ function createPdfDoc(payload) {
   doc.setFontSize(9.5);
   doc.text(`Publicadores cadastrados: ${payload.membros.length}`, 14, y);
   y += 4;
-  doc.text(`Horarios: ${payload.resumo.totalSlots} Â· Escalas preenchidas: ${payload.resumo.totalPessoas} Â· Vagas restantes: ${payload.resumo.faltando}`, 14, y);
+  doc.text(`Horarios: ${payload.resumo.totalSlots} · Escalas preenchidas: ${payload.resumo.totalPessoas} · Vagas restantes: ${payload.resumo.faltando}`, 14, y);
   y += 8;
   doc.setFontSize(8);
-  doc.text('Documento interno â€” Corrida Internacional de Praia Grande', 14, y);
+  doc.text('Documento interno — Corrida Internacional de Praia Grande', 14, y);
   return doc;
 }
 
@@ -2993,21 +2993,21 @@ function renderEscalaSectorActions() {
   el.innerHTML = groups.map(group => {
     const disabled = group.resumo.todosFechados ? '' : 'disabled';
     const status = group.resumo.todosFechados
-      ? 'âœ… setor fechado'
-      : `â³ faltam ${group.resumo.faltando} vaga(s)`;
+      ? '✅ setor fechado'
+      : `⏳ faltam ${group.resumo.faltando} vaga(s)`;
     const responsavel = group.responsavel
-      ? `ðŸ‘¤ ${group.responsavel.nome} Â· ${group.responsavel.whatsapp.formatted}`
+      ? `👤 ${group.responsavel.nome} · ${group.responsavel.whatsapp.formatted}`
       : 'WhatsApp liberado somente com 1 responsavel do setor';
     return `
       <div class="escala-sector-card">
         <div>
           <strong>${group.nome}</strong>
-          <div class="escala-sector-meta">${group.entries.length} posto(s) Â· ${group.resumo.totalSlots} horario(s) Â· ${status}</div>
+          <div class="escala-sector-meta">${group.entries.length} posto(s) · ${group.resumo.totalSlots} horario(s) · ${status}</div>
           <div class="escala-sector-meta">${responsavel}</div>
         </div>
         <div class="escala-sector-buttons">
-          <button class="btn btn-outline btn-sm" onclick="exportarPdfSetor(${group.categoriaId === null ? 'null' : group.categoriaId})" ${disabled}>ðŸ“„ PDF geral do setor</button>
-          ${group.categoriaId && group.responsavel ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${group.categoriaId})" ${disabled}>ðŸ“± WhatsApp do setor</button>` : ''}
+          <button class="btn btn-outline btn-sm" onclick="exportarPdfSetor(${group.categoriaId === null ? 'null' : group.categoriaId})" ${disabled}>📄 PDF geral do setor</button>
+          ${group.categoriaId && group.responsavel ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${group.categoriaId})" ${disabled}>📱 WhatsApp do setor</button>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -3021,7 +3021,7 @@ function renderMembros() {
   const membros = getMembros();
   const el = document.getElementById('membros-chips');
   el.innerHTML = membros.length
-    ? membros.map(m => `<span class="membro-chip">ðŸ‘¤ ${m.nome}<span class="membro-role">${m.funcao}${m.podeRepetir ? ' Â· repete' : ''}</span><button title="Editar" onclick="editarMembro('${escaparJs(m.nome)}')">âœï¸</button><button title="Remover" onclick="removerMembro('${escaparJs(m.nome)}')">âœ•</button></span>`).join('')
+    ? membros.map(m => `<span class="membro-chip">👤 ${m.nome}<span class="membro-role">${m.funcao}${m.podeRepetir ? ' · repete' : ''}</span><button title="Editar" onclick="editarMembro('${escaparJs(m.nome)}')">✏️</button><button title="Remover" onclick="removerMembro('${escaparJs(m.nome)}')">✕</button></span>`).join('')
     : '<span style="color:var(--gray);font-size:.82rem;">Nenhum publicador adicionado ainda.</span>';
   ['badge-escala-tab', 'badge-escala-card'].forEach(id => {
     const badge = document.getElementById(id);
@@ -3040,7 +3040,7 @@ window.editarMembro = function(nome) {
   document.getElementById('input-membro').value = membro.nome;
   document.getElementById('select-funcao-membro').value = membro.funcao || 'Publicador';
   document.getElementById('membro-pode-repetir').checked = !!membro.podeRepetir;
-  document.getElementById('btn-add-membro').textContent = 'ðŸ’¾ Atualizar';
+  document.getElementById('btn-add-membro').textContent = '💾 Atualizar';
   document.getElementById('input-membro').focus();
 };
 
@@ -3049,7 +3049,7 @@ function limparEdicaoMembro() {
   document.getElementById('input-membro').value = '';
   document.getElementById('select-funcao-membro').value = 'Publicador';
   document.getElementById('membro-pode-repetir').checked = false;
-  document.getElementById('btn-add-membro').textContent = 'âž• Adicionar';
+  document.getElementById('btn-add-membro').textContent = '➕ Adicionar';
 }
 
 window.configurarAgenda = function(desigId) {
@@ -3072,7 +3072,7 @@ function renderPostosTurnos() {
   const turnos = getTurnos();
 
   if (!desigs.length) {
-    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);background:white;border-radius:var(--radius);box-shadow:var(--shadow);">Nenhuma designaÃ§Ã£o recebida ainda.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray);background:white;border-radius:var(--radius);box-shadow:var(--shadow);">Nenhuma designação recebida ainda.</div>';
     return;
   }
 
@@ -3089,7 +3089,7 @@ function renderPostosTurnos() {
     const agendaAberta = window._agendaAbertaId === escalaKey;
     const dataFmt  = desig.data
       ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', {weekday:'short',day:'numeric',month:'short'})
-      : 'â€”';
+      : '—';
 
     const membros = getMembros();
 
@@ -3107,34 +3107,34 @@ function renderPostosTurnos() {
 
       const peopleHtml = people.map(pessoa => `
         <div class="turno-pessoa">
-          ðŸ‘¤ ${pessoa.nome}${pessoa.origem === 'ajuda' ? `<span class="helper-badge">ajuda${pessoa.ajudanteCongNome ? ` Â· ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}${pessoa.origem === 'tapa_buraco' ? `<span class="helper-badge">tapa-buraco${pessoa.ajudanteCongNome ? ` Â· ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}
-          <button onclick="removeFromSlot('${escaparJs(escalaKey)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">âœ•</button>
+          👤 ${pessoa.nome}${pessoa.origem === 'ajuda' ? `<span class="helper-badge">ajuda${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}${pessoa.origem === 'tapa_buraco' ? `<span class="helper-badge">tapa-buraco${pessoa.ajudanteCongNome ? ` · ${pessoa.ajudanteCongNome}` : ''}</span>` : ''}
+          <button onclick="removeFromSlot('${escaparJs(escalaKey)}','${escaparJs(key)}','${escaparJs(pessoa.nome)}')" title="Remover">✕</button>
         </div>`).join('');
 
       const vagasEfetivas = (fechadoCom2 || slotFinalizado) ? 0 : vagas;
       const vagasHtml = (fechadoCom2 || slotFinalizado) ? '' : Array.from({length: Math.max(0, vagasEfetivas)}, (_,i) => {
-        const disponÃ­veis = membros.filter(m => membroDisponivelNoHorario(m, desig, key, people));
-        if (!disponÃ­veis.length) return `<div style="font-size:.72rem;color:var(--gray);text-align:center;padding:.2rem;">â€” sem membros â€”</div>`;
+        const disponíveis = membros.filter(m => membroDisponivelNoHorario(m, desig, key, people));
+        if (!disponíveis.length) return `<div style="font-size:.72rem;color:var(--gray);text-align:center;padding:.2rem;">— sem membros —</div>`;
         return `<select class="turno-vaga-select" onchange="addToSlotFromSelect('${escaparJs(escalaKey)}','${escaparJs(key)}',${maxSlot},this)">
           <option value="">+ Vaga ${people.length+i+1}</option>
-          ${disponÃ­veis.map(m => `<option value="${getNomeMembro(m).replace(/"/g,'&quot;')}">${getLabelMembro(m)}</option>`).join('')}
+          ${disponíveis.map(m => `<option value="${getNomeMembro(m).replace(/"/g,'&quot;')}">${getLabelMembro(m)}</option>`).join('')}
         </select>`;
       }).join('');
 
       const helpHtml = slotFinalizado
-        ? `<div class="slot-fechado-com2">âœ… Arranjo finalizado <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotFinalizado('${escaparJs(escalaKey)}','${escaparJs(key)}')">â†© Reabrir</button></div>`
+        ? `<div class="slot-fechado-com2">✅ Arranjo finalizado <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotFinalizado('${escaparJs(escalaKey)}','${escaparJs(key)}')">↩ Reabrir</button></div>`
         : fechadoCom2
-        ? `<div class="slot-fechado-com2">âœ… Fechado com 2 irmÃ£os <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotCom2('${escaparJs(escalaKey)}','${escaparJs(key)}')">â†© Reabrir</button></div>`
+        ? `<div class="slot-fechado-com2">✅ Fechado com 2 irmãos <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:.72rem;" onclick="reabrirSlotCom2('${escaparJs(escalaKey)}','${escaparJs(key)}')">↩ Reabrir</button></div>`
         : vagas > 0
           ? pedidoAjuda
-            ? `<div class="slot-help-box"><strong>ðŸ†˜ Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}â€“${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button>${podeFinalizar ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFinalizarArranjo('${escaparJs(escalaKey)}','${escaparJs(key)}')">âœ… Finalizar arranjo</button>` : ''}</div>${podeFinalizar ? '<span>Como os horÃ¡rios anteriores jÃ¡ foram fechados, vocÃª tambÃ©m pode encerrar este Ãºltimo arranjo sem aguardar ajuda.</span>' : ''}</div>`
-            : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horÃ¡rio.</span><div class="slot-help-actions">${people.length >= 2 ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFecharCom2('${escaparJs(escalaKey)}','${escaparJs(key)}')">âœŒï¸ Fechar com 2</button>` : ''}${subAdmins.length ? `<button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(escalaKey)}','${escaparJs(key)}')">ðŸ†˜ Pedir ajuda</button>` : ''}${podeFinalizar ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFinalizarArranjo('${escaparJs(escalaKey)}','${escaparJs(key)}')">âœ… Finalizar arranjo</button>` : ''}</div>${subAdmins.length && window._ajudaAbertaKey === getChaveAjuda(escalaKey, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmÃ£os para completar este horÃ¡rio."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(escalaKey)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}${!subAdmins.length ? '<span>Nenhum sub-admin cadastrado para esta categoria.</span>' : ''}${podeFinalizar ? '<span>DisponÃ­vel apenas no Ãºltimo horÃ¡rio, quando os anteriores jÃ¡ estiverem fechados.</span>' : ''}</div>`
+            ? `<div class="slot-help-box"><strong>🆘 Ajuda solicitada</strong><span>${pedidoAjuda.subAdminNome || 'Sub-admin'} foi acionado para ${slot.inicio}–${slot.fim}.</span><div class="slot-help-actions"><button class="btn btn-outline btn-sm" onclick="cancelarPedidoAjuda('${escaparJs(pedidoAjuda.id)}')">Cancelar pedido</button>${podeFinalizar ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFinalizarArranjo('${escaparJs(escalaKey)}','${escaparJs(key)}')">✅ Finalizar arranjo</button>` : ''}</div>${podeFinalizar ? '<span>Como os horários anteriores já foram fechados, você também pode encerrar este último arranjo sem aguardar ajuda.</span>' : ''}</div>`
+            : `<div class="slot-help-box"><span>Faltam ${vagas} pessoa(s) neste horário.</span><div class="slot-help-actions">${people.length >= 2 ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFecharCom2('${escaparJs(escalaKey)}','${escaparJs(key)}')">✌️ Fechar com 2</button>` : ''}${subAdmins.length ? `<button class="btn btn-outline btn-sm" onclick="toggleAjudaHorario('${escaparJs(escalaKey)}','${escaparJs(key)}')">🆘 Pedir ajuda</button>` : ''}${podeFinalizar ? `<button class="btn btn-outline btn-sm" onclick="abrirConfirmacaoFinalizarArranjo('${escaparJs(escalaKey)}','${escaparJs(key)}')">✅ Finalizar arranjo</button>` : ''}</div>${subAdmins.length && window._ajudaAbertaKey === getChaveAjuda(escalaKey, key) ? `<select class="form-control" id="ajuda-sa-${safeId}"><option value="">Escolha o sub-admin da categoria</option>${subAdmins.map(sa => `<option value="${sa.id}">${sa.nome}</option>`).join('')}</select><textarea class="form-control" id="ajuda-obs-${safeId}" rows="2" placeholder="Ex: faltam irmãos para completar este horário."></textarea><div class="slot-help-actions"><button class="btn btn-primary btn-sm" onclick="enviarPedidoAjuda('${escaparJs(escalaKey)}','${escaparJs(key)}',${vagas},'${escaparJs(posto.id)}')">Enviar pedido</button></div>` : ''}${!subAdmins.length ? '<span>Nenhum sub-admin cadastrado para esta categoria.</span>' : ''}${podeFinalizar ? '<span>Disponível apenas no último horário, quando os anteriores já estiverem fechados.</span>' : ''}</div>`
           : '';
 
       return `
         <div class="turno-slot">
-          <div class="turno-slot-header">Horario ${String(slotIndex + 1).padStart(2, '0')} Â· ${slot.inicio}â€“${slot.fim}</div>
-          ${slotOvernight ? `<div style="padding:.45rem .55rem 0;font-size:.74rem;color:#7b4f00;line-height:1.45;">ðŸŒ™ ${slotOvernight.texto}</div>` : ''}
+          <div class="turno-slot-header">Horario ${String(slotIndex + 1).padStart(2, '0')} · ${slot.inicio}–${slot.fim}</div>
+          ${slotOvernight ? `<div style="padding:.45rem .55rem 0;font-size:.74rem;color:#7b4f00;line-height:1.45;">🌙 ${slotOvernight.texto}</div>` : ''}
           <div class="turno-slot-body">${peopleHtml}${vagasHtml}${helpHtml}</div>
         </div>`;
     }).join('');
@@ -3147,9 +3147,9 @@ function renderPostosTurnos() {
     });
     const actionsHtml = entry ? `
       <div class="carrinho-actions">
-        ${mapsUrl ? `<a class="btn btn-outline btn-sm" href="${mapsUrl}" target="_blank" rel="noopener">ðŸ“ Ver rota da designacao ${String(desigIndex + 1).padStart(2, '0')}</a>` : ''}
-        <button class="btn btn-outline btn-sm" onclick="exportarPdfPosto('${escaparJs(escalaKey)}')" ${entry.completo ? '' : 'disabled'}>ðŸ“„ PDF individual</button>
-        ${posto.categoriaId && responsavelSetor ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${posto.categoriaId})" ${entry.completo ? '' : 'disabled'}>ðŸ“± WhatsApp do setor</button>` : ''}
+        ${mapsUrl ? `<a class="btn btn-outline btn-sm" href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver rota da designacao ${String(desigIndex + 1).padStart(2, '0')}</a>` : ''}
+        <button class="btn btn-outline btn-sm" onclick="exportarPdfPosto('${escaparJs(escalaKey)}')" ${entry.completo ? '' : 'disabled'}>📄 PDF individual</button>
+        ${posto.categoriaId && responsavelSetor ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${posto.categoriaId})" ${entry.completo ? '' : 'disabled'}>📱 WhatsApp do setor</button>` : ''}
       </div>` : '';
 
     return `
@@ -3157,18 +3157,18 @@ function renderPostosTurnos() {
         <div class="carrinho-header">
           <span class="ch-km">${posto.km ? `Km ${posto.km}` : 'Ponto personalizado'}</span>
           <div style="flex:1;">
-            <div style="display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .55rem;border-radius:999px;background:#eef4fb;color:var(--primary-dark);font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.45rem;">${getPostoNumero(posto) ? `Posto ${String(getPostoNumero(posto)).padStart(2,'0')} Â· ` : ''}# Designacao ${String(desigIndex + 1).padStart(2, '0')}</div>
-            <strong>ðŸª§ ${posto.nome}</strong>
-            <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">ðŸ“ ${posto.local}</div>
+            <div style="display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .55rem;border-radius:999px;background:#eef4fb;color:var(--primary-dark);font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.45rem;">${getPostoNumero(posto) ? `Posto ${String(getPostoNumero(posto)).padStart(2,'0')} · ` : ''}# Designacao ${String(desigIndex + 1).padStart(2, '0')}</div>
+            <strong>🪧 ${posto.nome}</strong>
+            <div style="opacity:.8;font-size:.78rem;margin-top:.2rem;">📍 ${posto.local}</div>
           </div>
           <div style="font-size:.78rem;opacity:.85;text-align:right;">
-            <button class="agenda-trigger" onclick="configurarAgenda('${escaparJs(escalaKey)}')">ðŸ“… Agenda: ${dataFmt} Â· ${duracao}h/turno</button>
+            <button class="agenda-trigger" onclick="configurarAgenda('${escaparJs(escalaKey)}')">📅 Agenda: ${dataFmt} · ${duracao}h/turno</button>
             ${agendaAberta ? `<div class="agenda-chooser"><button class="agenda-choice-btn ${duracao === 2 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(escalaKey)}', 2)">2h</button><button class="agenda-choice-btn ${duracao === 3 ? 'active' : ''}" onclick="definirAgenda('${escaparJs(escalaKey)}', 3)">3h</button></div>` : ''}<br>
-            â±ï¸ ${desig.inicio}â€“${desig.fim}<br>${overnightInfo ? `ðŸŒ™ ${overnightInfo.badge}<br><span style="display:inline-block;max-width:240px;color:#7b4f00;line-height:1.4;">${overnightInfo.texto}</span><br>` : ''}mÃ¡x. ${maxSlot} por horÃ¡rio
+            ⏱️ ${desig.inicio}–${desig.fim}<br>${overnightInfo ? `🌙 ${overnightInfo.badge}<br><span style="display:inline-block;max-width:240px;color:#7b4f00;line-height:1.4;">${overnightInfo.texto}</span><br>` : ''}máx. ${maxSlot} por horário
           </div>
         </div>
         ${actionsHtml}
-        <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">HorÃ¡rios nÃ£o definidos.</div>'}</div>
+        <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
       </div>`;
   }).join('');
   renderResumoEscala();
@@ -3191,7 +3191,7 @@ window.enviarPedidoAjuda = function(desigId, slotKey, faltaQtd, postoId) {
   if (!subAdminId) { showToast('Escolha o sub-admin que vai receber o pedido.', 'warning'); return; }
   const lista = getPedidosAjudaEscala();
   if (lista.some(p => p.congId === CONG_ID && p.designacaoId === desigId && p.slotKey === slotKey && p.status === 'aberto')) {
-    showToast('JÃ¡ existe um pedido aberto para este horÃ¡rio.', 'warning');
+    showToast('Já existe um pedido aberto para este horário.', 'warning');
     return;
   }
   const posto = todosPos.find(p => String(p.id) === String(postoId));
@@ -3209,12 +3209,12 @@ window.enviarPedidoAjuda = function(desigId, slotKey, faltaQtd, postoId) {
     categoriaNome: getCategoriaById(posto?.categoriaId)?.nome || '',
     designacaoId: desigId,
     data: desig?.data || '',
-    dataFmt: desig?.data ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : 'â€”',
+    dataFmt: desig?.data ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' }) : '—',
     slotKey,
     slotLabel: (() => {
       const slotFim = gerarSlots(desig?.inicio || '00:00', desig?.fim || '00:00', getAgendaConfig(desigId).duracaoTurno).find(s => s.inicio === slotKey)?.fim || '';
       const overnightInfo = getResumoVirada(desig?.data || '', slotKey, slotFim || slotKey);
-      return `${slotKey}â€“${slotFim}${overnightInfo ? ` Â· ${overnightInfo.badge}` : ''}`;
+      return `${slotKey}–${slotFim}${overnightInfo ? ` · ${overnightInfo.badge}` : ''}`;
     })(),
     faltaQtd,
     subAdminId,
@@ -3235,7 +3235,7 @@ window.cancelarPedidoAjuda = function(id) {
   if (!pedido) return;
   pedido.status = 'cancelado';
   pedido.canceladoEm = new Date().toLocaleString('pt-BR');
-  pedido.motivoCancelamento = 'Pedido cancelado pela congregaÃ§Ã£o.';
+  pedido.motivoCancelamento = 'Pedido cancelado pela congregação.';
   salvarPedidosAjudaEscala(lista);
   renderPostosTurnos();
   showToast('Pedido de ajuda cancelado.', 'info');
@@ -3252,18 +3252,18 @@ window.addToSlotFromSelect = function(desigId, slotKey, maxSlot, selectEl) {
   if (current.length >= maxSlot) { showToast('Turno cheio!', 'error'); selectEl.value = ''; return; }
   const desig = desigs.find(d => String(d.id) === String(desigId));
   const membro = getInfoMembro(nome);
-  if (current.some(pessoa => pessoa.nome === nome)) { showToast('JÃ¡ estÃ¡ neste turno!', 'warning'); selectEl.value = ''; return; }
+  if (current.some(pessoa => pessoa.nome === nome)) { showToast('Já está neste turno!', 'warning'); selectEl.value = ''; return; }
   if (desig?.data && membro && !membro.podeRepetir && membroJaEscaladoNoDia(nome, desig.data, { desigId, slotKey })) {
-    showToast('Este nome nÃ£o foi marcado para repetir outro horÃ¡rio neste dia.', 'warning');
+    showToast('Este nome não foi marcado para repetir outro horário neste dia.', 'warning');
     selectEl.value = '';
     return;
   }
   turnos[desigId][slotKey] = current.concat([{ nome, origem: 'local' }]);
   cfg.turnos = turnos;
   saveCongConfig(cfg);
-  if (turnos[desigId][slotKey].length >= maxSlot) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'HorÃ¡rio fechado pela congregaÃ§Ã£o.');
+  if (turnos[desigId][slotKey].length >= maxSlot) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'Horário fechado pela congregação.');
   renderPostosTurnos();
-  showToast(`${nome} adicionado(a) ao turno ${slotKey} âœ…`, 'success');
+  showToast(`${nome} adicionado(a) ao turno ${slotKey} ✅`, 'success');
 };
 
 window.removeFromSlot = function(desigId, slotKey, nome) {
@@ -3287,11 +3287,11 @@ document.getElementById('btn-add-membro').addEventListener('click', () => {
   cfg.membros = cfg.membros || [];
   const membros = (cfg.membros || []).map(normalizarMembro).filter(Boolean);
   const duplicado = membros.some(m => m.nome.toLowerCase() === nome.toLowerCase() && m.nome !== membroEmEdicao);
-  if (duplicado) { showToast('Nome jÃ¡ adicionado!', 'warning'); return; }
+  if (duplicado) { showToast('Nome já adicionado!', 'warning'); return; }
 
   if (membroEmEdicao) {
     const idx = membros.findIndex(m => m.nome === membroEmEdicao);
-    if (idx < 0) { showToast('NÃ£o foi possÃ­vel localizar este nome para editar.', 'error'); return; }
+    if (idx < 0) { showToast('Não foi possível localizar este nome para editar.', 'error'); return; }
     membros[idx] = { nome, funcao, podeRepetir };
 
     if (cfg.turnos) {
@@ -3389,7 +3389,7 @@ document.getElementById('btn-salvar-escala').addEventListener('click', () => {
   const cfg = getCongConfig();
   cfg.escala_ts = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
   saveCongConfig(cfg);
-  showToast('Escala salva! âœ…', 'success');
+  showToast('Escala salva! ✅', 'success');
 });
 
 document.getElementById('btn-export-pdf').addEventListener('click', () => {
@@ -3446,7 +3446,7 @@ async function exportarEscalaPDF() {
   const entries = getEscalaEntries();
   const resumoEscala = getResumoEntries(entries);
   if (!resumoEscala.todosFechados) {
-    showToast('Feche todos os horÃ¡rios antes de baixar o PDF.', 'warning');
+    showToast('Feche todos os horários antes de baixar o PDF.', 'warning');
     return;
   }
   showToast('Montando PDF geral com orientacoes e localizacao...', 'info');
@@ -3486,9 +3486,9 @@ window.addEventListener('db-sync', e => {
   }
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  ABA 4 â€” REGISTRAR
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
+//  ABA 4 — REGISTRAR
+// ══════════════════════════════════════════
 let regAssignmentId = '';
 let regExperienceImage = null;
 
@@ -3536,7 +3536,7 @@ function getAssignmentStreetLabel(posto) {
   if (typeof posto?.lat === 'number' && typeof posto?.lng === 'number') {
     parts.push(`${posto.lat.toFixed(4)}, ${posto.lng.toFixed(4)}`);
   }
-  return parts.join(' Â· ') || 'Ponto personalizado no mapa';
+  return parts.join(' · ') || 'Ponto personalizado no mapa';
 }
 
 function buildRegisterAssignments() {
@@ -3558,7 +3558,7 @@ function buildRegisterAssignments() {
       dataFmt: desig.data
         ? new Date(desig.data + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
         : '',
-      horario: `${desig.inicio}â€“${desig.fim}`,
+      horario: `${desig.inicio}–${desig.fim}`,
       inicio,
       fim,
       posto,
@@ -3607,7 +3607,7 @@ function renderRegisterAlert() {
     return;
   }
   alert.classList.add('open');
-  alert.innerHTML = `<strong>âš ï¸ Fechamento pendente</strong><br>${pending.length} arranjo(s) jÃ¡ terminaram e ainda nÃ£o receberam o total de publicaÃ§Ãµes do dia.`;
+  alert.innerHTML = `<strong>⚠️ Fechamento pendente</strong><br>${pending.length} arranjo(s) já terminaram e ainda não receberam o total de publicações do dia.`;
   badge.textContent = pending.length > 9 ? '9+' : String(pending.length);
   badge.style.display = 'inline';
 }
@@ -3619,7 +3619,7 @@ function renderAssignmentPicker() {
   const wrap = document.getElementById('assignment-picker');
   if (!wrap) return;
   if (!assignments.length) {
-    wrap.innerHTML = '<div class="reg-empty">Nenhum arranjo disponÃ­vel para registrar ainda.</div>';
+    wrap.innerHTML = '<div class="reg-empty">Nenhum arranjo disponível para registrar ainda.</div>';
     return;
   }
   if (!assignments.some(item => item.id === regAssignmentId)) regAssignmentId = assignments[0].id;
@@ -3628,13 +3628,13 @@ function renderAssignmentPicker() {
     const pending = pendingIds.has(item.id);
     return `
       <button class="assignment-option ${item.id === regAssignmentId ? 'active' : ''} ${pending ? 'alert' : ''}" onclick="selecionarRegisterAssignment('${item.id}')">
-        <strong>${item.postoNumero ? `<span style="background:var(--primary);color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.78rem;margin-right:.4rem;font-weight:800;">NÂº ${item.postoNumero}</span>` : ''}${item.postoNome}</strong>
+        <strong>${item.postoNumero ? `<span style="background:var(--primary);color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.78rem;margin-right:.4rem;font-weight:800;">Nº ${item.postoNumero}</span>` : ''}${item.postoNome}</strong>
         <div style="font-size:.8rem;color:var(--gray);margin-top:.25rem;">${item.localLabel}</div>
         <div class="meta">
-          <span>ðŸ“… ${item.dataFmt || item.data || 'â€”'}</span>
-          <span>â±ï¸ ${item.horario}</span>
-          <span>ðŸ§­ ${item.categoriaNome}</span>
-          <span>${report ? `ðŸ“š ${report.quantidade} registradas` : pending ? 'ðŸ”´ faltando fechar' : 'â³ aguardando fechamento'}</span>
+          <span>📅 ${item.dataFmt || item.data || '—'}</span>
+          <span>⏱️ ${item.horario}</span>
+          <span>🧭 ${item.categoriaNome}</span>
+          <span>${report ? `📚 ${report.quantidade} registradas` : pending ? '🔴 faltando fechar' : '⏳ aguardando fechamento'}</span>
         </div>
       </button>`;
   }).join('');
@@ -3654,7 +3654,7 @@ function renderRegisterForm() {
   const mapsBtn = document.getElementById('btn-abrir-maps-reg');
   if (!summary || !totalInput || !mapsBtn) return;
   if (!assignment) {
-    summary.innerHTML = '<strong>Nenhum arranjo disponÃ­vel</strong>';
+    summary.innerHTML = '<strong>Nenhum arranjo disponível</strong>';
     totalInput.value = '0';
     mapsBtn.style.display = 'none';
     return;
@@ -3662,9 +3662,9 @@ function renderRegisterForm() {
   const report = getPublicationRecordForAssignment(registroCampo, assignment.desigId);
   summary.innerHTML = `
     <strong>${assignment.postoNome}</strong>
-    ðŸ“Œ ${assignment.localLabel}<br>
-    ðŸ“… ${assignment.data || 'â€”'} Â· â±ï¸ ${assignment.horario} Â· ðŸ§­ ${assignment.categoriaNome}
-    ${assignment.desig?.obs ? `<br>ðŸ’¬ ${assignment.desig.obs}` : ''}`;
+    📌 ${assignment.localLabel}<br>
+    📅 ${assignment.data || '—'} · ⏱️ ${assignment.horario} · 🧭 ${assignment.categoriaNome}
+    ${assignment.desig?.obs ? `<br>💬 ${assignment.desig.obs}` : ''}`;
   totalInput.value = String(report?.quantidade || 0);
   const mapsUrl = getMapsUrlForAssignment(assignment);
   mapsBtn.style.display = mapsUrl ? 'inline-flex' : 'none';
@@ -3729,9 +3729,9 @@ document.getElementById('exp-image-input').addEventListener('change', async e =>
   try {
     regExperienceImage = await compressImage(file);
     renderExperiencePreview();
-    showToast('Imagem pronta para a experiÃªncia.', 'success');
+    showToast('Imagem pronta para a experiência.', 'success');
   } catch {
-    showToast('NÃ£o foi possÃ­vel preparar a imagem.', 'warning');
+    showToast('Não foi possível preparar a imagem.', 'warning');
   }
 });
 
@@ -3759,14 +3759,14 @@ document.getElementById('btn-salvar-publicacoes').addEventListener('click', () =
   renderRegisterAlert();
   renderHistorico();
   renderResultado();
-  showToast('Total de publicaÃ§Ãµes do dia salvo.', 'success');
+  showToast('Total de publicações do dia salvo.', 'success');
 });
 
 document.getElementById('btn-salvar-experiencia').addEventListener('click', () => {
   const assignment = getSelectedRegisterAssignment();
   if (!assignment) { showToast('Selecione um arranjo.', 'warning'); return; }
   const detalhes = document.getElementById('exp-detalhes').value.trim();
-  if (!detalhes) { showToast('Descreva a experiÃªncia antes de salvar.', 'warning'); return; }
+  if (!detalhes) { showToast('Descreva a experiência antes de salvar.', 'warning'); return; }
   const registroCampo = getRegisterConfig();
   registroCampo.experiencias.unshift({
     id: `exp_${Date.now()}`,
@@ -3788,7 +3788,7 @@ document.getElementById('btn-salvar-experiencia').addEventListener('click', () =
   renderExperiencePreview();
   renderHistorico();
   renderResultado();
-  showToast('ExperiÃªncia salva para o administrador.', 'success');
+  showToast('Experiência salva para o administrador.', 'success');
 });
 
 function renderHistorico() {
@@ -3800,17 +3800,17 @@ function renderHistorico() {
   const el = document.getElementById('meu-historico');
   if (!el) return;
   if (!history.length) {
-    el.innerHTML = '<div class="reg-empty">Nenhum fechamento ou experiÃªncia registrada ainda.</div>';
+    el.innerHTML = '<div class="reg-empty">Nenhum fechamento ou experiência registrada ainda.</div>';
     return;
   }
   el.innerHTML = history.slice(0, 20).map(item => item.tipoRegistro === 'publicacao_dia'
-    ? `<div class="hist-item"><span>ðŸ“š</span><span style="flex:1;"><strong>${item.postoNome}</strong><br><span style="color:var(--gray);font-size:.76rem;">${item.localLabel} Â· ${item.horario}</span></span><span style="font-weight:800;color:var(--primary);">${item.quantidade}</span><span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${item.ts}</span></div>`
-    : `<div class="hist-item exp">${item.imageDataUrl ? `<img class="exp-thumb" src="${item.imageDataUrl}" alt="ExperiÃªncia" />` : '<span style="font-size:1.5rem;">âœ¨</span>'}<span style="flex:1;"><strong>${item.postoNome}</strong><br><span style="color:var(--gray);font-size:.76rem;">${item.detalhes}</span></span><span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${item.ts}</span></div>`
+    ? `<div class="hist-item"><span>📚</span><span style="flex:1;"><strong>${item.postoNome}</strong><br><span style="color:var(--gray);font-size:.76rem;">${item.localLabel} · ${item.horario}</span></span><span style="font-weight:800;color:var(--primary);">${item.quantidade}</span><span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${item.ts}</span></div>`
+    : `<div class="hist-item exp">${item.imageDataUrl ? `<img class="exp-thumb" src="${item.imageDataUrl}" alt="Experiência" />` : '<span style="font-size:1.5rem;">✨</span>'}<span style="flex:1;"><strong>${item.postoNome}</strong><br><span style="color:var(--gray);font-size:.76rem;">${item.detalhes}</span></span><span style="color:var(--gray);font-size:.75rem;margin-left:auto;">${item.ts}</span></div>`
   ).join('');
 }
 
 window.limparHistorico = function() {
-  if (!confirm('Limpar os fechamentos e experiÃªncias desta congregaÃ§Ã£o?')) return;
+  if (!confirm('Limpar os fechamentos e experiências desta congregação?')) return;
   saveRegisterConfig({ publicacoesDia: [], experiencias: [] });
   renderAssignmentPicker();
   renderRegisterForm();
@@ -3826,9 +3826,9 @@ function renderResultado() {
   const totalExperiencias = (registroCampo.experiencias || []).length;
   const pendencias = getPendingAssignments().length;
   document.getElementById('resultado-grid').innerHTML = `
-    <div class="resultado-item"><div class="r-qty">${totalPublicacoes}</div><div class="r-label">ðŸ“š Total do dia</div></div>
-    <div class="resultado-item"><div class="r-qty">${totalExperiencias}</div><div class="r-label">âœ¨ ExperiÃªncias</div></div>
-    <div class="resultado-item"><div class="r-qty">${pendencias}</div><div class="r-label">ðŸš¨ Pendentes</div></div>`;
+    <div class="resultado-item"><div class="r-qty">${totalPublicacoes}</div><div class="r-label">📚 Total do dia</div></div>
+    <div class="resultado-item"><div class="r-qty">${totalExperiencias}</div><div class="r-label">✨ Experiências</div></div>
+    <div class="resultado-item"><div class="r-qty">${pendencias}</div><div class="r-label">🚨 Pendentes</div></div>`;
 }
 
 window.imprimirResultado = function() {
@@ -3836,27 +3836,27 @@ window.imprimirResultado = function() {
   const registroCampo = getRegisterConfig();
   const totalPublicacoes = (registroCampo.publicacoesDia || []).reduce((sum, item) => sum + (item.quantidade || 0), 0);
   document.getElementById('print-content').innerHTML = `
-    <h1>ðŸƒ ${evento.nome}</h1>
-    <h2>Fechamento de campo â€” ${cong?.nome}</h2>
+    <h1>🏃 ${evento.nome}</h1>
+    <h2>Fechamento de campo — ${cong?.nome}</h2>
     <p style="color:#555;">Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
-    <h3>ðŸ“š PublicaÃ§Ãµes do dia</h3>
+    <h3>📚 Publicações do dia</h3>
     <table>
-      <thead><tr><th>Posto</th><th>HorÃ¡rio</th><th>Total</th></tr></thead>
+      <thead><tr><th>Posto</th><th>Horário</th><th>Total</th></tr></thead>
       <tbody>
-        ${(registroCampo.publicacoesDia || []).map(item => `<tr><td>${item.postoNome}<br><small>${item.localLabel}</small></td><td>${item.dataRef || 'â€”'} ${item.horario}</td><td style="text-align:center;font-weight:700;">${item.quantidade}</td></tr>`).join('')}
+        ${(registroCampo.publicacoesDia || []).map(item => `<tr><td>${item.postoNome}<br><small>${item.localLabel}</small></td><td>${item.dataRef || '—'} ${item.horario}</td><td style="text-align:center;font-weight:700;">${item.quantidade}</td></tr>`).join('')}
         <tr style="background:#D4EDDA;"><td colspan="2"><strong>TOTAL GERAL</strong></td><td style="text-align:center;font-weight:800;">${totalPublicacoes}</td></tr>
       </tbody>
     </table>
-    <h3 style="margin-top:1.5rem;">âœ¨ ExperiÃªncias</h3>
-    <ul>${(registroCampo.experiencias || []).map(item => `<li><strong>${item.postoNome}</strong> â€” ${item.detalhes}</li>`).join('') || '<li>Nenhuma experiÃªncia registrada.</li>'}</ul>
-    <p style="margin-top:2rem;color:#999;font-size:.85rem;">Documento interno â€” Corrida Internacional de Praia Grande</p>`;
+    <h3 style="margin-top:1.5rem;">✨ Experiências</h3>
+    <ul>${(registroCampo.experiencias || []).map(item => `<li><strong>${item.postoNome}</strong> — ${item.detalhes}</li>`).join('') || '<li>Nenhuma experiência registrada.</li>'}</ul>
+    <p style="margin-top:2rem;color:#999;font-size:.85rem;">Documento interno — Corrida Internacional de Praia Grande</p>`;
   window.print();
 };
 
 function initRegisterTab() {
   const assignments = buildRegisterAssignments();
   if (!assignments.length) {
-    document.getElementById('assignment-picker').innerHTML = '<div class="reg-empty">Nenhum arranjo disponÃ­vel para registrar.</div>';
+    document.getElementById('assignment-picker').innerHTML = '<div class="reg-empty">Nenhum arranjo disponível para registrar.</div>';
     return;
   }
   regAssignmentId = assignments[0].id;
@@ -3871,17 +3871,17 @@ function initRegisterTab() {
 initRegisterTab();
 })();
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  FECHAR COM 2 â€” diÃ¡logo nativo (Ã  prova de mobile)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════
+//  FECHAR COM 2 — diálogo nativo (à prova de mobile)
+// ══════════════════════════════════════════
 window.abrirConfirmacaoFecharCom2 = function(desigId, slotKey) {
   // Marca pending ANTES do confirm() para proteger o localStorage contra
-  // callbacks do Firebase que chegam enquanto o diÃ¡logo estÃ¡ aberto.
+  // callbacks do Firebase que chegam enquanto o diálogo está aberto.
   const guardAll = DB.get('cong_config', {});
   const guardTs = typeof markPendingWrite === 'function'
     ? markPendingWrite('cong_config', guardAll) : null;
 
-  const ok = confirm('Ao marcar com 2, o irmÃ£o se responsabiliza em assegurar uma possÃ­vel desfalque.\n\nConfirma fechar este horÃ¡rio com 2 irmÃ£os?');
+  const ok = confirm('Ao marcar com 2, o irmão se responsabiliza em assegurar uma possível desfalque.\n\nConfirma fechar este horário com 2 irmãos?');
 
   if (!ok) {
     if (guardTs && typeof clearPendingWrite === 'function') clearPendingWrite('cong_config', guardTs);
@@ -3891,14 +3891,14 @@ window.abrirConfirmacaoFecharCom2 = function(desigId, slotKey) {
   window.setSlotFechadoCom2(desigId, slotKey, true);
   window.renderPostosTurnos();
   window.renderResumoEscala();
-  showToast('HorÃ¡rio fechado com 2 irmÃ£os. âœŒï¸', 'success');
+  showToast('Horário fechado com 2 irmãos. ✌️', 'success');
 };
 
 window.reabrirSlotCom2 = function(desigId, slotKey) {
   window.setSlotFechadoCom2(desigId, slotKey, false);
   window.renderPostosTurnos();
   window.renderResumoEscala();
-  showToast('HorÃ¡rio reaberto.', 'info');
+  showToast('Horário reaberto.', 'info');
 };
 
 window.abrirConfirmacaoFinalizarArranjo = function(desigId, slotKey) {
@@ -3906,7 +3906,7 @@ window.abrirConfirmacaoFinalizarArranjo = function(desigId, slotKey) {
   const guardTs = typeof markPendingWrite === 'function'
     ? markPendingWrite('cong_config', guardAll) : null;
 
-  const ok = confirm('Finalize este Ãºltimo horÃ¡rio do arranjo sem solicitar ajuda?\n\nUse esta opÃ§Ã£o apenas quando os horÃ¡rios anteriores jÃ¡ estiverem fechados.');
+  const ok = confirm('Finalize este último horário do arranjo sem solicitar ajuda?\n\nUse esta opção apenas quando os horários anteriores já estiverem fechados.');
 
   if (!ok) {
     if (guardTs && typeof clearPendingWrite === 'function') clearPendingWrite('cong_config', guardTs);
@@ -3921,13 +3921,13 @@ window.abrirConfirmacaoFinalizarArranjo = function(desigId, slotKey) {
   const pedidoAberto = window.getPedidoAjudaAberto(desigId, slotKey);
   if (pedidoAberto) {
     pedidoAberto.status = 'fechado';
-    pedidoAberto.resolvidoPor = window.cong?.nome || 'CongregaÃ§Ã£o';
+    pedidoAberto.resolvidoPor = window.cong?.nome || 'Congregação';
     pedidoAberto.resolvidoEm = new Date().toLocaleString('pt-BR');
     pedidoAberto.resolvidoVia = 'finalizacao_arranjo';
     pedidoAberto.faltaQtdOriginal = Number(pedidoAberto.faltaQtd || faltaAtual);
     pedidoAberto.faltaQtdFinal = faltaAtual;
     pedidoAberto.nomesResolvidos = pessoas.map(p => p.nome);
-    pedidoAberto.observacaoFechamento = `Finalizado pela congregaÃ§Ã£o com ${pessoas.length} de ${expectedQtd} nome(s) neste horÃ¡rio.`;
+    pedidoAberto.observacaoFechamento = `Finalizado pela congregação com ${pessoas.length} de ${expectedQtd} nome(s) neste horário.`;
     window.salvarPedidosAjudaEscala(window.getPedidosAjudaEscala());
   }
   window.setSlotFinalizado(desigId, slotKey, true, {
@@ -3940,14 +3940,14 @@ window.abrirConfirmacaoFinalizarArranjo = function(desigId, slotKey) {
   });
   window.renderPostosTurnos();
   window.renderResumoEscala();
-  showToast('Arranjo finalizado neste Ãºltimo horÃ¡rio. âœ…', 'success');
+  showToast('Arranjo finalizado neste último horário. ✅', 'success');
 };
 
 window.reabrirSlotFinalizado = function(desigId, slotKey) {
   window.setSlotFinalizado(desigId, slotKey, false);
   window.renderPostosTurnos();
   window.renderResumoEscala();
-  showToast('FinalizaÃ§Ã£o do arranjo removida.', 'info');
+  showToast('Finalização do arranjo removida.', 'info');
 };
 </script>
 </body>

@@ -369,6 +369,39 @@ function setPathResilient(path, value) {
 }
 window.setPathResilient = setPathResilient;
 
+// Remove o campo congId de um posto especifico via REST, buscando a chave real
+// do Firebase pelo campo id do posto. Funciona em celular mesmo com WebSocket bloqueado.
+function clearPostoCongId(postoId) {
+  if (IS_LOCAL_FILE || !DATABASE_REST_URL) return Promise.resolve();
+  return fetch(`${DATABASE_REST_URL}/postos.json`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      const pairs = Array.isArray(data)
+        ? data.map((v, i) => [i, v])
+        : Object.entries(data);
+      const match = pairs.find(([, p]) => p && String(p.id) === String(postoId));
+      if (!match) return;
+      const [fbKey] = match;
+      return fetch(`${DATABASE_REST_URL}/postos/${fbKey}/congId.json`, {
+        method: 'DELETE',
+        cache: 'no-store',
+      }).then(r => {
+        if (!r.ok) throw new Error('REST DELETE congId falhou: ' + r.status);
+        // Atualiza localStorage em sincronia com Firebase
+        try {
+          const local = JSON.parse(localStorage.getItem('postos') || 'null');
+          if (Array.isArray(local)) {
+            const idx = local.findIndex(p => String(p.id) === String(postoId));
+            if (idx >= 0) { local[idx] = { ...local[idx], congId: null }; localStorage.setItem('postos', JSON.stringify(local)); }
+          }
+        } catch(e) {}
+      });
+    })
+    .catch(err => console.warn('[Firebase] clearPostoCongId:', err));
+}
+window.clearPostoCongId = clearPostoCongId;
+
 // Carrega dados do Firebase uma vez ao iniciar (garante dados frescos)
 function pullFromFirebase() {
   return Promise.all(SYNC_KEYS.map(pullKeyResilient)).then(() => {

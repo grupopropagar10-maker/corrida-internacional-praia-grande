@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minha Congregação — Corrida PG</title>
-  <link rel="stylesheet" href="css/style.css?v=20260616i"/>
+  <link rel="stylesheet" href="css/style.css?v=20260616j"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     /* ══ BANNER ══ */
@@ -1244,9 +1244,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="js/firebase-db.js?v=20260616i"></script>
-<script src="js/app.js?v=20260616i"></script>
-<script src="js/auth.js?v=20260616i"></script>
+<script src="js/firebase-db.js?v=20260616j"></script>
+<script src="js/app.js?v=20260616j"></script>
+<script src="js/auth.js?v=20260616j"></script>
 <script>
 (async function() {
 await (window.DB_SYNC_READY || Promise.resolve());
@@ -3206,15 +3206,14 @@ window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada, postoIdRaw) {
     }
   }
 
-  // 2. Remove congregação do posto via DB.set para propagar via Firebase sync ao admin
+  // 2. Remove congId do posto via REST (funciona em celular, propaga ao admin via WebSocket)
   if (postoIdRaw) {
     const postos = DB.get('postos', []);
     const postoIdx = postos.findIndex(p => String(p.id) === String(postoIdRaw));
     if (postoIdx >= 0 && String(postos[postoIdx].congId) === String(CONG_ID)) {
-      const postosAtualizados = postos.map((p, i) =>
-        i === postoIdx ? { ...p, congId: null } : p
-      );
-      DB.set('postos', postosAtualizados);
+      if (typeof clearPostoCongId === 'function') {
+        clearPostoCongId(postoIdRaw);
+      }
     }
   }
 

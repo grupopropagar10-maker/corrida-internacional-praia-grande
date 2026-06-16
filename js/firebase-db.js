@@ -332,6 +332,18 @@ function pullKeyResilient(key) {
     });
   });
 }
+window.pullKeyResilient = pullKeyResilient;
+
+function refreshLiveAuthKeys() {
+  return Promise.all([
+    pullKeyResilient('evento_config'),
+    pullKeyResilient('cong_config'),
+  ]).then(() => {
+    window.dispatchEvent(new CustomEvent('db-sync', { detail: { key: 'evento_config', source: 'live-auth-refresh' } }));
+    window.dispatchEvent(new CustomEvent('db-sync', { detail: { key: 'cong_config', source: 'live-auth-refresh' } }));
+  });
+}
+window.refreshLiveAuthKeys = refreshLiveAuthKeys;
 
 // Escreve em um caminho especifico (set/PUT). Tenta o SDK; se o WebSocket
 // travar (timeout) ou falhar, grava via REST PUT. A escrita fica SEMPRE

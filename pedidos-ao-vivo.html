@@ -510,7 +510,12 @@
     function saveCongConfigById(congId, cfg) {
       const all = DB.get('cong_config', {});
       all[congId] = cfg;
-      DB.set('cong_config', all);
+      localStorage.setItem('cong_config', JSON.stringify(all));
+      if (typeof rtdb !== 'undefined' && !IS_LOCAL_FILE) {
+        rtdb.ref('cong_config/' + String(congId)).set(cfg).catch(err => {
+          console.warn('[Firebase] Erro ao salvar cong_config/' + congId + ':', err);
+        });
+      }
     }
 
     function getEventoConfig() {
@@ -528,13 +533,19 @@
     }
 
     function saveTapaBuracoConfig(cfg) {
-      const evento = getEventoConfig();
-      evento.tapaBuraco = {
+      const tapaBuraco = {
         invites: Array.isArray(cfg?.invites) ? cfg.invites : [],
         suggestions: Array.isArray(cfg?.suggestions) ? cfg.suggestions : [],
         assignments: Array.isArray(cfg?.assignments) ? cfg.assignments : [],
       };
-      DB.set('evento_config', evento);
+      const evento = DB.get('evento_config', {});
+      evento.tapaBuraco = tapaBuraco;
+      localStorage.setItem('evento_config', JSON.stringify(evento));
+      if (typeof rtdb !== 'undefined' && !IS_LOCAL_FILE) {
+        rtdb.ref('evento_config/tapaBuraco').set(tapaBuraco).catch(err => {
+          console.warn('[Firebase] Erro ao salvar evento_config/tapaBuraco:', err);
+        });
+      }
     }
 
     function getInvite() {
@@ -984,7 +995,10 @@
 
     window.responderTapaBuraco = function(assignmentId, aceitar) {
       const invite = getInvite();
-      if (!invite) return;
+      if (!invite) {
+        showToast('Sessão expirada ou convite não encontrado. Recarregue a página.', 'warning');
+        return;
+      }
       const cfg = getTapaBuracoConfig();
       const assignment = cfg.assignments.find(item => item.id === assignmentId && item.inviteId === invite.id);
       const suggestion = (cfg.suggestions || []).find(item => item.id === assignment?.suggestionId);
@@ -1298,7 +1312,7 @@
     };
 
     window.addEventListener('db-sync', e => {
-      if (!['cong_config', 'postos', 'designacoes', 'categorias'].includes(e.detail?.key)) return;
+      if (!['cong_config', 'postos', 'designacoes', 'categorias', 'evento_config'].includes(e.detail?.key)) return;
       render();
     });
 

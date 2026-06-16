@@ -1404,7 +1404,12 @@
   function saveCongConfigById(congId, cfg) {
     const all = DB.get('cong_config', {});
     all[congId] = cfg;
-    DB.set('cong_config', all);
+    localStorage.setItem('cong_config', JSON.stringify(all));
+    if (typeof rtdb !== 'undefined' && !IS_LOCAL_FILE) {
+      rtdb.ref('cong_config/' + String(congId)).set(cfg).catch(err => {
+        console.warn('[Firebase] Erro ao salvar cong_config/' + congId + ':', err);
+      });
+    }
   }
 
   function getEventoConfig() {
@@ -1422,13 +1427,19 @@
   }
 
   function saveTapaBuracoConfig(cfg) {
-    const evento = getEventoConfig();
-    evento.tapaBuraco = {
+    const tapaBuraco = {
       invites: Array.isArray(cfg?.invites) ? cfg.invites : [],
       suggestions: Array.isArray(cfg?.suggestions) ? cfg.suggestions : [],
       assignments: Array.isArray(cfg?.assignments) ? cfg.assignments : [],
     };
-    DB.set('evento_config', evento);
+    const evento = DB.get('evento_config', {});
+    evento.tapaBuraco = tapaBuraco;
+    localStorage.setItem('evento_config', JSON.stringify(evento));
+    if (typeof rtdb !== 'undefined' && !IS_LOCAL_FILE) {
+      rtdb.ref('evento_config/tapaBuraco').set(tapaBuraco).catch(err => {
+        console.warn('[Firebase] Erro ao salvar evento_config/tapaBuraco:', err);
+      });
+    }
   }
 
   function getDigits(value) {

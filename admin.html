@@ -1107,7 +1107,9 @@
   }
 
   document.getElementById('btn-salvar-evento').addEventListener('click', () => {
+    const eventoAtual = DB.get('evento_config', {});
     DB.set('evento_config', {
+      ...eventoAtual,
       nome: document.getElementById('s-evento-nome').value.trim() || 'Corrida Internacional de Praia Grande',
       data: document.getElementById('s-evento-data').value,
       hora: document.getElementById('s-evento-hora').value,

@@ -71,6 +71,17 @@ function getLatestRestoreSnapshot() {
   return safeJsonParse(localStorage.getItem(PREWRITE_BACKUP_KEY), null) || getLatestSafeBackup();
 }
 
+function countPeopleInCongConfig(obj) {
+  if (!obj || typeof obj !== 'object') return 0;
+  return Object.values(obj).reduce((total, cfg) => {
+    if (!cfg?.turnos || typeof cfg.turnos !== 'object') return total;
+    return total + Object.values(cfg.turnos).reduce((sum, desig) => {
+      if (!desig || typeof desig !== 'object') return sum;
+      return sum + Object.values(desig).reduce((s, pessoas) => s + (Array.isArray(pessoas) ? pessoas.length : 0), 0);
+    }, 0);
+  }, 0);
+}
+
 function isSuspiciousWrite(key, nextValue) {
   if (!CRITICAL_KEYS.includes(key)) return false;
   const latest = getLatestSafeBackup();
@@ -83,6 +94,14 @@ function isSuspiciousWrite(key, nextValue) {
   if (nextSize === 0) return true;  // Tentativa de zerar dados existentes
   if (prevSize >= 3 && nextSize <= 1) return true;
   if (prevSize >= 5 && nextSize / prevSize <= 0.35) return true;
+
+  // Verifica queda brusca no número de pessoas nos turnos do cong_config
+  if (key === 'cong_config') {
+    const prevPeople = countPeopleInCongConfig(prevValue);
+    const nextPeople = countPeopleInCongConfig(nextValue);
+    if (prevPeople >= 10 && nextPeople < prevPeople * 0.5) return true;
+  }
+
   return false;
 }
 

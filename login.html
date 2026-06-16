@@ -483,12 +483,14 @@
   document.getElementById('cong-senha').addEventListener('keydown', e => { if (e.key === 'Enter') loginCong(); });
 
   async function loginLive() {
-    const btn = document.getElementById('btn-login-live');
     const usuario = document.getElementById('live-usuario').value.trim();
     const senha = document.getElementById('live-senha').value;
     if (!usuario || !senha) { mostrarErro('Informe usuário e senha do pedido ao vivo!'); return; }
     setLiveButtonState('loading');
     try {
+      if (typeof window.refreshLiveAuthKeys === 'function') {
+        await window.refreshLiveAuthKeys();
+      }
       await (window.DB_SYNC_READY || Promise.resolve());
       if (Auth.loginLiveInvite(usuario, senha)) {
         redirectToLiveArea();
@@ -532,6 +534,11 @@
     btn.disabled = false;
   }
 
+  function isProbablyMobile() {
+    return window.matchMedia('(pointer: coarse)').matches
+      || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+  }
+
   function redirectToLiveArea() {
     if (params.get('type') === 'live') {
       history.replaceState({}, '', window.location.pathname);
@@ -546,9 +553,9 @@
   }
 
   function startAutoLiveLogin(usuario, senha) {
-    const AUTO_LOGIN_TIMEOUT_MS = 15000;
-    const RETRY_INTERVAL_MS = 1200;
-    const REMOTE_REFRESH_INTERVAL_MS = 3500;
+    const AUTO_LOGIN_TIMEOUT_MS = isProbablyMobile() ? 3200 : 7000;
+    const RETRY_INTERVAL_MS = isProbablyMobile() ? 900 : 1200;
+    const REMOTE_REFRESH_INTERVAL_MS = isProbablyMobile() ? 1600 : 3000;
     let autoLogado = false;
     let finished = false;
     let retryTimer = null;
@@ -556,7 +563,7 @@
     let timeoutTimer = null;
     let refreshInFlight = null;
 
-    setLiveButtonState('loading');
+    setLiveButtonState('idle');
 
     function cleanup() {
       finished = true;
@@ -643,7 +650,7 @@
     }, REMOTE_REFRESH_INTERVAL_MS);
 
     timeoutTimer = setTimeout(() => {
-      finishFallback('Não foi possível entrar automaticamente. Toque no botão "Entrar" para tentar novamente.');
+      finishFallback('Se não entrar sozinho, toque no botão "Entrar" para continuar.');
     }, AUTO_LOGIN_TIMEOUT_MS);
 
     (window.DB_SYNC_READY || Promise.resolve())

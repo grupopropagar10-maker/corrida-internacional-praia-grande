@@ -1953,8 +1953,8 @@
 
     if (!window._tbCatSel && catsFiltro.length) window._tbCatSel = null; // null = todas
 
-    const _isResolvido = p => suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status)).length >= (p.faltaQtd || 0);
-    const pedidosTodos = getPedidosAjuda().filter(p => p.status === 'aberto' && p.tapaBuracoStatus === 'encaminhado');
+    const _isResolvido = p => p.status !== 'aberto' || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status)).length >= (p.faltaQtd || 0);
+    const pedidosTodos = getPedidosAjuda().filter(p => p.tapaBuracoStatus === 'encaminhado' && (p.status === 'aberto' || p.status === 'fechado'));
     const pedidosProntos = pedidosTodos.filter(p => _isResolvido(p));
     const pedidosPendentes = pedidosTodos.filter(p => !_isResolvido(p));
     const pedidosEncaminhados = window._tbCatSel
@@ -2146,7 +2146,7 @@
                 <strong>${escapeHtml(pedido.congNome)}</strong>
                 <div class="mini-note">📍 ${escapeHtml(pedido.postoNome || 'Posto')} · ${escapeHtml(pedido.categoriaNome || '')} · ${escapeHtml(pedido.dataFmt || pedido.data || '—')} · ${escapeHtml(pedido.slotLabel || '')}</div>
               </div>
-              <span class="badge badge-ativo">✅ Resolvido</span>
+              <span class="badge badge-ativo">${pedido.status === 'fechado' ? '✅ Fechado pelo setor' : '✅ Preenchido'}</span>
             </div>
             <div style="margin-top:.4rem;font-size:.8rem;color:#2d6a4f;">
               ${sugestoes.map(s => `<div>👤 ${escapeHtml(s.inviteNome)} — ${s.status === 'aceito' ? 'aceitou' : 'designado no setor'}</div>`).join('')}

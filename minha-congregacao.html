@@ -1861,6 +1861,7 @@ function getSlotFinalizadoInfo(agendaCfg, slotKey) {
 }
 
 window.setSlotFechadoCom2 = function(desigId, slotKey, valor) {
+  if (valor) cancelarPedidosAbertosDoHorario(desigId, slotKey, 'Horário fechado com 2 irmãos pela congregação.');
   // 1. Atualiza localStorage imediatamente (cumulativo — não perde slots anteriores)
   const all = DB.get('cong_config', {});
   const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};

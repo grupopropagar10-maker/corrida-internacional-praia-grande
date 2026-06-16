@@ -423,6 +423,7 @@
     const senha = document.getElementById('admin-senha').value;
     if (!senha) { mostrarErro('Informe a senha!'); return; }
     btn.innerHTML = '<span class="spin"></span>';
+    await (window.DB_SYNC_READY || Promise.resolve());
     const resultado = await Auth.loginAdmin(senha);
     if (resultado === true) {
       window.location.href = 'admin.html';
@@ -445,6 +446,7 @@
     const senha   = document.getElementById('subadmin-senha').value;
     if (!usuario || !senha) { mostrarErro('Informe usuário e senha!'); return; }
     btn.innerHTML = '<span class="spin"></span>';
+    await (window.DB_SYNC_READY || Promise.resolve());
     const resultado = await Auth.loginSubAdmin(usuario, senha);
     if (resultado === true) {
       window.location.href = 'sub-admin.html';

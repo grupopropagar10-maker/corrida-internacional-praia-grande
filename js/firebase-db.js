@@ -294,14 +294,19 @@ function pullFromFirebase() {
   });
 }
 
-window.DB_SYNC_READY = pullFromFirebase()
-  .then(() => {
-    // Salva backup remoto uma vez por sessão após dados carregados — #13
-    saveFirebaseBackup();
-  })
-  .catch(err => {
-    console.warn('[Firebase] Erro ao carregar dados iniciais:', err);
-  });
+const _syncPromise = pullFromFirebase()
+  .then(() => { saveFirebaseBackup(); })
+  .catch(err => { console.warn('[Firebase] Erro ao carregar dados iniciais:', err); });
+
+// Garante que DB_SYNC_READY sempre resolve em até 8 s,
+// mesmo que o Firebase trave (ex: Chrome/iOS com WebSocket lento).
+window.DB_SYNC_READY = Promise.race([
+  _syncPromise,
+  new Promise(resolve => setTimeout(() => {
+    console.warn('[Firebase] Timeout de sincronização — continuando com cache local.');
+    resolve();
+  }, 8000))
+]);
 
 // Inicia sincronização assim que o Firebase estiver pronto
 startSync();

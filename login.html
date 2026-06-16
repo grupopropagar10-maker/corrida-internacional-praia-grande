@@ -487,11 +487,20 @@
     const senha = document.getElementById('live-senha').value;
     if (!usuario || !senha) { mostrarErro('Informe usuário e senha do pedido ao vivo!'); return; }
     setLiveButtonState('loading');
-    try {
-      if (typeof window.refreshLiveAuthKeys === 'function') {
+    if (typeof window.refreshLiveAuthKeys === 'function') {
+      try {
         await window.refreshLiveAuthKeys();
+      } catch (err) {
+        console.error('[Login Live] Falha ao atualizar dados do acesso ao vivo:', err);
       }
+    }
+    try {
       await (window.DB_SYNC_READY || Promise.resolve());
+    } catch (err) {
+      console.error('[Login Live] Falha na sincronização inicial:', err);
+    }
+
+    try {
       if (Auth.loginLiveInvite(usuario, senha)) {
         redirectToLiveArea();
         return;

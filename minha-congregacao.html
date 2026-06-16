@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minha Congregação — Corrida PG</title>
-  <link rel="stylesheet" href="css/style.css?v=20260616g"/>
+  <link rel="stylesheet" href="css/style.css?v=20260616h"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     /* ══ BANNER ══ */
@@ -1244,9 +1244,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="js/firebase-db.js?v=20260616g"></script>
-<script src="js/app.js?v=20260616g"></script>
-<script src="js/auth.js?v=20260616g"></script>
+<script src="js/firebase-db.js?v=20260616h"></script>
+<script src="js/app.js?v=20260616h"></script>
+<script src="js/auth.js?v=20260616h"></script>
 <script>
 (async function() {
 await (window.DB_SYNC_READY || Promise.resolve());
@@ -3170,7 +3170,7 @@ function renderPostosTurnos() {
         </div>
         ${actionsHtml}
         <div style="display:flex;justify-content:flex-end;padding:.2rem .7rem .05rem;">
-          <button onclick="deletarPonto('${escaparJs(!desig.autoGerada ? String(desig.id) : '')}','${escaparJs(escalaKey)}',${!!desig.autoGerada})" style="background:none;border:1px solid #dc3545;color:#dc3545;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;opacity:.75;" title="Deletar este ponto (requer senha do administrador)">🗑️ Deletar ponto</button>
+          <button onclick="deletarPonto('${escaparJs(!desig.autoGerada ? String(desig.id) : '')}','${escaparJs(escalaKey)}',${!!desig.autoGerada},'${escaparJs(String(posto.id))}')" style="background:none;border:1px solid #dc3545;color:#dc3545;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;opacity:.75;" title="Deletar este ponto (requer senha do administrador)">🗑️ Deletar ponto</button>
         </div>
         <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
       </div>`;
@@ -3183,7 +3183,7 @@ function renderPostosTurnos() {
 
 window.renderPostosTurnos = renderPostosTurnos;
 
-window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada) {
+window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada, postoIdRaw) {
   const senha = prompt('🔐 Digite a senha do administrador para deletar este ponto:');
   if (!senha) return;
   if (senha !== 'Julioxj310648') {
@@ -3206,7 +3206,20 @@ window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada) {
     }
   }
 
-  // 2. Limpa turnos e agendaConfig deste ponto no cong_config
+  // 2. Remove congregação do posto (reflete na view do admin que filtra por posto.congId)
+  if (postoIdRaw) {
+    const postos = DB.get('postos', []);
+    const postoIdx = postos.findIndex(p => String(p.id) === String(postoIdRaw));
+    if (postoIdx >= 0 && String(postos[postoIdx].congId) === String(CONG_ID)) {
+      postos[postoIdx] = { ...postos[postoIdx], congId: null };
+      try { localStorage.setItem('postos', JSON.stringify(postos)); } catch(e) {}
+      if (typeof setPathResilient === 'function') {
+        setPathResilient('postos/' + postoIdx + '/congId', null);
+      }
+    }
+  }
+
+  // 3. Limpa turnos e agendaConfig deste ponto no cong_config
   (function() {
     const all = DB.get('cong_config', {});
     const cfg = all[CONG_ID] ? JSON.parse(JSON.stringify(all[CONG_ID])) : {};

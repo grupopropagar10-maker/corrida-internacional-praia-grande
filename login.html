@@ -526,7 +526,7 @@
     document.getElementById('live-senha').value   = _p;
 
     if (_u && _p) {
-      startAutoLiveLogin(_u, _p);
+      scheduleAutoLiveLogin();
     }
   }
 
@@ -543,11 +543,6 @@
     btn.disabled = false;
   }
 
-  function isProbablyMobile() {
-    return window.matchMedia('(pointer: coarse)').matches
-      || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
-  }
-
   function redirectToLiveArea() {
     if (params.get('type') === 'live') {
       history.replaceState({}, '', window.location.pathname);
@@ -555,124 +550,27 @@
     window.location.replace('pedidos-ao-vivo.html');
   }
 
-  function showPersistentLiveLoginHint(msg) {
-    const el = document.getElementById('error-msg');
-    el.textContent = msg;
-    el.style.display = 'block';
-  }
-
-  function startAutoLiveLogin(usuario, senha) {
-    const AUTO_LOGIN_TIMEOUT_MS = isProbablyMobile() ? 3200 : 7000;
-    const RETRY_INTERVAL_MS = isProbablyMobile() ? 900 : 1200;
-    const REMOTE_REFRESH_INTERVAL_MS = isProbablyMobile() ? 1600 : 3000;
-    let autoLogado = false;
-    let finished = false;
-    let retryTimer = null;
-    let refreshTimer = null;
-    let timeoutTimer = null;
-    let refreshInFlight = null;
-
+  function scheduleAutoLiveLogin() {
     setLiveButtonState('idle');
-
-    function cleanup() {
-      finished = true;
-      window.removeEventListener('db-sync', onSync);
-      window.removeEventListener('online', onRetrySignal);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('pageshow', onRetrySignal);
-      if (retryTimer) clearInterval(retryTimer);
-      if (refreshTimer) clearInterval(refreshTimer);
-      if (timeoutTimer) clearTimeout(timeoutTimer);
-    }
-
-    function refreshLiveData(reason) {
-      if (finished || refreshInFlight || typeof window.refreshLiveAuthKeys !== 'function') {
-        return refreshInFlight || Promise.resolve();
-      }
-      refreshInFlight = window.refreshLiveAuthKeys()
-        .catch(err => {
-          console.error('[Auto Login Live] Falha ao atualizar dados via', reason, err);
-        })
-        .finally(() => {
-          refreshInFlight = null;
-        });
-      return refreshInFlight;
-    }
-
-    function finishFallback(message) {
-      if (finished || autoLogado) return;
-      cleanup();
-      setLiveButtonState('idle');
-      showPersistentLiveLoginHint(message);
-    }
-
-    function tryAutoLogin(source) {
-      if (finished || autoLogado) return false;
+    setTimeout(async () => {
+      const usuario = document.getElementById('live-usuario').value.trim();
+      const senha = document.getElementById('live-senha').value;
+      if (!usuario || !senha) return;
       try {
-        if (Auth.loginLiveInvite(usuario, senha)) {
-          autoLogado = true;
-          cleanup();
-          redirectToLiveArea();
-          return true;
+        if (typeof window.refreshLiveAuthKeys === 'function') {
+          await window.refreshLiveAuthKeys();
         }
       } catch (err) {
-        console.error('[Auto Login Live] Falha ao autenticar via', source, err);
+        console.error('[Auto Login Live] Falha ao atualizar dados iniciais:', err);
       }
-      return false;
-    }
-
-    function onSync(e) {
-      if (!['evento_config', 'cong_config'].includes(e.detail?.key)) return;
-      tryAutoLogin('db-sync:' + e.detail.key);
-    }
-
-    function onRetrySignal() {
-      tryAutoLogin('retry-signal');
-      refreshLiveData('retry-signal');
-    }
-
-    function onVisibilityChange() {
-      if (document.visibilityState === 'visible') {
-        tryAutoLogin('visibilitychange');
-        refreshLiveData('visibilitychange');
+      try {
+        if (Auth.loginLiveInvite(usuario, senha)) {
+          redirectToLiveArea();
+        }
+      } catch (err) {
+        console.error('[Auto Login Live] Falha ao autenticar automaticamente:', err);
       }
-    }
-
-    window.addEventListener('db-sync', onSync);
-    window.addEventListener('online', onRetrySignal);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('pageshow', onRetrySignal);
-
-    tryAutoLogin('initial-cache');
-    refreshLiveData('initial-cache').then(() => {
-      tryAutoLogin('initial-refresh');
-    });
-
-    retryTimer = setInterval(() => {
-      tryAutoLogin('retry-interval');
-    }, RETRY_INTERVAL_MS);
-
-    refreshTimer = setInterval(() => {
-      refreshLiveData('refresh-interval').then(() => {
-        tryAutoLogin('refresh-interval');
-      });
-    }, REMOTE_REFRESH_INTERVAL_MS);
-
-    timeoutTimer = setTimeout(() => {
-      finishFallback('Se não entrar sozinho, toque no botão "Entrar" para continuar.');
-    }, AUTO_LOGIN_TIMEOUT_MS);
-
-    (window.DB_SYNC_READY || Promise.resolve())
-      .then(() => {
-        tryAutoLogin('db-sync-ready');
-        return refreshLiveData('db-sync-ready');
-      })
-      .then(() => {
-        tryAutoLogin('db-sync-ready-refresh');
-      })
-      .catch(err => {
-        console.error('[Auto Login Live] Falha na sincronização inicial:', err);
-      });
+    }, 250);
   }
 
   function mostrarErro(msg) {

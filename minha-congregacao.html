@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minha Congregação — Corrida PG</title>
-  <link rel="stylesheet" href="css/style.css?v=20260616m"/>
+  <link rel="stylesheet" href="css/style.css?v=20260616r"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     /* ══ BANNER ══ */
@@ -1244,9 +1244,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="js/firebase-db.js?v=20260616m"></script>
-<script src="js/app.js?v=20260616m"></script>
-<script src="js/auth.js?v=20260616m"></script>
+<script src="js/firebase-db.js?v=20260616r"></script>
+<script src="js/app.js?v=20260616r"></script>
+<script src="js/auth.js?v=20260616r"></script>
 <script>
 (async function() {
 await (window.DB_SYNC_READY || Promise.resolve());
@@ -2067,7 +2067,7 @@ function getResumoEscala() {
     totalSlots,
     totalPessoas,
     faltando,
-    todosFechados: totalSlots > 0 && faltando === 0,
+    todosFechados: faltando === 0,
   };
 }
 
@@ -2191,11 +2191,11 @@ function renderResumoEscala() {
   const el = document.getElementById('escala-status-resumo');
   const exportBtn = document.getElementById('btn-export-pdf');
   if (!resumo.totalSlots) {
-    el.className = 'escala-status-box warning';
-    el.innerHTML = 'Nenhum horário gerado ainda para esta congregação.';
-    exportBtn.disabled = true;
-    exportBtn.style.opacity = '.55';
-    exportBtn.style.cursor = 'not-allowed';
+    el.className = 'escala-status-box';
+    el.innerHTML = 'Nenhum horário pendente. PDF disponível.';
+    exportBtn.disabled = false;
+    exportBtn.style.opacity = '1';
+    exportBtn.style.cursor = 'pointer';
     return;
   }
   el.className = resumo.todosFechados ? 'escala-status-box' : 'escala-status-box warning';
@@ -2590,7 +2590,7 @@ function getEscalaEntries(filterFn = null) {
     if (!posto) return null;
     const escalaKey = getEscalaKey(desig, posto);
     const categoria = getCategoriaById(posto.categoriaId);
-    const baseEntry = { desig, posto, categoria };
+    const baseEntry = { desig, posto, categoria, desigKey: escalaKey };
     if (filterFn && !filterFn(baseEntry)) return null;
     const agendaCfg = getAgendaConfig(escalaKey);
     const duracao = agendaCfg.duracaoTurno;
@@ -3207,12 +3207,25 @@ window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada, postoIdRaw) {
     }
   }
 
-  // 2. Remove congId do posto via REST (funciona em celular, propaga ao admin via WebSocket)
+  // 2. Remove congId do posto via REST APENAS se não há mais arranjos ativos para este posto
   if (postoIdRaw) {
     const postos = DB.get('postos', []);
-    const postoIdx = postos.findIndex(p => String(p.id) === String(postoIdRaw));
-    if (postoIdx >= 0 && String(postos[postoIdx].congId) === String(CONG_ID)) {
-      if (typeof clearPostoCongId === 'function') {
+    const postoObj = postos.find(p => String(p.id) === String(postoIdRaw));
+    if (postoObj && String(postoObj.congId) === String(CONG_ID)) {
+      // Verifica se ainda há designações manuais (excluindo a que acabou de ser removida)
+      const remainingManual = DB.get('designacoes', []).filter(d =>
+        String(d.postoId) === String(postoIdRaw) &&
+        (!autoGerada ? String(d.id) !== String(desigIdRaw) : true)
+      );
+      // Verifica se ainda há auto-arranjos ativos (tratando escalaKey atual como já deletado)
+      const autoDesigsDoPosto = buildAutoDesignacoesForPosto(postoObj);
+      const agendaAtual = DB.get('cong_config', {})?.[CONG_ID]?.agendaConfig || {};
+      const temAutoAtiva = autoDesigsDoPosto.some(d => {
+        const k = getEscalaKey(d, postoObj);
+        if (k === escalaKey) return false; // acabamos de marcar como deletado
+        return !agendaAtual[k]?.deletadoPeloAdmin;
+      });
+      if (!remainingManual.length && !temAutoAtiva && typeof clearPostoCongId === 'function') {
         clearPostoCongId(postoIdRaw);
       }
     }
@@ -3266,6 +3279,7 @@ window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada, postoIdRaw) {
 // (cascade falhou em deleções anteriores) e corrige via REST.
 function repararPostosOrfaos() {
   if (typeof clearPostoCongId !== 'function') return;
+  if (!DB.get('categorias', []).length) return; // guard: dados ainda não carregados
   const agendaMap = getAgendaConfigMap();
   const desigs = DB.get('designacoes', []);
   todosPos.filter(p => Number(p.congId) === Number(CONG_ID)).forEach(posto => {
@@ -3498,7 +3512,7 @@ document.getElementById('btn-export-pdf').addEventListener('click', () => {
 });
 
 window.exportarPdfPosto = async function(desigId) {
-  const entries = getEscalaEntries(entry => String(entry.desig.id) === String(desigId));
+  const entries = getEscalaEntries(entry => String(entry.desigKey) === String(desigId));
   if (!entries.length) return;
   if (!entries[0].completo) {
     showToast('Feche este posto antes de baixar o PDF individual.', 'warning');
@@ -3546,7 +3560,7 @@ window.enviarSetorWhatsApp = async function(categoriaId) {
 async function exportarEscalaPDF() {
   const entries = getEscalaEntries();
   const resumoEscala = getResumoEntries(entries);
-  if (!resumoEscala.todosFechados) {
+  if (resumoEscala.faltando > 0) {
     showToast('Feche todos os horários antes de baixar o PDF.', 'warning');
     return;
   }
@@ -3557,7 +3571,8 @@ async function exportarEscalaPDF() {
 
 renderMembros();
 renderPostosTurnos();
-repararPostosOrfaos();
+if (window.DB_SYNC_READY) window.DB_SYNC_READY.then(() => repararPostosOrfaos());
+else repararPostosOrfaos();
 renderLiveRequests();
 renderLiveMemberOptions();
 renderSolicitacoesManuais();

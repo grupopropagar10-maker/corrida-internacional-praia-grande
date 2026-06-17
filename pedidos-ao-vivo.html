@@ -460,7 +460,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/firebase-db.js?v=20260616j"></script>
+  <script src="js/firebase-db.js?v=20260616q"></script>
   <script src="js/app.js?v=20260616f"></script>
   <script src="js/auth.js?v=20260616f"></script>
   <script>
@@ -976,7 +976,8 @@
       const cfgCong = getCongConfigById(pedido.congId);
       const atuais = getPessoasDoSlot(cfgCong.turnos || {}, pedido.designacaoId, pedido.slotKey);
       const faltamAgora = Math.max(0, 3 - atuais.length);
-      const nomesConfirmados = getTapaBuracoAssignments(session.liveInviteId)
+      const _cfgTB = getTapaBuracoConfig();
+      const nomesConfirmados = (_cfgTB.assignments || [])
         .filter(item => item.pedidoId === pedidoId && item.status === 'aceito')
         .map(item => item.inviteNome);
       pedido.faltaQtd = faltamAgora;
@@ -1059,6 +1060,64 @@
       render();
     };
 
+    window.candidatarTapaBuraco = function(pedidoId) {
+      const invite = getInvite();
+      if (!invite) { showToast('Sessao expirada. Recarregue a pagina.', 'warning'); return; }
+      const cfg = getTapaBuracoConfig();
+      const pedido = DB.get('pedidos_ajuda_escala', []).find(p => p.id === pedidoId);
+      if (!pedido || pedido.status !== 'aberto') { showToast('Este pedido nao esta mais disponivel.', 'warning'); return; }
+      // Ja se candidatou?
+      const jaExiste = (cfg.assignments || []).some(a =>
+        a.inviteId === invite.id && a.pedidoId === pedidoId && ['pendente','aceito'].includes(a.status));
+      if (jaExiste) { showToast('Voce ja tem uma candidatura ativa neste posto!', 'info'); return; }
+      // Vagas ainda disponíveis?
+      const _ts = Date.now();
+      const ativosNoPedido = (cfg.assignments || []).filter(a =>
+        a.pedidoId === pedidoId && ['pendente','aceito'].includes(a.status) && !a._slotExpired).length;
+      if (ativosNoPedido >= (pedido.faltaQtd || 3)) {
+        showToast('Este posto ja foi preenchido! Obrigado pelo interesse.', 'info'); return;
+      }
+      // Limite por dia
+      const mesmosDia = (cfg.assignments || []).filter(a =>
+        a.inviteId === invite.id && a.data === pedido.data &&
+        ['pendente','aceito'].includes(a.status) && !a._slotExpired);
+      if (mesmosDia.length >= 2) {
+        showToast('Voce ja tem 2 candidaturas neste dia. Maximo atingido.', 'warning'); return;
+      }
+      if (mesmosDia.length === 1) {
+        const label = pedido.dataFmt || pedido.data || 'este dia';
+        const prim = mesmosDia[0];
+        if (!confirm('Voce ja tem uma candidatura em ' + label + ':\n' + (prim.postoNome||'Posto') + ' \xb7 ' + (prim.slotLabel||'—') + '\n\nConfirma que pode ir novamente neste mesmo dia? (maximo: 2 vezes)')) return;
+      }
+      const agora = new Date().toLocaleString('pt-BR');
+      const expiresAt = Date.now() + 3600000;
+      const suggId = 'tb_sug_auto_' + Date.now();
+      const assignId = 'tb_assign_auto_' + Date.now();
+      const base = {
+        inviteId: invite.id, inviteNome: invite.nome,
+        inviteCongNome: invite.congNome || '', inviteCongId: invite.congId ?? null,
+        whatsapp: invite.whatsapp || '',
+        pedidoId, congId: pedido.congId, congNome: pedido.congNome,
+        postoId: pedido.postoId, postoNome: pedido.postoNome, localLabel: pedido.localLabel || '',
+        categoriaId: pedido.categoriaId, categoriaNome: pedido.categoriaNome,
+        designacaoId: pedido.designacaoId,
+        data: pedido.data || '', dataFmt: pedido.dataFmt || pedido.data || '',
+        slotKey: pedido.slotKey, slotLabel: pedido.slotLabel,
+        autoIndicado: true, suggestedAt: agora, managerId: invite.id, managerNome: invite.nome,
+      };
+      cfg.suggestions = Array.isArray(cfg.suggestions) ? cfg.suggestions : [];
+      cfg.assignments = Array.isArray(cfg.assignments) ? cfg.assignments : [];
+      cfg.suggestions.unshift({ id: suggId, ...base, status: 'designado' });
+      cfg.assignments.unshift({
+        id: assignId, ...base, suggestionId: suggId,
+        status: 'pendente', _expiresAt: expiresAt,
+        designatedAt: agora, setorSubAdminId: null, setorSubAdminNome: null,
+      });
+      saveTapaBuracoConfig(cfg);
+      showToast('Candidatura registrada! Confirme abaixo. Voce tem 1 hora para confirmar ou sera cancelada.', 'success');
+      render();
+    };
+
     window.apresentarNaCong = function(assignmentKey) {
       const cfg = getTapaBuracoConfig();
       const invite = getInvite();
@@ -1120,34 +1179,79 @@
 
         const listEl = document.getElementById('slots-list');
         const sectionText = document.querySelector('#live-root .card p');
-        if (sectionText) {
-          sectionText.textContent = 'Nesta area voce nao escolhe vagas. O operador tapa-buraco envia a designacao e voce so precisa confirmar se aceita, verificando antes onde fica o local.';
-        }
-        if (!assignments.length) {
-          listEl.innerHTML = '<div class="card"><p style="color:var(--gray);font-size:.88rem;">Ainda nao existe designacao especial enviada para voce.</p></div>';
-          return;
-        }
-        listEl.innerHTML = assignments.map((item, index) => `
-          <div class="live-slot-card">
-            <div class="live-slot-head">
-              <div>
-                <strong>Designacao ${String(index + 1).padStart(2, '0')} · ${item.postoNome || item.posto?.nome || 'Posto'}</strong>
-                <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.localLabel || item.posto?.local || 'Local nao informado'}</div>
-                <div class="live-slot-meta">
-                  <span>📅 ${item.dataFmt || item.data || '—'}</span>
-                  <span>🧭 ${item.categoriaNome || item.categoria?.nome || 'Sem setor'}</span>
-                  <span>⏱️ ${item.slotLabel || item.slotKey || '—'}</span>
+        if (sectionText) sectionText.textContent = 'Confira as designacoes recebidas e candidate-se aos postos com vagas abertas para voce.';
+
+        // Candidaturas disponíveis
+        const cfgTB = getTapaBuracoConfig();
+        const _tsNow = Date.now();
+        // Marcar expirados como _slotExpired (libera a vaga para outros, mas assignment continua acessível)
+        let _modif = false;
+        (cfgTB.assignments || []).forEach(a => {
+          if (a.status === 'pendente' && a.autoIndicado && a._expiresAt && _tsNow > a._expiresAt && !a._slotExpired) {
+            a._slotExpired = true;
+            _modif = true;
+          }
+        });
+        if (_modif) saveTapaBuracoConfig(cfgTB);
+        const allPedidosTB = DB.get('pedidos_ajuda_escala', []);
+        const myCatIds = [invite.catId, ...(invite.categoriasExtra||[]).map(c=>c.id)].filter(Boolean).map(Number);
+        const candidataveis = allPedidosTB.filter(p => {
+          if (!p.autoSelecionavel || p.status !== 'aberto') return false;
+          if (myCatIds.length && !myCatIds.includes(Number(p.categoriaId))) return false;
+          if ((cfgTB.assignments||[]).some(a => a.inviteId === invite.id && a.pedidoId === p.id && ['pendente','aceito'].includes(a.status))) return false;
+          const ativos = (cfgTB.assignments||[]).filter(a => a.pedidoId === p.id && ['pendente','aceito'].includes(a.status) && !a._slotExpired).length;
+          return ativos < (p.faltaQtd || 3);
+        });
+        const catsComVaga = [...new Map(candidataveis.map(p => [p.categoriaId, {id:p.categoriaId, nome:p.categoriaNome||'—'}])).values()];
+        const _selCat = window._tbCandidataCat;
+        const candidatavelVistos = _selCat ? candidataveis.filter(p => String(p.categoriaId) === String(_selCat)) : candidataveis;
+        const candidatavelHtml = candidataveis.length ? `
+          <div class="card" style="border:2px solid var(--primary);margin-bottom:.75rem;">
+            <p style="font-weight:700;font-size:.95rem;margin:0 0 .3rem;">🙋 Postos com candidaturas abertas para você</p>
+            <p style="font-size:.8rem;color:var(--gray);margin:0 0 .55rem;">Esses postos precisam de reforço. Máximo 2 vezes no mesmo dia. Você tem 1h para confirmar após se candidatar.</p>
+            ${catsComVaga.length > 1 ? `<div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.55rem;">
+              <button onclick="window._tbCandidataCat=null;render();" style="padding:.26rem .6rem;border-radius:99px;border:2px solid ${!_selCat?'var(--primary)':'#ccc'};background:${!_selCat?'var(--primary)':'white'};color:${!_selCat?'white':'var(--gray)'};font-size:.76rem;font-weight:700;cursor:pointer;">Todas (${candidataveis.length})</button>
+              ${catsComVaga.map(c=>`<button onclick="window._tbCandidataCat='${c.id}';render();" style="padding:.26rem .6rem;border-radius:99px;border:2px solid ${String(_selCat)===String(c.id)?'var(--primary)':'#ccc'};background:${String(_selCat)===String(c.id)?'var(--primary)':'white'};color:${String(_selCat)===String(c.id)?'white':'var(--gray)'};font-size:.76rem;font-weight:700;cursor:pointer;">${c.nome} (${candidataveis.filter(p=>String(p.categoriaId)===String(c.id)).length})</button>`).join('')}
+            </div>` : ''}
+            ${candidatavelVistos.map(p => {
+              const ativosP = (cfgTB.assignments||[]).filter(a=>a.pedidoId===p.id&&['pendente','aceito'].includes(a.status)&&!(a._expiresAt&&_tsNow>a._expiresAt)).length;
+              const restantes = Math.max(0,(p.faltaQtd||3)-ativosP);
+              return `<div style="border:1px solid #d0d8f5;border-radius:10px;padding:.75rem;margin-top:.5rem;">
+                <div style="font-weight:700;font-size:.88rem;">${p.postoNome||'Posto'} \xb7 ${p.slotLabel||'—'}</div>
+                <div style="font-size:.78rem;color:var(--gray);margin:.15rem 0;">${p.congNome||'—'} \xb7 ${p.dataFmt||p.data||'—'} \xb7 ${p.categoriaNome||'—'}</div>
+                ${p.localLabel?`<div style="font-size:.76rem;color:var(--gray);">📍 ${p.localLabel}</div>`:''}
+                <div style="font-size:.76rem;color:var(--primary);margin:.2rem 0;">${restantes} vaga(s) disponível(is)</div>
+                <button class="btn btn-primary btn-sm" style="margin-top:.3rem;" onclick="candidatarTapaBuraco('${p.id}')">✋ Quero este posto</button>
+              </div>`;
+            }).join('')}
+          </div>` : '';
+
+        const assignmentsHtml = assignments.length
+          ? assignments.map((item, index) => `
+            <div class="live-slot-card">
+              <div class="live-slot-head">
+                <div>
+                  <strong>Designacao ${String(index + 1).padStart(2, '0')} · ${item.postoNome || item.posto?.nome || 'Posto'}${item.autoIndicado ? ' 🙋' : ''}</strong>
+                  <div style="opacity:.88;font-size:.82rem;margin-top:.2rem;">📍 ${item.localLabel || item.posto?.local || 'Local nao informado'}</div>
+                  <div class="live-slot-meta">
+                    <span>📅 ${item.dataFmt || item.data || '—'}</span>
+                    <span>🧭 ${item.categoriaNome || item.categoria?.nome || 'Sem setor'}</span>
+                    <span>⏱️ ${item.slotLabel || item.slotKey || '—'}</span>
+                    ${item.autoIndicado && item._expiresAt ? `<span style="color:#dc3545;font-size:.75rem;">⌛ confirmar até ${new Date(item._expiresAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>` : ''}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="live-slot-grid" style="grid-template-columns:1fr;">
-              <div class="live-slot-option ${item.key === assignment?.key ? 'current' : ''}">
-                <strong>${item.status === 'aceito' ? 'Aceita' : 'Aguardando resposta'}</strong>
-                <div class="meta">${item.key === assignment?.key ? 'Esta designacao esta aberta acima para voce responder.' : 'Clique para abrir os detalhes desta designacao.'}</div>
-                <button class="btn btn-outline btn-sm" onclick="selecionarEscolhaConfirmada('${item.key}')">Abrir detalhes</button>
+              <div class="live-slot-grid" style="grid-template-columns:1fr;">
+                <div class="live-slot-option ${item.key === assignment?.key ? 'current' : ''}">
+                  <strong>${item.status === 'aceito' ? 'Aceita' : 'Aguardando confirmacao'}</strong>
+                  <div class="meta">${item.key === assignment?.key ? 'Esta designacao esta aberta acima para voce responder.' : 'Clique para abrir os detalhes e confirmar.'}</div>
+                  <button class="btn btn-outline btn-sm" onclick="selecionarEscolhaConfirmada('${item.key}')">Abrir detalhes</button>
+                </div>
               </div>
-            </div>
-          </div>`).join('');
+            </div>`).join('')
+          : '<div class="card"><p style="color:var(--gray);font-size:.88rem;">Ainda nao existe designacao especial enviada para voce.</p></div>';
+
+        listEl.innerHTML = candidatavelHtml + assignmentsHtml;
         return;
       }
 

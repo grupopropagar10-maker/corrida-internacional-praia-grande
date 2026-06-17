@@ -597,7 +597,7 @@
 ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="js/firebase-db.js?v=20260616n"></script>
+<script src="js/firebase-db.js?v=20260616q"></script>
 <script src="js/app.js?v=20260616f"></script>
 <script src="js/auth.js?v=20260616f"></script>
 <script>
@@ -1967,6 +1967,17 @@
     nav.style.display = 'flex';
 
     const cfg = getTapaBuracoConfig();
+    // Marcar candidaturas auto-indicadas expiradas como _slotExpired para liberar a vaga
+    // (NÃO cancela o assignment — pessoa ainda pode ver e responder)
+    const _tsAgora = Date.now();
+    let _expirou = false;
+    (cfg.assignments || []).forEach(a => {
+      if (a.status === 'pendente' && a.autoIndicado && a._expiresAt && _tsAgora > a._expiresAt && !a._slotExpired) {
+        a._slotExpired = true;
+        _expirou = true;
+      }
+    });
+    if (_expirou) saveTapaBuracoConfig(cfg);
     const invites = cfg.invites.slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
     const suggestions = cfg.suggestions || [];
     const assignments = cfg.assignments || [];
@@ -2051,7 +2062,8 @@
       ? pedidosEncaminhados.map(pedido => {
           const sugestoes = suggestions.filter(item => item.pedidoId === pedido.id);
           const sugestoesAtivas = sugestoes.filter(s => ['sugerido','designado','aceito'].includes(s.status)).length;
-          const inviteOptions = invites
+          const _sugsRecusadas = sugestoes.filter(s => s.status === 'recusado').map(s => s.inviteId);
+          const _invitesFiltrados = invites
             .filter(invite => invite.ativo !== false)
             .filter(invite => { if (!invite.catId && !(invite.categoriasExtra?.length)) return true; const ids = [invite.catId, ...(invite.categoriasExtra||[]).map(c=>c.id)].filter(Boolean).map(Number); return ids.includes(Number(pedido.categoriaId)); })
             .filter(invite => !sugestoes.some(item => item.inviteId === invite.id && ['sugerido', 'designado', 'aceito'].includes(item.status)))
@@ -2067,9 +2079,14 @@
                 const gap = Math.max(tAtual.start - tOutro.end, tOutro.start - tAtual.end, 0);
                 return gap < 120;
               });
-            })
-            .map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'}</option>`)
-            .join('');
+            });
+          const _invDisp = _invitesFiltrados.filter(i => !_sugsRecusadas.includes(i.id));
+          const _invRecusou = _invitesFiltrados.filter(i => _sugsRecusadas.includes(i.id));
+          const inviteOptions = [
+            ..._invDisp.map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'}</option>`),
+            ...(_invRecusou.length ? ['<option disabled>── já recusou ──</option>'] : []),
+            ..._invRecusou.map(invite => `<option value="${invite.id}">${invite.nome} · ${invite.whatsapp || 'sem WhatsApp'} (recusou)</option>`),
+          ].join('');
           return `
             <div class="help-card pending">
               <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
@@ -2081,6 +2098,7 @@
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;">
                   <span class="badge badge-standby">Faltam ${pedido.faltaQtd} pessoa(s)</span>
                   ${sugestoesAtivas > 0 ? `<span class="badge ${sugestoesAtivas >= pedido.faltaQtd ? 'badge-ativo' : 'badge-primary'}" style="font-size:.72rem;">📲 ${sugestoesAtivas} de ${pedido.faltaQtd} enviado(s)</span>` : ''}
+                  ${pedido.autoSelecionavel ? `<span class="badge badge-ativo" style="font-size:.72rem;">🙋 Candidaturas abertas</span>` : ''}
                 </div>
               </div>
               <div class="mini-note" style="margin-top:.5rem;">Escolha um tapa-buraco para sugerir ao setor. O voluntário receberá o login particular pelo WhatsApp e só precisará responder se aceita a designação.</div>
@@ -2096,17 +2114,27 @@
                   <label>Status das sugestões</label>
                   <div style="padding:.65rem .75rem;border:1px solid var(--gray-light);border-radius:10px;background:#fafbfd;font-size:.8rem;min-height:42px;">
                     ${sugestoes.length ? sugestoes.map(item => {
-                      const lbl = item.status === 'sugerido' ? 'aguardando setor' : item.status === 'designado' ? 'designado no setor' : item.status === 'aceito' ? 'aceitou' : 'recusou';
+                      const pedidoAssign = assignments.find(a => a.pedidoId === pedido.id && a.inviteId === item.inviteId && a.status !== 'cancelado');
+                      let icon, lbl;
+                      if (item.status === 'sugerido') { icon = '⏳'; lbl = 'aguardando setor'; }
+                      else if (pedidoAssign?.status === 'aceito') { icon = pedidoAssign.autoIndicado ? '🙋' : '✅'; lbl = pedidoAssign.autoIndicado ? 'se candidatou' : 'aceitou'; }
+                      else if (pedidoAssign?.status === 'recusado') { icon = '❌'; lbl = 'recusou'; }
+                      else if (item.status === 'designado') { icon = '📲'; lbl = 'aguardando resposta'; }
+                      else { icon = '❌'; lbl = 'recusou'; }
+                      const setorInfo = pedidoAssign?.managerNome ? ` · setor: ${escapeHtml(pedidoAssign.managerNome)}` : '';
                       const xBtn = item.status === 'sugerido'
                         ? `<span onclick="removerSugestaoTapaBuraco('${escaparJs(item.id)}')" title="Remover sugestão" style="cursor:pointer;color:#dc3545;font-weight:700;font-size:1.1rem;line-height:1;padding:0 .3rem;flex-shrink:0;">×</span>`
                         : '';
-                      return `<div style="display:flex;align-items:center;gap:.2rem;">${xBtn}<span>${escapeHtml(item.inviteNome)} — ${lbl}</span></div>`;
+                      return `<div style="display:flex;align-items:center;gap:.2rem;">${xBtn}<span>${icon} ${escapeHtml(item.inviteNome)} — ${lbl}${setorInfo}</span></div>`;
                     }).join('') : 'Nenhuma sugestão enviada ainda.'}
                   </div>
                 </div>
               </div>
               <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;">
                 <button class="btn btn-primary btn-sm" onclick="enviarSugestaoTapaBuraco('${pedido.id}')">📲 Enviar sugestão</button>
+                ${pedido.autoSelecionavel
+                  ? `<button class="btn btn-outline btn-sm" onclick="abrirAutoSelecionavel('${pedido.id}',true)" style="border-color:#dc3545;color:#dc3545;">🔴 Fechar candidaturas</button>`
+                  : `<button class="btn btn-outline btn-sm" onclick="abrirAutoSelecionavel('${pedido.id}')">🙋 Abrir candidaturas</button>`}
               </div>
             </div>`;
         }).join('')
@@ -2302,6 +2330,17 @@
     showToast('Nome enviado para a reserva do pedido no setor.', 'success');
   };
 
+  window.abrirAutoSelecionavel = function(pedidoId, fechar) {
+    const lista = getPedidosAjuda();
+    const pedido = lista.find(item => item.id === pedidoId);
+    if (!pedido) return;
+    if (fechar) { delete pedido.autoSelecionavel; delete pedido.autoSelecionavelAbertoEm; }
+    else { pedido.autoSelecionavel = true; pedido.autoSelecionavelAbertoEm = new Date().toLocaleString('pt-BR'); }
+    savePedidosAjuda(lista);
+    renderTapaBuraco();
+    showToast(fechar ? 'Candidaturas encerradas.' : 'Candidaturas abertas!', fechar ? 'info' : 'success');
+  };
+
   window.designarSugestoesTapaBuraco = function(pedidoId) {
     const lista = getPedidosAjuda();
     const pedido = lista.find(item => item.id === pedidoId && item.subAdminId === session.subAdminId && item.status === 'aberto');
@@ -2442,8 +2481,10 @@
     const doc = new jsPDF('p', 'mm', 'a4');
     const cfg = getTapaBuracoConfig();
     const todasCats = DB.get('categorias', []).sort((a, b) => (a.numero ?? 999) - (b.numero ?? 999));
-    const invites   = cfg.invites || [];
+    const invites     = cfg.invites || [];
+    const suggestions = cfg.suggestions || [];
     const assignments = cfg.assignments || [];
+    const pedidosTB   = getPedidosAjuda().filter(p => p.tapaBuracoStatus === 'encaminhado');
     const W = 210, M = 14;
 
     const catLabel = (catId, catNome, catNumero) => {
@@ -2465,63 +2506,121 @@
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W/2, y, {align:'center'});
     y += 9;
 
-    // ---- SECAO 1: Participantes ----
+    // ---- SECAO 1: Por Pedido ----
     doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('1. Participantes — Status das Designa\xe7\xf5es', M, y);
+    doc.text('1. Situa\xe7\xe3o dos Pedidos Encaminhados', M, y);
     y += 3;
 
-    const invitesSorted = invites.slice().sort((a, b) => {
-      const na = a.catNumero ?? 999, nb = b.catNumero ?? 999;
-      return na !== nb ? na - nb : (a.nome||'').localeCompare(b.nome||'');
+    const pedidosSorted = pedidosTB.slice().sort((a, b) => {
+      if ((a.data||'') !== (b.data||'')) return (a.data||'').localeCompare(b.data||'');
+      return (a.postoNome||'').localeCompare(b.postoNome||'');
     });
 
     const rows1 = [];
-    for (const inv of invitesSorted) {
-      const myA = assignments.filter(a => a.inviteId === inv.id);
-      const aceitas  = myA.filter(a => a.status === 'aceito');
-      const recusadas = myA.filter(a => a.status === 'recusado');
-      const pendentes = myA.filter(a => a.status === 'pendente');
-      const cat = catLabel(inv.catId, inv.catNome, inv.catNumero);
-      const extra = (inv.categoriasExtra||[]).map(c => catLabel(c.id, c.nome, c.numero)).join(', ');
-      const catFull = extra ? `${cat}\n+ ${extra}` : cat;
-
-      if (aceitas.length) {
-        aceitas.forEach(a => rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
-          'Aceito', `${a.postoNome||'—'}\n${a.dataFmt||a.data||'—'} ${a.slotLabel||a.slotKey||'—'}`,
-          a.managerNome||'—', a.congNome||'—']));
-      } else if (recusadas.length) {
-        recusadas.forEach(a => rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
-          'Recusado', a.postoNome||'—', a.managerNome||'—', a.congNome||'—']));
-      } else if (pendentes.length) {
-        pendentes.forEach(a => rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
-          'Pendente', a.postoNome||'—', a.managerNome||'—', a.congNome||'—']));
+    const rowMeta1 = [];
+    for (const pedido of pedidosSorted) {
+      const sugs = suggestions.filter(s => s.pedidoId === pedido.id);
+      const encPor = pedido.tapaBuracoEncaminhadoPorNome || pedido.subAdminNome || '—';
+      const encFmt = pedido.tapaBuracoEncaminhadoEm || pedido.criadoEm || '—';
+      const qtdDesig = sugs.filter(s => ['designado','aceito'].includes(s.status)).length;
+      rows1.push([
+        pedido.congNome || '—',
+        (pedido.postoNome || '—') + ' \xb7 ' + (pedido.categoriaNome || '—'),
+        (pedido.dataFmt || pedido.data || '—') + '\n' + (pedido.slotLabel || '—'),
+        `Encam. por ${encPor}\n${encFmt}`,
+        sugs.length ? `${qtdDesig}/${pedido.faltaQtd || '?'} encam.` : `Faltam ${pedido.faltaQtd || '?'}`,
+      ]);
+      rowMeta1.push(true);
+      if (!sugs.length) {
+        rows1.push(['   (nenhuma sugest\xe3o enviada)', '', '', '', '']);
+        rowMeta1.push(false);
       } else {
-        rows1.push([inv.nome||'—', inv.congNome||'—', catFull,
-          'N\xe3o desig.', '—', '—', '—']);
+        for (const sug of sugs) {
+          const assign = assignments.find(a => a.inviteId === sug.inviteId && a.pedidoId === pedido.id && a.status !== 'cancelado');
+          let statusLabel;
+          if (sug.status === 'sugerido') statusLabel = 'Aguard. setor';
+          else if (assign?.status === 'aceito') statusLabel = 'Aceitou';
+          else if (assign?.status === 'recusado') statusLabel = 'Recusou';
+          else if (sug.status === 'designado') statusLabel = 'Aguard. resposta';
+          else if (sug.status === 'recusado') statusLabel = 'Cancelado';
+          else statusLabel = sug.status;
+          const inv = invites.find(i => i.id === sug.inviteId);
+          const catStr = inv ? catLabel(inv.catId, inv.catNome, inv.catNumero) : '—';
+          rows1.push([
+            '   ' + (sug.inviteNome || '—'),
+            catStr,
+            inv?.congNome || sug.congNome || '—',
+            sug.managerNome ? `Setor: ${sug.managerNome}` : '—',
+            statusLabel,
+          ]);
+          rowMeta1.push(false);
+        }
       }
+    }
+    if (!rows1.length) {
+      rows1.push(['Nenhum pedido encaminhado ao tapa-buraco.', '', '', '', '']);
+      rowMeta1.push(false);
     }
 
     doc.autoTable({
       startY: y,
-      head: [['Nome', 'Cong. origem', 'Categoria', 'Status', 'Posto / Hor\xe1rio', 'Respons\xe1vel', 'Cong. posto']],
+      head: [['Congrega\xe7\xe3o', 'Posto \xb7 Categoria', 'Data / Slot', 'Respons\xe1vel', 'Status']],
       body: rows1,
       styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
       headStyles: { fillColor: [44, 62, 158], textColor: 255, fontSize: 7.5 },
       columnStyles: {
-        0: { cellWidth: 28 }, 1: { cellWidth: 24 }, 2: { cellWidth: 32 },
-        3: { cellWidth: 18 }, 4: { cellWidth: 38 }, 5: { cellWidth: 22 }, 6: { cellWidth: 20 },
+        0: { cellWidth: 33 }, 1: { cellWidth: 40 }, 2: { cellWidth: 28 },
+        3: { cellWidth: 45 }, 4: { cellWidth: 26 },
       },
+      didParseCell: (data) => {
+        if (data.section === 'body' && rowMeta1[data.row.index]) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [220, 230, 250];
+          data.cell.styles.fontSize = 7.5;
+        }
+      },
+      alternateRowStyles: false,
+      margin: { left: M, right: M },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    // ---- SECAO 2: Participantes sem designacao ----
+    if (y > 245) { doc.addPage(); y = 18; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('2. Participantes Sem Designa\xe7\xe3o Atribu\xedda', M, y); y += 3;
+
+    const semDesig = invites.filter(inv => {
+      const mine = assignments.filter(a => a.inviteId === inv.id && a.status !== 'cancelado');
+      return !mine.length;
+    }).sort((a, b) => (a.catNumero ?? 999) - (b.catNumero ?? 999) || (a.nome||'').localeCompare(b.nome||''));
+
+    const rows2 = semDesig.length
+      ? semDesig.map(inv => [
+          inv.nome || '—',
+          inv.congNome || '—',
+          catLabel(inv.catId, inv.catNome, inv.catNumero),
+          inv.whatsapp || '—',
+        ])
+      : [['Todos os participantes t\xeam designa\xe7\xe3o.', '', '', '']];
+
+    doc.autoTable({
+      startY: y,
+      head: [['Nome', 'Congrega\xe7\xe3o', 'Categoria', 'WhatsApp']],
+      body: rows2,
+      styles: { fontSize: 7, cellPadding: 1.8 },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 38 }, 2: { cellWidth: 72 }, 3: { cellWidth: 24 } },
       alternateRowStyles: { fillColor: [245, 247, 255] },
       margin: { left: M, right: M },
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    // ---- SECAO 2: Resumo por categoria ----
+    // ---- SECAO 3: Resumo por categoria ----
     if (y > 245) { doc.addPage(); y = 18; }
     doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('2. Resumo por Categoria', M, y); y += 3;
+    doc.text('3. Resumo por Categoria', M, y); y += 3;
 
-    const rows2 = todasCats.filter(c => c.nome).map(cat => {
+    const rows3 = todasCats.filter(c => c.nome).map(cat => {
       const catInvites = invites.filter(i =>
         Number(i.catId) === Number(cat.id) ||
         (i.categoriasExtra||[]).some(c2 => Number(c2.id) === Number(cat.id))
@@ -2530,19 +2629,19 @@
       const aceitos   = catA.filter(a => a.status === 'aceito').length;
       const recusados = catA.filter(a => a.status === 'recusado').length;
       const pendentes = catA.filter(a => a.status === 'pendente').length;
-      const semDesig  = catInvites.filter(i => {
+      const semD = catInvites.filter(i => {
         const mine = assignments.filter(a => a.inviteId === i.id);
         return !mine.length || mine.every(a => ['cancelado','recusado'].includes(a.status));
       }).length;
       if (!catInvites.length && !catA.length) return null;
       return [cat.numero != null ? String(cat.numero).padStart(2,'0') : '—', cat.nome||'—',
-        String(catInvites.length), String(aceitos), String(recusados), String(pendentes), String(semDesig)];
+        String(catInvites.length), String(aceitos), String(recusados), String(pendentes), String(semD)];
     }).filter(Boolean);
 
     doc.autoTable({
       startY: y,
-      head: [['N\xba', 'Categoria', 'Total', 'Aceitos', 'Recusados', 'Pendentes', 'N\xe3o desig.']],
-      body: rows2,
+      head: [['N\xba', 'Categoria', 'Total', 'Aceitos', 'Recusados', 'Pendentes', 'Sem desig.']],
+      body: rows3,
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [44, 62, 158], textColor: 255 },
       columnStyles: {
@@ -2556,12 +2655,12 @@
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    // ---- SECAO 3: Descricao das categorias ----
+    // ---- SECAO 4: Descricao das categorias ----
     if (y > 240) { doc.addPage(); y = 18; }
     doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('3. Descri\xe7\xe3o das Categorias', M, y); y += 3;
+    doc.text('4. Descri\xe7\xe3o das Categorias', M, y); y += 3;
 
-    const rows3 = todasCats.filter(c => c.nome).map(cat => [
+    const rows4 = todasCats.filter(c => c.nome).map(cat => [
       cat.numero != null ? String(cat.numero).padStart(2,'0') : '—',
       cat.nome || '—',
       [cat.horario && cat.horarioFim ? `${cat.horario}–${cat.horarioFim}` : null, cat.descricao || null]
@@ -2571,12 +2670,10 @@
     doc.autoTable({
       startY: y,
       head: [['N\xba', 'Categoria', 'Hor\xe1rio / Descri\xe7\xe3o']],
-      body: rows3,
+      body: rows4,
       styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
       headStyles: { fillColor: [44, 62, 158], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 55 }, 2: { cellWidth: 115 },
-      },
+      columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 55 }, 2: { cellWidth: 115 } },
       alternateRowStyles: { fillColor: [245, 247, 255] },
       margin: { left: M, right: M },
     });

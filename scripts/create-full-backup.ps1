@@ -1,7 +1,7 @@
 param(
   [string]$WorkspacePath = "C:\Users\julio\Documents\Projeto Corrida internacional Praia Grande",
   [string]$BackupParent = "D:\corrida-backups",
-  [int]$KeepLatest = 2,
+  [int]$KeepLatest = 30,
   [switch]$SkipPrune
 )
 

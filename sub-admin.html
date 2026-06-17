@@ -2017,6 +2017,7 @@
     const invites = cfg.invites.slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
     const suggestions = cfg.suggestions || [];
     const assignments = cfg.assignments || [];
+    const _pendentesCount = assignments.filter(a => a.status === 'pendente').length;
     const todasCats = DB.get('categorias', []);
 
     // Categorias vinculadas a este sub-admin
@@ -2272,7 +2273,11 @@
           <div class="setor-stat"><strong>${suggestions.filter(item => item.status === 'sugerido').length}</strong><span>Nomes aguardando setor</span></div>
           <div class="setor-stat success"><strong>${assignments.filter(item => item.status === 'aceito').length}</strong><span>Designações aceitas</span></div>
         </div>
-        <button onclick="gerarRelatorioPdfTapaBuraco()" class="btn btn-outline btn-sm" style="white-space:nowrap;flex-shrink:0;">📄 Relatório PDF</button>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;flex-shrink:0;">
+          <button onclick="gerarRelatorioPdfTapaBuraco()" class="btn btn-outline btn-sm" style="white-space:nowrap;">📄 Relatório PDF</button>
+          <button onclick="abrirPainelVerdade()" class="btn btn-outline btn-sm" style="white-space:nowrap;">🔍 Painel Verdade</button>
+          ${_pendentesCount > 0 ? `<button onclick="resetarPendentes()" class="btn btn-outline btn-sm" style="white-space:nowrap;border-color:#d97706;color:#d97706;">🔄 Resetar pendentes (${_pendentesCount})</button>` : ''}
+        </div>
       </div>
       <div class="help-card" style="margin-bottom:1rem;">
         <strong>Cadastrar tapa-buraco</strong>
@@ -2751,8 +2756,145 @@
       margin: { left: M, right: M },
     });
 
+    // ---- SECAO 5: Resumo por Setor — Quem Aceitou ----
+    if (y > 240) { doc.addPage(); y = 18; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('5. Resumo por Setor — Quem Aceitou', M, y); y += 3;
+
+    const pedidosEncam = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado');
+    const catsSorted = todasCats.filter(c => c.nome).sort((a,b) => (a.numero ?? 999) - (b.numero ?? 999));
+
+    const rows5 = [];
+    const rowMeta5 = [];
+
+    catsSorted.forEach(cat => {
+      const pedsCat = pedidosEncam.filter(p => String(p.categoriaId) === String(cat.id) || p.categoriaNome === cat.nome);
+      if (!pedsCat.length) return;
+      const catTitle = cat.numero != null ? `N\xba ${String(cat.numero).padStart(2,'0')} \xb7 ${cat.nome}` : cat.nome;
+      rows5.push([catTitle, '', '', '']); rowMeta5.push('cat');
+      pedsCat.forEach(pedido => {
+        const encPor = pedido.tapaBuracoEncaminhadoPorNome || pedido.subAdminNome || '—';
+        const pedSugs = suggestions.filter(s => s.pedidoId === pedido.id);
+        const aceitou = pedSugs.map(s => {
+          const a = assignments.find(x => x.inviteId === s.inviteId && x.pedidoId === pedido.id && x.status === 'aceito');
+          return a ? (s.inviteNome || a.inviteNome || '—') : null;
+        }).filter(Boolean);
+        const pendentes2 = pedSugs.filter(s => {
+          const a = assignments.find(x => x.inviteId === s.inviteId && x.pedidoId === pedido.id);
+          return a?.status === 'pendente';
+        }).length;
+        rows5.push([
+          '  ' + (pedido.congNome || '—'),
+          (pedido.dataFmt || pedido.data || '—') + ' ' + (pedido.slotLabel || ''),
+          aceitou.length ? aceitou.join(', ') : (pendentes2 ? `${pendentes2} aguardando` : 'Nenhum aceito'),
+          encPor,
+        ]);
+        rowMeta5.push('pedido');
+      });
+    });
+
+    if (!rows5.length) { rows5.push(['Nenhum pedido encaminhado.','','','']); rowMeta5.push('pedido'); }
+
+    doc.autoTable({
+      startY: y,
+      head: [['Congrega\xe7\xe3o / Setor', 'Data / Slot', 'Irm\xe3o(s) Respons\xe1vel(is)', 'Encaminhado por']],
+      body: rows5,
+      styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255, fontSize: 7.5 },
+      columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: 30 }, 2: { cellWidth: 68 }, 3: { cellWidth: 42 } },
+      didParseCell: (data) => {
+        if (data.section !== 'body') return;
+        const meta = rowMeta5[data.row.index];
+        if (meta === 'cat') {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [220, 230, 250];
+          data.cell.styles.fontSize = 8;
+          data.cell.styles.textColor = [30, 50, 120];
+          data.cell.colSpan = 4;
+        }
+      },
+      alternateRowStyles: false,
+      margin: { left: M, right: M },
+    });
+
     const ts = new Date().toISOString().slice(0,10);
     doc.save(`relatorio-tapa-buraco-${ts}.pdf`);
+  };
+
+  window.resetarPendentes = function() {
+    const cfg = getTapaBuracoConfig();
+    const pendentes = (cfg.assignments || []).filter(a => a.status === 'pendente');
+    if (!pendentes.length) { showToast('Nenhuma designação pendente.', 'info'); return; }
+    const n = pendentes.length;
+    if (!confirm(`Resetar ${n} designação(ões) pendente(s)?\n\nIsso cancela as designações que ainda não foram respondidas pelo voluntário, liberando os slots para nova designação.`)) return;
+    const agora = new Date().toLocaleString('pt-BR');
+    pendentes.forEach(a => {
+      a.status = 'cancelado';
+      a.cancelReason = 'Resetado pelo administrador';
+      a.canceladoEm = agora;
+      const sug = (cfg.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId && s.status === 'designado');
+      if (sug) { sug.status = 'recusado'; sug.declinedAt = agora; }
+    });
+    saveTapaBuracoConfig(cfg);
+    showToast(`${n} designação(ões) pendente(s) cancelada(s).`, 'success');
+    renderTapaBuraco();
+  };
+
+  window.abrirPainelVerdade = function() {
+    const cfg = getTapaBuracoConfig();
+    const invites = cfg.invites || [];
+    const suggestions = cfg.suggestions || [];
+    const assignments = cfg.assignments || [];
+    const pedidos = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado');
+    const aceitos   = assignments.filter(a => a.status === 'aceito').length;
+    const pendentes = assignments.filter(a => a.status === 'pendente').length;
+    const recusados = assignments.filter(a => a.status === 'recusado').length;
+    const cancelados = assignments.filter(a => a.status === 'cancelado').length;
+
+    const badge = (bg, cor, txt) => `<span style="background:${bg};color:${cor};padding:.2rem .55rem;border-radius:8px;font-size:.8rem;font-weight:700;">${txt}</span>`;
+
+    let rows = pedidos.map(pedido => {
+      const pedSugs = suggestions.filter(s => s.pedidoId === pedido.id);
+      const detalhes = pedSugs.length ? pedSugs.map(s => {
+        const a = assignments.find(x => x.inviteId === s.inviteId && x.pedidoId === pedido.id);
+        const inv = invites.find(i => i.id === s.inviteId);
+        const nome = inv?.nome || s.inviteNome || '—';
+        let bg = '#f3f4f6'; let cor = '#6b7280'; let label = s.status;
+        if (a?.status === 'aceito')    { bg='#d1fae5'; cor='#065f46'; label='ACEITOU'; }
+        else if (a?.status === 'pendente')  { bg='#fef3c7'; cor='#92400e'; label='PENDENTE'; }
+        else if (a?.status === 'recusado' || sug?.status === 'recusado')  { bg='#fee2e2'; cor='#991b1b'; label='RECUSOU'; }
+        else if (a?.status === 'cancelado') { bg='#f3f4f6'; cor='#9ca3af'; label='CANCELADO'; }
+        else if (s.status === 'sugerido')   { bg='#dbeafe'; cor='#1e40af'; label='AGUARD. SETOR'; }
+        else if (s.status === 'designado')  { bg='#fef3c7'; cor='#92400e'; label='ENVIADO'; }
+        return `<div style="display:flex;justify-content:space-between;padding:.2rem .4rem;background:${bg};border-radius:4px;margin:.15rem 0;font-size:.78rem;"><span style="font-weight:600;">${escapeHtml(nome)}</span><span style="font-weight:700;color:${cor};">${label}</span></div>`;
+      }).join('') : '<div style="font-size:.76rem;color:#9ca3af;padding:.2rem 0;">Nenhuma designação.</div>';
+
+      return `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:.65rem .8rem;margin-bottom:.5rem;">
+        <div style="font-weight:700;font-size:.84rem;">${escapeHtml(pedido.congNome||'—')} → ${escapeHtml(pedido.postoNome||'—')}</div>
+        <div style="font-size:.75rem;color:#6b7280;margin-bottom:.3rem;">${escapeHtml(pedido.categoriaNome||'—')} · ${escapeHtml(pedido.dataFmt||pedido.data||'—')} ${escapeHtml(pedido.slotLabel||'')} · Encam: ${escapeHtml(pedido.tapaBuracoEncaminhadoPorNome||pedido.subAdminNome||'—')}</div>
+        ${detalhes}
+      </div>`;
+    }).join('');
+
+    if (!rows) rows = '<p style="color:#9ca3af;font-size:.85rem;">Nenhum pedido encaminhado.</p>';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;';
+    overlay.innerHTML = `<div style="background:white;border-radius:12px;padding:1.25rem 1.5rem;max-width:660px;width:100%;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+        <strong style="font-size:1rem;">🔍 Painel Verdade — Estado Real</strong>
+        <button onclick="this.closest('[style*=position:fixed]').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;line-height:1;">&times;</button>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.85rem;">
+        ${badge('#d1fae5','#065f46',`✅ ${aceitos} aceitos`)}
+        ${badge('#fef3c7','#92400e',`⏳ ${pendentes} pendentes`)}
+        ${badge('#fee2e2','#991b1b',`❌ ${recusados} recusados`)}
+        ${badge('#f3f4f6','#6b7280',`🚫 ${cancelados} cancelados`)}
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;">${rows}</div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   };
 
   // Sincroniza em tempo real

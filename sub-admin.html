@@ -2654,236 +2654,109 @@
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, W/2, y, {align:'center'});
     y += 9;
 
-    // ---- SECAO 1: Por Pedido ----
+    // ---- SECAO 1: Status por Voluntario ----
     doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('1. Situa\xe7\xe3o dos Pedidos Encaminhados', M, y);
-    y += 3;
+    doc.text('1. Status por Voluntário', M, y); y += 3;
 
-    const pedidosSorted = pedidosTB.slice().sort((a, b) => {
-      if ((a.data||'') !== (b.data||'')) return (a.data||'').localeCompare(b.data||'');
-      return (a.postoNome||'').localeCompare(b.postoNome||'');
-    });
+    const rows1 = invites
+      .slice()
+      .sort((a, b) => (a.catNumero ?? 999) - (b.catNumero ?? 999) || (a.nome||'').localeCompare(b.nome||'','pt-BR'))
+      .map(invite => {
+        const minhasSugs = suggestions.filter(s => s.inviteId === invite.id);
 
-    const rows1 = [];
-    const rowMeta1 = [];
-    for (const pedido of pedidosSorted) {
-      const sugs = suggestions.filter(s => s.pedidoId === pedido.id);
-      const encPor = pedido.tapaBuracoEncaminhadoPorNome || pedido.subAdminNome || '—';
-      const encFmt = pedido.tapaBuracoEncaminhadoEm || pedido.criadoEm || '—';
-      const qtdDesig = sugs.filter(s => ['designado','aceito'].includes(s.status)).length;
-      rows1.push([
-        pedido.congNome || '—',
-        (pedido.postoNome || '—') + ' \xb7 ' + (pedido.categoriaNome || '—'),
-        (pedido.dataFmt || pedido.data || '—') + '\n' + (pedido.slotLabel || '—'),
-        `Encam. por ${encPor}\n${encFmt}`,
-        sugs.length ? `${qtdDesig}/${pedido.faltaQtd || '?'} encam.` : `Faltam ${pedido.faltaQtd || '?'}`,
-      ]);
-      rowMeta1.push(true);
-      if (!sugs.length) {
-        rows1.push(['   (nenhuma sugest\xe3o enviada)', '', '', '', '']);
-        rowMeta1.push(false);
-      } else {
-        for (const sug of sugs) {
-          const assign = assignments.find(a => a.inviteId === sug.inviteId && a.pedidoId === pedido.id && a.status !== 'cancelado');
-          let statusLabel;
-          if (sug.status === 'sugerido') statusLabel = 'Aguard. setor';
-          else if (assign?.status === 'aceito') statusLabel = 'Aceitou';
-          else if (assign?.status === 'recusado') statusLabel = 'Recusou';
-          else if (sug.status === 'designado') statusLabel = 'Aguard. resposta';
-          else if (sug.status === 'recusado') statusLabel = 'Cancelado';
-          else statusLabel = sug.status;
-          const inv = invites.find(i => i.id === sug.inviteId);
-          const catStr = inv ? catLabel(inv.catId, inv.catNome, inv.catNumero) : '—';
-          rows1.push([
-            '   ' + (sug.inviteNome || '—'),
-            catStr,
-            inv?.congNome || sug.congNome || '—',
-            sug.managerNome ? `Setor: ${sug.managerNome}` : '—',
-            statusLabel,
-          ]);
-          rowMeta1.push(false);
-        }
-      }
-    }
-    if (!rows1.length) {
-      rows1.push(['Nenhum pedido encaminhado ao tapa-buraco.', '', '', '', '']);
-      rowMeta1.push(false);
-    }
+        const aceitasTexto = minhasSugs
+          .filter(s => assignments.some(x => x.inviteId === invite.id && x.pedidoId === s.pedidoId && x.status === 'aceito'))
+          .map(s => { const p = pedidosTB.find(x => x.id === s.pedidoId); return p ? `${p.congNome || '—'} \xb7 ${p.slotLabel || p.data || '—'}` : (s.congNome || '—'); })
+          .join('\n') || '—';
 
-    doc.autoTable({
-      startY: y,
-      head: [['Congrega\xe7\xe3o', 'Posto \xb7 Categoria', 'Data / Slot', 'Respons\xe1vel', 'Status']],
-      body: rows1,
-      styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
-      headStyles: { fillColor: [44, 62, 158], textColor: 255, fontSize: 7.5 },
-      columnStyles: {
-        0: { cellWidth: 33 }, 1: { cellWidth: 40 }, 2: { cellWidth: 28 },
-        3: { cellWidth: 45 }, 4: { cellWidth: 26 },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && rowMeta1[data.row.index]) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [220, 230, 250];
-          data.cell.styles.fontSize = 7.5;
-        }
-      },
-      alternateRowStyles: false,
-      margin: { left: M, right: M },
-    });
-    y = doc.lastAutoTable.finalY + 10;
+        const recusouTexto = minhasSugs
+          .filter(s => assignments.some(x => x.inviteId === invite.id && x.pedidoId === s.pedidoId && x.status === 'recusado') || s.status === 'recusado')
+          .map(s => { const p = pedidosTB.find(x => x.id === s.pedidoId); return p ? (p.congNome || '—') : (s.congNome || '—'); })
+          .join('\n') || '—';
 
-    // ---- SECAO 2: Participantes sem designacao ----
-    if (y > 245) { doc.addPage(); y = 18; }
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('2. Participantes Sem Designa\xe7\xe3o Atribu\xedda', M, y); y += 3;
+        const pendenteTexto = minhasSugs
+          .filter(s => assignments.some(x => x.inviteId === invite.id && x.pedidoId === s.pedidoId && x.status === 'pendente'))
+          .map(s => { const p = pedidosTB.find(x => x.id === s.pedidoId); return p ? `${p.congNome || '—'} \xb7 ${p.slotLabel || '—'}` : (s.congNome || '—'); })
+          .join('\n') || '—';
 
-    const semDesig = invites.filter(inv => {
-      const mine = assignments.filter(a => a.inviteId === inv.id && a.status !== 'cancelado');
-      return !mine.length;
-    }).sort((a, b) => (a.catNumero ?? 999) - (b.catNumero ?? 999) || (a.nome||'').localeCompare(b.nome||''));
-
-    const rows2 = semDesig.length
-      ? semDesig.map(inv => [
-          inv.nome || '—',
-          inv.congNome || '—',
-          catLabel(inv.catId, inv.catNome, inv.catNumero),
-          inv.whatsapp || '—',
-        ])
-      : [['Todos os participantes t\xeam designa\xe7\xe3o.', '', '', '']];
-
-    doc.autoTable({
-      startY: y,
-      head: [['Nome', 'Congrega\xe7\xe3o', 'Categoria', 'WhatsApp']],
-      body: rows2,
-      styles: { fontSize: 7, cellPadding: 1.8 },
-      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 38 }, 2: { cellWidth: 72 }, 3: { cellWidth: 24 } },
-      alternateRowStyles: { fillColor: [245, 247, 255] },
-      margin: { left: M, right: M },
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    // ---- SECAO 3: Resumo por categoria ----
-    if (y > 245) { doc.addPage(); y = 18; }
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('3. Resumo por Categoria', M, y); y += 3;
-
-    const rows3 = todasCats.filter(c => c.nome).map(cat => {
-      const catInvites = invites.filter(i =>
-        Number(i.catId) === Number(cat.id) ||
-        (i.categoriasExtra||[]).some(c2 => Number(c2.id) === Number(cat.id))
-      );
-      const catA = assignments.filter(a => String(a.categoriaId) === String(cat.id));
-      const aceitos   = catA.filter(a => a.status === 'aceito').length;
-      const recusados = catA.filter(a => a.status === 'recusado').length;
-      const pendentes = catA.filter(a => a.status === 'pendente').length;
-      const semD = catInvites.filter(i => {
-        const mine = assignments.filter(a => a.inviteId === i.id);
-        return !mine.length || mine.every(a => ['cancelado','recusado'].includes(a.status));
-      }).length;
-      if (!catInvites.length && !catA.length) return null;
-      return [cat.numero != null ? String(cat.numero).padStart(2,'0') : '—', cat.nome||'—',
-        String(catInvites.length), String(aceitos), String(recusados), String(pendentes), String(semD)];
-    }).filter(Boolean);
-
-    doc.autoTable({
-      startY: y,
-      head: [['N\xba', 'Categoria', 'Total', 'Aceitos', 'Recusados', 'Pendentes', 'Sem desig.']],
-      body: rows3,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 65 },
-        2: { cellWidth: 16, halign: 'center' }, 3: { cellWidth: 18, halign: 'center' },
-        4: { cellWidth: 22, halign: 'center' }, 5: { cellWidth: 22, halign: 'center' },
-        6: { cellWidth: 20, halign: 'center' },
-      },
-      alternateRowStyles: { fillColor: [245, 247, 255] },
-      margin: { left: M, right: M },
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    // ---- SECAO 4: Descricao das categorias ----
-    if (y > 240) { doc.addPage(); y = 18; }
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('4. Descri\xe7\xe3o das Categorias', M, y); y += 3;
-
-    const rows4 = todasCats.filter(c => c.nome).map(cat => [
-      cat.numero != null ? String(cat.numero).padStart(2,'0') : '—',
-      cat.nome || '—',
-      [cat.horario && cat.horarioFim ? `${cat.horario}–${cat.horarioFim}` : null, cat.descricao || null]
-        .filter(Boolean).join(' — ') || '—',
-    ]);
-
-    doc.autoTable({
-      startY: y,
-      head: [['N\xba', 'Categoria', 'Hor\xe1rio / Descri\xe7\xe3o']],
-      body: rows4,
-      styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 55 }, 2: { cellWidth: 115 } },
-      alternateRowStyles: { fillColor: [245, 247, 255] },
-      margin: { left: M, right: M },
-    });
-    y = doc.lastAutoTable.finalY + 10;
-
-    // ---- SECAO 5: Resumo por Setor — Quem Aceitou ----
-    if (y > 240) { doc.addPage(); y = 18; }
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('5. Resumo por Setor — Quem Aceitou', M, y); y += 3;
-
-    const pedidosEncam = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado');
-    const catsSorted = todasCats.filter(c => c.nome).sort((a,b) => (a.numero ?? 999) - (b.numero ?? 999));
-
-    const rows5 = [];
-    const rowMeta5 = [];
-
-    catsSorted.forEach(cat => {
-      const pedsCat = pedidosEncam.filter(p => String(p.categoriaId) === String(cat.id) || p.categoriaNome === cat.nome);
-      if (!pedsCat.length) return;
-      const catTitle = cat.numero != null ? `N\xba ${String(cat.numero).padStart(2,'0')} \xb7 ${cat.nome}` : cat.nome;
-      rows5.push([catTitle, '', '', '']); rowMeta5.push('cat');
-      pedsCat.forEach(pedido => {
-        const encPor = pedido.tapaBuracoEncaminhadoPorNome || pedido.subAdminNome || '—';
-        const pedSugs = suggestions.filter(s => s.pedidoId === pedido.id);
-        const aceitou = pedSugs.map(s => {
-          const a = assignments.find(x => x.inviteId === s.inviteId && x.pedidoId === pedido.id && x.status === 'aceito');
-          return a ? (s.inviteNome || a.inviteNome || '—') : null;
-        }).filter(Boolean);
-        const pendentes2 = pedSugs.filter(s => {
-          const a = assignments.find(x => x.inviteId === s.inviteId && x.pedidoId === pedido.id);
-          return a?.status === 'pendente';
-        }).length;
-        rows5.push([
-          '  ' + (pedido.congNome || '—'),
-          (pedido.dataFmt || pedido.data || '—') + ' ' + (pedido.slotLabel || ''),
-          aceitou.length ? aceitou.join(', ') : (pendentes2 ? `${pendentes2} aguardando` : 'Nenhum aceito'),
-          encPor,
-        ]);
-        rowMeta5.push('pedido');
+        return [
+          invite.nome || '—',
+          catLabel(invite.catId, invite.catNome, invite.catNumero),
+          aceitasTexto,
+          recusouTexto,
+          pendenteTexto,
+        ];
       });
-    });
 
-    if (!rows5.length) { rows5.push(['Nenhum pedido encaminhado.','','','']); rowMeta5.push('pedido'); }
+    if (!rows1.length) rows1.push(['Nenhum voluntário cadastrado.', '', '', '', '']);
 
     doc.autoTable({
       startY: y,
-      head: [['Congrega\xe7\xe3o / Setor', 'Data / Slot', 'Irm\xe3o(s) Respons\xe1vel(is)', 'Encaminhado por']],
-      body: rows5,
-      styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
-      headStyles: { fillColor: [44, 62, 158], textColor: 255, fontSize: 7.5 },
-      columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: 30 }, 2: { cellWidth: 68 }, 3: { cellWidth: 42 } },
+      head: [['Nome', 'Categoria', 'Aceitou (Cong. \xb7 Hor\xe1rio)', 'Recusou', 'Pendente']],
+      body: rows1,
+      styles: { fontSize: 6.5, cellPadding: 1.8, overflow: 'linebreak' },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255, fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 34 }, 1: { cellWidth: 40 }, 2: { cellWidth: 56 },
+        3: { cellWidth: 34 }, 4: { cellWidth: 18 },
+      },
       didParseCell: (data) => {
         if (data.section !== 'body') return;
-        const meta = rowMeta5[data.row.index];
-        if (meta === 'cat') {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [220, 230, 250];
-          data.cell.styles.fontSize = 8;
-          data.cell.styles.textColor = [30, 50, 120];
+        const val = String(data.cell.raw || '');
+        if (val !== '—') {
+          if (data.column.index === 2) { data.cell.styles.textColor = [6, 95, 70]; data.cell.styles.fontStyle = 'bold'; }
+          else if (data.column.index === 3) { data.cell.styles.textColor = [153, 27, 27]; }
+          else if (data.column.index === 4) { data.cell.styles.textColor = [146, 64, 14]; data.cell.styles.fontStyle = 'bold'; }
         }
       },
-      alternateRowStyles: false,
+      alternateRowStyles: { fillColor: [248, 250, 255] },
+      margin: { left: M, right: M },
+    });
+    y = doc.lastAutoTable.finalY + 12;
+
+    // ---- SECAO 2: Congregações que precisam de ajuda ----
+    if (y > 240) { doc.addPage(); y = 18; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('2. Congrega\xe7\xf5es que Precisam de Ajuda', M, y); y += 3;
+
+    const pedidosAbertos = pedidosTB
+      .filter(p => p.status === 'aberto')
+      .sort((a, b) => (a.congNome||'').localeCompare(b.congNome||'','pt-BR'));
+
+    const rows2 = pedidosAbertos.map(p => {
+      const sugs = suggestions.filter(s => s.pedidoId === p.id);
+      const confirmados = sugs.filter(s => assignments.some(x => x.inviteId === s.inviteId && x.pedidoId === p.id && x.status === 'aceito')).length;
+      const faltam = Math.max(0, (p.faltaQtd || 0) - confirmados);
+      const statusStr = faltam === 0 ? 'Completo' : (confirmados > 0 ? `${faltam} ainda falt.` : `${p.faltaQtd || 0} sem ninguem`);
+      return [
+        p.congNome || '—',
+        (p.postoNome || '—') + '\n' + (p.categoriaNome || '—'),
+        (p.dataFmt || p.data || '—') + '\n' + (p.slotLabel || '—'),
+        String(p.faltaQtd || 0),
+        String(confirmados),
+        statusStr,
+      ];
+    });
+
+    if (!rows2.length) rows2.push(['Todas as congrega\xe7\xf5es j\xe1 t\xeam ajuda confirmada ou n\xe3o h\xe1 pedidos abertos.', '', '', '', '', '']);
+
+    doc.autoTable({
+      startY: y,
+      head: [['Congrega\xe7\xe3o', 'Posto \xb7 Categoria', 'Data / Slot', 'Precisam', 'Confirm.', 'Situa\xe7\xe3o']],
+      body: rows2,
+      styles: { fontSize: 7, cellPadding: 1.8, overflow: 'linebreak' },
+      headStyles: { fillColor: [44, 62, 158], textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 40 }, 1: { cellWidth: 42 }, 2: { cellWidth: 30 },
+        3: { cellWidth: 16, halign: 'center' }, 4: { cellWidth: 16, halign: 'center' }, 5: { cellWidth: 38 },
+      },
+      didParseCell: (data) => {
+        if (data.section !== 'body' || data.column.index !== 5) return;
+        const val = String(data.cell.raw || '');
+        if (val === 'Completo') { data.cell.styles.textColor = [6, 95, 70]; data.cell.styles.fontStyle = 'bold'; }
+        else { data.cell.styles.textColor = [153, 27, 27]; data.cell.styles.fontStyle = 'bold'; }
+      },
+      alternateRowStyles: { fillColor: [255, 249, 240] },
       margin: { left: M, right: M },
     });
 

@@ -460,7 +460,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/firebase-db.js?v=20260616t"></script>
+  <script src="js/firebase-db.js?v=20260617a"></script>
   <script src="js/app.js?v=20260616f"></script>
   <script src="js/auth.js?v=20260616f"></script>
   <script>
@@ -1064,9 +1064,13 @@
       render();
     };
 
-    window.candidatarTapaBuraco = function(pedidoId) {
+    window.candidatarTapaBuraco = async function(pedidoId) {
       const invite = getInvite();
       if (!invite) { showToast('Sessao expirada. Recarregue a pagina.', 'warning'); return; }
+      // Busca dados frescos do Firebase antes de salvar para evitar race condition
+      if (typeof pullKeyResilient === 'function') {
+        try { await pullKeyResilient('evento_config'); } catch (e) { /* continua com cache local */ }
+      }
       const cfg = getTapaBuracoConfig();
       const pedido = DB.get('pedidos_ajuda_escala', []).find(p => p.id === pedidoId);
       if (!pedido || pedido.status !== 'aberto') { showToast('Este pedido nao esta mais disponivel.', 'warning'); return; }

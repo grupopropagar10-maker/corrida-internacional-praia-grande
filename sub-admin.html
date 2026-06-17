@@ -597,7 +597,7 @@
 ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="js/firebase-db.js?v=20260616t"></script>
+<script src="js/firebase-db.js?v=20260617a"></script>
 <script src="js/app.js?v=20260616f"></script>
 <script src="js/auth.js?v=20260616f"></script>
 <script>
@@ -1972,6 +1972,16 @@
     section.style.display = 'block';
     nav.style.display = 'flex';
 
+    // Busca dados frescos do Firebase a cada abertura da seção (evita cache desatualizado)
+    if (typeof pullKeyResilient === 'function' && !window._tbPulling) {
+      window._tbPulling = true;
+      Promise.all([pullKeyResilient('evento_config'), pullKeyResilient('pedidos_ajuda_escala')])
+        .then(() => { window._tbPulling = false; renderTapaBuraco(); })
+        .catch(() => { window._tbPulling = false; });
+      return;
+    }
+    window._tbPulling = false;
+
     const cfg = getTapaBuracoConfig();
 
     // Reparo automático: restaura assignments cancelados pelo bug de expiração
@@ -2017,7 +2027,9 @@
     if (!window._tbCatSel && catsFiltro.length) window._tbCatSel = null; // null = todas
 
     const _postoIdsValidos = new Set(DB.get('postos', []).map(p => Number(p.id)).filter(Number.isFinite));
-    const _pedidoValido = p => _postoIdsValidos.has(Number(p.postoId));
+    // Pedidos com candidaturas ativas sempre aparecem, mesmo que o posto tenha sido deletado
+    const _temCandidatura = p => (cfg.suggestions || []).some(s => s.pedidoId === p.id && s.autoIndicado && ['designado','aceito'].includes(s.status));
+    const _pedidoValido = p => _postoIdsValidos.has(Number(p.postoId)) || _temCandidatura(p);
     const _congCfg = DB.get('cong_config', {});
     const _slotJaCompleto = p => {
       const cfg = _congCfg[String(p.congId)];

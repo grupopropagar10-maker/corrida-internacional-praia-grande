@@ -1402,6 +1402,13 @@
     DB.set(HELP_REQUEST_KEY, lista);
   }
 
+  function _pedidoValido(p) {
+    const postoIdsValidos = new Set(DB.get('postos', []).map(x => Number(x.id)).filter(Number.isFinite));
+    const suggs = getTapaBuracoConfig().suggestions || [];
+    return postoIdsValidos.has(Number(p.postoId)) ||
+      suggs.some(s => s.pedidoId === p.id && s.autoIndicado && ['designado','aceito'].includes(s.status));
+  }
+
   function getCongConfigById(congId) {
     const all = DB.get('cong_config', {});
     return all[congId] ? JSON.parse(JSON.stringify(all[congId])) : {};
@@ -2046,7 +2053,8 @@
     };
     const _isResolvido = p => p.status !== 'aberto' || _slotJaCompleto(p) || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status) && !s.autoIndicado).length >= (p.faltaQtd || 0);
     // ── Buckets de pedidos para as abas do painel ──
-    const _matchCat = p => !window._tbCatSel || String(p.categoriaId) === String(window._tbCatSel) || p.categoriaNome === (todasCats.find(c => c.id === window._tbCatSel)?.nome);
+    const _matchCat  = p => !window._tbCatSel || String(p.categoriaId) === String(window._tbCatSel) || p.categoriaNome === (todasCats.find(c => c.id === window._tbCatSel)?.nome);
+    const _matchCong = p => !window._tbCongSel || String(p.congId) === String(window._tbCongSel);
     const _encaminhados  = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado');
     const _bCancelados   = _encaminhados.filter(p => p.status === 'cancelado');
     const _naoCancelados = _encaminhados.filter(p => p.status !== 'cancelado');
@@ -2063,7 +2071,15 @@
     ];
     if (!_abasPedido.some(a => a.id === window._tbAbaPedido)) window._tbAbaPedido = 'vigor';
     const _abaAtual = _abasPedido.find(a => a.id === window._tbAbaPedido) || _abasPedido[0];
-    const pedidosEncaminhados = _abaAtual.lista.filter(_matchCat); // lista exibida (aba + modalidade)
+    // Congregações únicas na aba + modalidade atual (sem filtro de congregação, para construir os pills)
+    const _listaFiltradaCat = _abaAtual.lista.filter(_matchCat);
+    const _congsUnicas = [];
+    { const _seen = new Set();
+      _listaFiltradaCat.forEach(p => { if (p.congId && !_seen.has(String(p.congId))) { _seen.add(String(p.congId)); _congsUnicas.push({ id: String(p.congId), nome: p.congNome || String(p.congId) }); } });
+      _congsUnicas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); }
+    // Resetar congregação selecionada se não existe na aba atual
+    if (window._tbCongSel && !_congsUnicas.some(c => c.id === String(window._tbCongSel))) window._tbCongSel = null;
+    const pedidosEncaminhados = _listaFiltradaCat.filter(_matchCong); // lista exibida (aba + modalidade + congregação)
     const catsOptionsHtml = catsFiltro
       .map(c => `<option value="${c.id}">${c.numero != null ? `Nº ${String(c.numero).padStart(2,'0')} · ` : ''}${escapeHtml(c.nome || '')}</option>`)
       .join('');
@@ -2233,7 +2249,7 @@
     </div>`;
     const pedidosHtml = pedidosEncaminhados.length
       ? pedidosEncaminhados.map(_cardByAba[_abaAtual.id]).join('')
-      : `<div style="color:var(--gray);font-size:.84rem;">Nenhum pedido nesta aba${window._tbCatSel ? ' para a modalidade selecionada' : ''}.</div>`;
+      : `<div style="color:var(--gray);font-size:.84rem;">Nenhum pedido nesta aba${window._tbCatSel ? ' para a modalidade selecionada' : ''}${window._tbCongSel ? ' para a congregação selecionada' : ''}.</div>`;
 
     // Seletor de modalidade/categoria
     const catPillsHtml = catsFiltro.length > 1 ? `
@@ -2255,6 +2271,29 @@
                 font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.35rem;">
               <span style="width:9px;height:9px;border-radius:50%;background:${ativa ? 'white' : cat.cor || '#999'};flex-shrink:0;opacity:.85;"></span>
               ${cat.numero != null ? `Nº ${String(cat.numero).padStart(2,'0')} · ` : ''}${cat.nome} (${qtd})
+            </button>`;
+          }).join('')}
+        </div>
+      </div>` : '';
+
+    const congPillsHtml = _congsUnicas.length > 1 ? `
+      <div style="margin-bottom:.75rem;">
+        <div style="font-size:.78rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.4rem;">🏠 Filtrar por congregação</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.35rem;">
+          <button onclick="window._tbCongSel=null;renderTapaBuraco();"
+            style="padding:.28rem .65rem;border-radius:99px;border:2px solid ${!window._tbCongSel ? '#d97706' : '#ccc'};
+              background:${!window._tbCongSel ? '#d97706' : 'white'};color:${!window._tbCongSel ? 'white' : 'var(--gray)'};
+              font-size:.76rem;font-weight:700;cursor:pointer;">
+            Todas (${_listaFiltradaCat.length})
+          </button>
+          ${_congsUnicas.map(cong => {
+            const qtd = _listaFiltradaCat.filter(p => String(p.congId) === cong.id).length;
+            const ativa = window._tbCongSel === cong.id;
+            return `<button onclick="window._tbCongSel='${cong.id}';renderTapaBuraco();"
+              style="padding:.28rem .65rem;border-radius:99px;border:2px solid ${ativa ? '#d97706' : '#ccc'};
+                background:${ativa ? '#d97706' : 'white'};color:${ativa ? 'white' : 'var(--gray)'};
+                font-size:.76rem;font-weight:700;cursor:pointer;">
+              ${escapeHtml(cong.nome)} (${qtd})
             </button>`;
           }).join('')}
         </div>
@@ -2307,6 +2346,7 @@
       <div class="help-card" style="margin-bottom:1rem;">
         <strong>Pedidos dos setores</strong>
         ${catPillsHtml ? `<div style="margin-top:.75rem;margin-bottom:-.2rem;">${catPillsHtml}</div>` : ''}
+        ${congPillsHtml ? `<div style="margin-top:.5rem;">${congPillsHtml}</div>` : ''}
         ${_abasHtml}
         <div style="margin-top:.8rem;">${pedidosHtml}</div>
       </div>`;

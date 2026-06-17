@@ -597,7 +597,7 @@
 ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="js/firebase-db.js?v=20260616q"></script>
+<script src="js/firebase-db.js?v=20260616s"></script>
 <script src="js/app.js?v=20260616f"></script>
 <script src="js/auth.js?v=20260616f"></script>
 <script>
@@ -1430,17 +1430,23 @@
     };
   }
 
-  function saveTapaBuracoConfig(cfg) {
-    const tapaBuraco = {
-      invites: Array.isArray(cfg?.invites) ? cfg.invites : [],
-      suggestions: Array.isArray(cfg?.suggestions) ? cfg.suggestions : [],
-      assignments: Array.isArray(cfg?.assignments) ? cfg.assignments : [],
-    };
+  function saveTapaBuracoConfig(cfg, { saveInvites = false } = {}) {
     const evento = DB.get('evento_config', {});
-    evento.tapaBuraco = tapaBuraco;
-    localStorage.setItem('evento_config', JSON.stringify(evento));
-    if (typeof setPathResilient === 'function') {
-      setPathResilient('evento_config/tapaBuraco', tapaBuraco);
+    if (!evento.tapaBuraco || typeof evento.tapaBuraco !== 'object') evento.tapaBuraco = {};
+    if (saveInvites && Array.isArray(cfg?.invites)) {
+      evento.tapaBuraco.invites = cfg.invites;
+      localStorage.setItem('evento_config', JSON.stringify(evento));
+      if (typeof setPathResilient === 'function') setPathResilient('evento_config/tapaBuraco/invites', cfg.invites);
+    }
+    if (Array.isArray(cfg?.suggestions)) {
+      evento.tapaBuraco.suggestions = cfg.suggestions;
+      localStorage.setItem('evento_config', JSON.stringify(evento));
+      if (typeof setPathResilient === 'function') setPathResilient('evento_config/tapaBuraco/suggestions', cfg.suggestions);
+    }
+    if (Array.isArray(cfg?.assignments)) {
+      evento.tapaBuraco.assignments = cfg.assignments;
+      localStorage.setItem('evento_config', JSON.stringify(evento));
+      if (typeof setPathResilient === 'function') setPathResilient('evento_config/tapaBuraco/assignments', cfg.assignments);
     }
   }
 
@@ -1593,7 +1599,7 @@
     const invite = cfg.invites.find(item => item.id === inviteId);
     if (!invite) { showToast('Tapa-buraco não encontrado.', 'warning'); return; }
     invite.acessoEnviadoEm = new Date().toLocaleString('pt-BR');
-    saveTapaBuracoConfig(cfg);
+    saveTapaBuracoConfig(cfg, { saveInvites: true });
     renderTapaBuraco();
     renderAtividades();
     abrirWhatsAppAcessoTapaBuraco(invite);
@@ -1608,7 +1614,7 @@
     const aviso = temAtivo ? ' Esta pessoa tem sugestões ou designações ativas — isso não as remove da escala.' : '';
     if (!confirm(`Remover "${invite.nome}" da equipe de tapa-buraco?${aviso}`)) return;
     cfg.invites = cfg.invites.filter(i => i.id !== inviteId);
-    saveTapaBuracoConfig(cfg);
+    saveTapaBuracoConfig(cfg, { saveInvites: true });
     renderTapaBuraco();
     renderAtividades();
     showToast(`${invite.nome} removido(a) da equipe.`, 'success');
@@ -1637,7 +1643,7 @@
     if (jaExiste) { showToast('Este setor já está vinculado.', 'warning'); return; }
     if (!invite.categoriasExtra) invite.categoriasExtra = [];
     invite.categoriasExtra.push({ id: catSel.id, nome: catSel.nome, numero: catSel.numero ?? null });
-    saveTapaBuracoConfig(cfg);
+    saveTapaBuracoConfig(cfg, { saveInvites: true });
     renderTapaBuraco();
     renderAtividades();
     showToast(`Setor "${catSel.nome}" adicionado a ${invite.nome}.`, 'success');
@@ -1967,6 +1973,25 @@
     nav.style.display = 'flex';
 
     const cfg = getTapaBuracoConfig();
+
+    // Reparo automático: restaura assignments cancelados pelo bug de expiração
+    // (bug antigo fazia status='cancelado' em vez de _slotExpired=true)
+    let _reparados = 0;
+    (cfg.assignments || []).forEach(a => {
+      if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt) {
+        const sug = (cfg.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId);
+        if (!sug || sug.status !== 'recusado') {
+          a.status = 'pendente';
+          a._slotExpired = true;
+          _reparados++;
+        }
+      }
+    });
+    if (_reparados) {
+      saveTapaBuracoConfig(cfg);
+      showToast(`✅ ${_reparados} acesso(s) restaurado(s) automaticamente.`, 'success');
+    }
+
     // Marcar candidaturas auto-indicadas expiradas como _slotExpired para liberar a vaga
     // (NÃO cancela o assignment — pessoa ainda pode ver e responder)
     const _tsAgora = Date.now();
@@ -2269,7 +2294,7 @@
       criadoPorNome: session.nome,
     };
     cfg.invites.unshift(invite);
-    saveTapaBuracoConfig(cfg);
+    saveTapaBuracoConfig(cfg, { saveInvites: true });
     document.getElementById('tb-nome').value = '';
     document.getElementById('tb-whatsapp').value = '';
     const catSelect = document.getElementById('tb-categoria');

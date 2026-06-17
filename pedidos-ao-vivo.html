@@ -460,7 +460,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/firebase-db.js?v=20260616q"></script>
+  <script src="js/firebase-db.js?v=20260616s"></script>
   <script src="js/app.js?v=20260616f"></script>
   <script src="js/auth.js?v=20260616f"></script>
   <script>
@@ -1183,6 +1183,17 @@
 
         // Candidaturas disponíveis
         const cfgTB = getTapaBuracoConfig();
+
+        // Reparo: restaura assignments cancelados pelo bug antigo de expiração
+        let _rep = 0;
+        (cfgTB.assignments || []).forEach(a => {
+          if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt) {
+            const sug = (cfgTB.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId);
+            if (!sug || sug.status !== 'recusado') { a.status = 'pendente'; a._slotExpired = true; _rep++; }
+          }
+        });
+        if (_rep) saveTapaBuracoConfig(cfgTB);
+
         const _tsNow = Date.now();
         // Marcar expirados como _slotExpired (libera a vaga para outros, mas assignment continua acessível)
         let _modif = false;

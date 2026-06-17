@@ -1973,13 +1973,14 @@
     nav.style.display = 'flex';
 
     // Busca dados frescos do Firebase a cada abertura da seção (evita cache desatualizado)
-    if (typeof pullKeyResilient === 'function' && !window._tbPulling) {
+    if (typeof pullKeyResilient === 'function' && !window._tbPulling && !window._tbJustFetched) {
       window._tbPulling = true;
       Promise.all([pullKeyResilient('evento_config'), pullKeyResilient('pedidos_ajuda_escala')])
-        .then(() => { window._tbPulling = false; renderTapaBuraco(); })
+        .then(() => { window._tbPulling = false; window._tbJustFetched = true; renderTapaBuraco(); })
         .catch(() => { window._tbPulling = false; });
       return;
     }
+    window._tbJustFetched = false;
     window._tbPulling = false;
 
     const cfg = getTapaBuracoConfig();

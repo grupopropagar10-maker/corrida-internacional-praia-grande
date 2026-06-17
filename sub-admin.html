@@ -1806,7 +1806,7 @@
     const _pedidoOk = p => _postoIdsOk.has(Number(p.postoId));
     const pedidos = isTapaBuracoAdmin
       ? getPedidosAjuda().filter(p => _pedidoOk(p) && (p.status === 'aberto' || p.status === 'fechado'))
-      : getPedidosDoSetor().filter(p => _pedidoOk(p) && p.subAdminId === session.subAdminId);
+      : getPedidosDoSetor().filter(p => _pedidoOk(p) && p.subAdminId === session.subAdminId && (p.status === 'aberto' || p.status === 'fechado'));
     if (!pedidos.length) {
       el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--gray);">${isTapaBuracoAdmin ? 'Nenhum pedido de ajuda aberto no momento.' : 'Nenhum pedido de ajuda atribuído a você no seu setor.'}</div>`;
       return;
@@ -1989,7 +1989,7 @@
     // (bug antigo fazia status='cancelado' em vez de _slotExpired=true)
     let _reparados = 0;
     (cfg.assignments || []).forEach(a => {
-      if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt) {
+      if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt && !a.cancelReason) {
         const sug = (cfg.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId);
         if (!sug || sug.status !== 'recusado') {
           a.status = 'pendente';

@@ -568,8 +568,18 @@
 
     function getTapaBuracoAssignments(inviteId) {
       const cfg = getTapaBuracoConfig();
+      const pedidosById = new Map(DB.get('pedidos_ajuda_escala', []).map(p => [p.id, p]));
       return cfg.assignments
         .filter(item => item.inviteId === inviteId && ['pendente', 'aceito'].includes(item.status))
+        // Esconde designacoes PENDENTES cujo pedido ja nao esta aberto (cancelado/fechado pela
+        // congregacao ou setor). Aceitas continuam visiveis pois a pessoa ja entrou na escala.
+        // Se o pedido ainda nao carregou (nao encontrado), nao esconde para evitar flicker.
+        .filter(item => {
+          if (item.status === 'aceito') return true;
+          const pedido = pedidosById.get(item.pedidoId);
+          if (!pedido) return true;
+          return pedido.status === 'aberto';
+        })
         .map(item => {
           const posto = DB.get('postos', []).find(p => p.id === item.postoId) || {
             id: item.postoId,
@@ -1022,11 +1032,31 @@
         return;
       }
 
+      // Revalida o pedido: se a congregacao ou o setor ja resolveu/cancelou/fechou, nao escala.
+      const pedidoAtual = DB.get('pedidos_ajuda_escala', []).find(p => p.id === assignment.pedidoId);
+      if (!pedidoAtual || pedidoAtual.status !== 'aberto') {
+        assignment.status = 'cancelado';
+        assignment.cancelReason = 'Pedido nao esta mais disponivel.';
+        if (suggestion) {
+          suggestion.status = 'recusado';
+          suggestion.declinedAt = new Date().toLocaleString('pt-BR');
+        }
+        saveTapaBuracoConfig(cfg);
+        showToast('Esse horario nao esta mais disponivel. A congregacao ja resolveu este pedido.', 'warning');
+        render();
+        return;
+      }
+
       const cfgCong = getCongConfigById(assignment.congId);
       cfgCong.turnos = cfgCong.turnos || {};
       if (!cfgCong.turnos[assignment.designacaoId]) cfgCong.turnos[assignment.designacaoId] = {};
       const atuais = getPessoasDoSlot(cfgCong.turnos, assignment.designacaoId, assignment.slotKey);
-      if (!atuais.some(pessoa => pessoa.liveInviteId === invite.id) && atuais.length >= 3) {
+      // Capacidade real do slot: respeita "fechado com 2" (max 2) e "finalizado" (sem vaga) da congregacao.
+      const agendaSlot = cfgCong.agendaConfig?.[assignment.designacaoId] || {};
+      const slotFinalizado = !!(agendaSlot.slotFinalizado && agendaSlot.slotFinalizado[assignment.slotKey]);
+      const maxEfetivo = agendaSlot.slotsOverride?.[assignment.slotKey] === true ? 2 : 3;
+      const jaEstou = atuais.some(pessoa => pessoa.liveInviteId === invite.id);
+      if (!jaEstou && (slotFinalizado || atuais.length >= maxEfetivo)) {
         assignment.status = 'cancelado';
         assignment.cancelReason = 'Horario preenchido antes da confirmacao.';
         if (suggestion) {
@@ -1209,7 +1239,7 @@
         // Reparo: restaura assignments cancelados pelo bug antigo de expiração
         let _rep = 0;
         (cfgTB.assignments || []).forEach(a => {
-          if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt) {
+          if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt && !a.cancelReason) {
             const sug = (cfgTB.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId);
             if (!sug || sug.status !== 'recusado') { a.status = 'pendente'; a._slotExpired = true; _rep++; }
           }

@@ -3385,9 +3385,48 @@ window.removeFromSlot = function(desigId, slotKey, nome) {
   const cfg = getCongConfig();
   const t   = cfg.turnos || {};
   if (t[desigId] && t[desigId][slotKey]) {
+    const rawPessoa = (t[desigId][slotKey] || []).find(p => getNomePessoaEscala(p) === nome);
+    const origemTB  = rawPessoa && typeof rawPessoa === 'object' && rawPessoa.origem === 'tapa_buraco';
+    const invId     = origemTB ? rawPessoa.liveInviteId : null;
     t[desigId][slotKey] = t[desigId][slotKey].filter(p => getNomePessoaEscala(p) !== nome);
     cfg.turnos = t;
     saveCongConfig(cfg);
+    if (invId) {
+      const all        = DB.get('evento_config', {});
+      const invites    = Array.isArray(all?.tapaBuraco?.invites)    ? all.tapaBuraco.invites    : [];
+      const assignments = Array.isArray(all?.tapaBuraco?.assignments) ? all.tapaBuraco.assignments : [];
+      const pedidoId   = rawPessoa?.helperRequestId;
+
+      // Grava notificação no invite
+      const inv = invites.find(i => i.id === invId);
+      if (inv) {
+        inv.notificacoes = (inv.notificacoes || []).concat([{
+          id: String(Date.now()),
+          tipo: 'removido_do_slot',
+          congNome: cong ? cong.nome : '',
+          horarioLabel: String(slotKey),
+          lida: false,
+          criadaEm: new Date().toLocaleString('pt-BR'),
+        }]);
+        all.tapaBuraco.invites = invites;
+        if (typeof setPathResilient === 'function')
+          setPathResilient('evento_config/tapaBuraco/invites', invites);
+      }
+
+      // Marca o assignment como removido para o PDF e Painel Verdade ficarem corretos
+      const assign = pedidoId
+        ? assignments.find(a => a.inviteId === invId && a.pedidoId === pedidoId && a.status === 'aceito')
+        : null;
+      if (assign) {
+        assign.status    = 'removido';
+        assign.removedAt = new Date().toLocaleString('pt-BR');
+        all.tapaBuraco.assignments = assignments;
+        if (typeof setPathResilient === 'function')
+          setPathResilient('evento_config/tapaBuraco/assignments', assignments);
+      }
+
+      localStorage.setItem('evento_config', JSON.stringify(all));
+    }
     renderPostosTurnos();
   }
 };

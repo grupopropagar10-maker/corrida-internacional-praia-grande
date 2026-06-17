@@ -2670,8 +2670,13 @@
           .join('\n') || '—';
 
         const recusouTexto = minhasSugs
-          .filter(s => assignments.some(x => x.inviteId === invite.id && x.pedidoId === s.pedidoId && x.status === 'recusado') || s.status === 'recusado')
-          .map(s => { const p = pedidosTB.find(x => x.id === s.pedidoId); return p ? (p.congNome || '—') : (s.congNome || '—'); })
+          .filter(s => assignments.some(x => x.inviteId === invite.id && x.pedidoId === s.pedidoId && (x.status === 'recusado' || x.status === 'removido')) || s.status === 'recusado')
+          .map(s => {
+            const a = assignments.find(x => x.inviteId === invite.id && x.pedidoId === s.pedidoId);
+            const p = pedidosTB.find(x => x.id === s.pedidoId);
+            const label = a?.status === 'removido' ? ' (rem.)' : '';
+            return (p ? (p.congNome || '—') : (s.congNome || '—')) + label;
+          })
           .join('\n') || '—';
 
         const pendenteTexto = minhasSugs
@@ -2793,6 +2798,7 @@
     const pendentes = assignments.filter(a => a.status === 'pendente').length;
     const recusados = assignments.filter(a => a.status === 'recusado').length;
     const cancelados = assignments.filter(a => a.status === 'cancelado').length;
+    const removidos = assignments.filter(a => a.status === 'removido').length;
 
     const badge = (bg, cor, txt) => `<span style="background:${bg};color:${cor};padding:.2rem .55rem;border-radius:8px;font-size:.8rem;font-weight:700;">${txt}</span>`;
 
@@ -2806,6 +2812,7 @@
         if (a?.status === 'aceito')    { bg='#d1fae5'; cor='#065f46'; label='ACEITOU'; }
         else if (a?.status === 'pendente')  { bg='#fef3c7'; cor='#92400e'; label='PENDENTE'; }
         else if (a?.status === 'recusado' || s?.status === 'recusado')    { bg='#fee2e2'; cor='#991b1b'; label='RECUSOU'; }
+        else if (a?.status === 'removido')  { bg='#fed7aa'; cor='#9a3412'; label='REMOVIDO'; }
         else if (a?.status === 'cancelado') { bg='#f3f4f6'; cor='#9ca3af'; label='CANCELADO'; }
         else if (s.status === 'sugerido')   { bg='#dbeafe'; cor='#1e40af'; label='AGUARD. SETOR'; }
         else if (s.status === 'designado')  { bg='#fef3c7'; cor='#92400e'; label='ENVIADO'; }
@@ -2833,6 +2840,7 @@
         ${badge('#fef3c7','#92400e',`⏳ ${pendentes} pendentes`)}
         ${badge('#fee2e2','#991b1b',`❌ ${recusados} recusados`)}
         ${badge('#f3f4f6','#6b7280',`🚫 ${cancelados} cancelados`)}
+        ${removidos ? badge('#fed7aa','#9a3412',`⛔ ${removidos} removidos`) : ''}
       </div>
       <div style="max-height:65vh;overflow-y:auto;">${rows}</div>
     </div>`;

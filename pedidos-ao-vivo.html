@@ -420,6 +420,8 @@
       <div class="live-stats" id="live-stats"></div>
     </section>
 
+    <div id="tb-notif-banner" style="display:none;"></div>
+
     <section id="assignment-focus" class="live-assignment-focus">
       <div class="live-assignment-card">
         <div class="live-assignment-head">
@@ -1195,6 +1197,42 @@
       render();
     };
 
+    window.desistirVagaAceita = function(assignmentKey) {
+      if (!confirm('Deseja desistir desta designação já aceita? Você será removido do slot e a vaga voltará a estar disponível.')) return;
+      const cfg = getTapaBuracoConfig();
+      const invite = getInvite();
+      const assignment = cfg.assignments.find(a => a.id === assignmentKey && a.inviteId === invite?.id && a.status === 'aceito');
+      if (!assignment) { showToast('Designação não encontrada ou já alterada.', 'warning'); return; }
+
+      // Remove do slot da congregação
+      if (assignment.congId && assignment.designacaoId && assignment.slotKey) {
+        const cfgCong = getCongConfigById(assignment.congId);
+        cfgCong.turnos = cfgCong.turnos || {};
+        if (cfgCong.turnos[assignment.designacaoId]?.[assignment.slotKey]) {
+          cfgCong.turnos[assignment.designacaoId][assignment.slotKey] =
+            cfgCong.turnos[assignment.designacaoId][assignment.slotKey].filter(
+              p => !(p && typeof p === 'object' && p.liveInviteId === invite.id)
+            );
+          saveCongConfigById(assignment.congId, cfgCong);
+        }
+      }
+
+      assignment.status = 'cancelado';
+      assignment.cancelReason = 'Voluntário desistiu após aceitar.';
+      assignment.canceledAt = new Date().toLocaleString('pt-BR');
+
+      // Reabre a suggestion para que o sub-admin possa re-designar
+      const sug = (cfg.suggestions || []).find(s => s.inviteId === assignment.inviteId && s.pedidoId === assignment.pedidoId);
+      if (sug && sug.status === 'aceito') {
+        sug.status = 'sugerido';
+        sug.reabertoEm = assignment.canceledAt;
+      }
+
+      saveTapaBuracoConfig(cfg);
+      showToast('Designação cancelada. A vaga está disponível novamente.', 'info');
+      render();
+    };
+
     function render() {
       const invite = getInvite();
       if (!invite) {
@@ -1228,6 +1266,28 @@
           <div class="live-stat"><strong>${aceitas}</strong><span>aceitas</span></div>
           <div class="live-stat"><strong>${Math.max(0, assignments.length - aceitas)}</strong><span>em aberto</span></div>
         `;
+
+        // Notificações de remoção de slot
+        const _notifBanner = document.getElementById('tb-notif-banner');
+        if (_notifBanner) {
+          const _notifs = (invite.notificacoes || []).filter(n => !n.lida);
+          if (_notifs.length) {
+            _notifBanner.style.display = 'block';
+            _notifBanner.innerHTML = _notifs.map(n => `
+              <div style="background:#fff3cd;border:1.5px solid #f0ad4e;border-radius:10px;padding:.85rem 1rem;margin:.6rem 1rem;display:flex;align-items:flex-start;gap:.75rem;">
+                <span style="font-size:1.4rem;flex-shrink:0;">⚠️</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700;font-size:.9rem;margin-bottom:.25rem;">Atualização sobre sua vaga</div>
+                  <div style="font-size:.85rem;color:#5a4a00;line-height:1.5;">Infelizmente não houve apoio suficiente para o horário ${(n.horarioLabel||'—').replace(/</g,'&lt;').replace(/>/g,'&gt;')}. Obrigado pela disponibilidade!</div>
+                  ${n.criadaEm ? `<div style="font-size:.73rem;color:var(--gray);margin-top:.25rem;">${n.criadaEm}</div>` : ''}
+                </div>
+                <button onclick="dispensarNotificacao('${(n.id||'').replace(/'/g,"\\'")}')" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#856404;flex-shrink:0;" title="Dispensar">✕</button>
+              </div>`).join('');
+          } else {
+            _notifBanner.style.display = 'none';
+            _notifBanner.innerHTML = '';
+          }
+        }
 
         const listEl = document.getElementById('slots-list');
         const sectionText = document.querySelector('#live-root .card p');
@@ -1308,7 +1368,10 @@
                 <div class="live-slot-option ${item.key === assignment?.key ? 'current' : ''}">
                   <strong>${item.status === 'aceito' ? 'Aceita' : 'Aguardando confirmacao'}</strong>
                   <div class="meta">${item.key === assignment?.key ? 'Esta designacao esta aberta acima para voce responder.' : 'Clique para abrir os detalhes e confirmar.'}</div>
-                  <button class="btn btn-outline btn-sm" onclick="selecionarEscolhaConfirmada('${item.key}')">Abrir detalhes</button>
+                  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.25rem;">
+                    <button class="btn btn-outline btn-sm" onclick="selecionarEscolhaConfirmada('${item.key}')">Abrir detalhes</button>
+                    ${item.status === 'aceito' ? `<button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;" onclick="desistirVagaAceita('${item.key}')">Desistir desta vaga</button>` : ''}
+                  </div>
                 </div>
               </div>
             </div>`).join('')
@@ -1466,6 +1529,19 @@
       saveCongConfigById(CONG_ID, cfg);
       liveFocusAssignmentKey = `${desigId}__${slotKey}`;
       showToast('Horario confirmado com sucesso!', 'success');
+      render();
+    };
+
+    window.dispensarNotificacao = function(notifId) {
+      const evento = DB.get('evento_config', {});
+      if (!evento?.tapaBuraco || !Array.isArray(evento.tapaBuraco.invites)) return;
+      const inv = evento.tapaBuraco.invites.find(i => i.id === session.liveInviteId);
+      if (!inv) return;
+      const notif = (inv.notificacoes || []).find(n => n.id === notifId);
+      if (notif) notif.lida = true;
+      localStorage.setItem('evento_config', JSON.stringify(evento));
+      if (typeof setPathResilient === 'function')
+        setPathResilient('evento_config/tapaBuraco/invites', evento.tapaBuraco.invites);
       render();
     };
 

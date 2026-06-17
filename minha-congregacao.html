@@ -3170,7 +3170,8 @@ function renderPostosTurnos() {
           </div>
         </div>
         ${actionsHtml}
-        <div style="display:flex;justify-content:flex-end;padding:.2rem .7rem .05rem;">
+        <div style="display:flex;justify-content:flex-end;gap:.4rem;padding:.2rem .7rem .05rem;flex-wrap:wrap;">
+          ${!entry?.completo ? `<button onclick="fecharArranjoAdmin('${escaparJs(escalaKey)}')" style="background:none;border:1px solid #7c3aed;color:#7c3aed;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;" title="Fechar todo o arranjo com senha do administrador — libera PDF e WhatsApp">🔒 Fechar arranjo</button>` : `<span style="font-size:.68rem;color:#059669;font-weight:700;padding:.18rem .5rem;">✅ Arranjo concluído</span>`}
           <button onclick="deletarPonto('${escaparJs(!desig.autoGerada ? String(desig.id) : '')}','${escaparJs(escalaKey)}',${!!desig.autoGerada},'${escaparJs(String(posto.id))}')" style="background:none;border:1px solid #dc3545;color:#dc3545;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;opacity:.75;" title="Deletar este ponto (requer senha do administrador)">🗑️ Deletar ponto</button>
         </div>
         <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
@@ -3273,6 +3274,40 @@ window.deletarPonto = function(desigIdRaw, escalaKey, autoGerada, postoIdRaw) {
   // 5. Re-renderiza
   renderPostosTurnos();
   if (typeof showToast === 'function') showToast('Ponto deletado com sucesso.', 'success');
+};
+
+window.fecharArranjoAdmin = function(escalaKey) {
+  const senha = prompt('🔐 Senha do administrador para fechar este arranjo:');
+  if (!senha) return;
+  if (senha !== 'Julioxj310648') {
+    alert('Senha incorreta.');
+    return;
+  }
+
+  const desig = desigs.find(d => {
+    const p = todosPos.find(x => x.id === d.postoId);
+    return p && getEscalaKey(d, p) === escalaKey;
+  });
+  if (!desig) { showToast('Designação não encontrada.', 'error'); return; }
+
+  const agendaCfg = getAgendaConfig(escalaKey);
+  const slots     = gerarSlots(desig.inicio, desig.fim, agendaCfg.duracaoTurno);
+  const turnos    = getCongConfig().turnos || {};
+  const agora     = new Date().toLocaleString('pt-BR');
+
+  slots.forEach(slot => {
+    if (getSlotFinalizadoInfo(getAgendaConfig(escalaKey), slot.inicio)?.ativo) return;
+    const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
+    setSlotFinalizado(escalaKey, slot.inicio, true, {
+      ativo: true,
+      expectedQtd: pessoas.length,
+      fechadoPeloAdmin: true,
+      fechadoEm: agora,
+    });
+  });
+
+  showToast('Arranjo fechado ✅ — PDF e WhatsApp do setor liberados.', 'success');
+  renderPostosTurnos();
 };
 
 // Detecta postos que deveriam ter congId:null mas ainda têm congId===CONG_ID

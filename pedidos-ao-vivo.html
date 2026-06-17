@@ -460,7 +460,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/firebase-db.js?v=20260616s"></script>
+  <script src="js/firebase-db.js?v=20260616t"></script>
   <script src="js/app.js?v=20260616f"></script>
   <script src="js/auth.js?v=20260616f"></script>
   <script>
@@ -531,16 +531,17 @@
     }
 
     function saveTapaBuracoConfig(cfg) {
-      const tapaBuraco = {
-        invites: Array.isArray(cfg?.invites) ? cfg.invites : [],
-        suggestions: Array.isArray(cfg?.suggestions) ? cfg.suggestions : [],
-        assignments: Array.isArray(cfg?.assignments) ? cfg.assignments : [],
-      };
       const evento = DB.get('evento_config', {});
-      evento.tapaBuraco = tapaBuraco;
-      localStorage.setItem('evento_config', JSON.stringify(evento));
-      if (typeof setPathResilient === 'function') {
-        setPathResilient('evento_config/tapaBuraco', tapaBuraco);
+      if (!evento.tapaBuraco || typeof evento.tapaBuraco !== 'object') evento.tapaBuraco = {};
+      if (Array.isArray(cfg?.assignments)) {
+        evento.tapaBuraco.assignments = cfg.assignments;
+        localStorage.setItem('evento_config', JSON.stringify(evento));
+        if (typeof setPathResilient === 'function') setPathResilient('evento_config/tapaBuraco/assignments', cfg.assignments);
+      }
+      if (Array.isArray(cfg?.suggestions)) {
+        evento.tapaBuraco.suggestions = cfg.suggestions;
+        localStorage.setItem('evento_config', JSON.stringify(evento));
+        if (typeof setPathResilient === 'function') setPathResilient('evento_config/tapaBuraco/suggestions', cfg.suggestions);
       }
     }
 
@@ -907,6 +908,9 @@
       if (isTapaBuraco && assignment.status !== 'aceito') {
         actionButtons.push(`<button class="btn btn-outline" onclick="responderTapaBuraco('${assignment.key}', false)">❌ Nao consigo aceitar</button>`);
       }
+      if (isTapaBuraco && assignment.autoIndicado && assignment.status === 'pendente') {
+        actionButtons.push(`<button class="btn btn-outline" onclick="desistirDaVaga('${assignment.key}')" style="border-color:#6c757d;color:#6c757d;font-size:.82rem;">↩ Desistir da vaga</button>`);
+      }
       if (isTapaBuraco && assignment.status === 'aceito') {
         const congContato = DB.get('congregacoes', []).find(c => c.id === assignment.congId);
         if (congContato?.telefone) {
@@ -1141,6 +1145,20 @@
         `Estou disponivel para esse horario. Por favor, confirme o recebimento respondendo esta mensagem. Obrigado!`,
       ].join('\n');
       window.open(`https://wa.me/${waDigits}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    };
+
+    window.desistirDaVaga = function(assignmentKey) {
+      if (!confirm('Deseja desistir desta vaga? Ela ficará disponível para outra pessoa.')) return;
+      const cfg = getTapaBuracoConfig();
+      const invite = getInvite();
+      const assignment = cfg.assignments.find(a => a.id === assignmentKey && a.inviteId === invite?.id && a.autoIndicado);
+      if (!assignment || assignment.status !== 'pendente') return;
+      assignment.status = 'cancelado';
+      const sug = (cfg.suggestions || []).find(s => s.inviteId === assignment.inviteId && s.pedidoId === assignment.pedidoId);
+      if (sug) sug.status = 'recusado';
+      saveTapaBuracoConfig(cfg);
+      showToast('Vaga liberada.', 'info');
+      render();
     };
 
     function render() {

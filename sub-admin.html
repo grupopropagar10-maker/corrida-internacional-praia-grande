@@ -1814,12 +1814,8 @@
     const pedidos = isTapaBuracoAdmin
       ? getPedidosAjuda().filter(p => _pedidoOk(p) && (p.status === 'aberto' || p.status === 'fechado'))
       : getPedidosDoSetor().filter(p => _pedidoOk(p) && p.subAdminId === session.subAdminId && (p.status === 'aberto' || p.status === 'fechado'));
-    if (!pedidos.length) {
-      el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--gray);">${isTapaBuracoAdmin ? 'Nenhum pedido de ajuda aberto no momento.' : 'Nenhum pedido de ajuda atribuído a você no seu setor.'}</div>`;
-      return;
-    }
 
-    // Filtro por congregação
+    // Filtro por congregação — sempre visível
     const _congsAjuda = [];
     { const _seen = new Set();
       pedidos.forEach(p => { if (p.congId && !_seen.has(String(p.congId))) { _seen.add(String(p.congId)); _congsAjuda.push({ id: String(p.congId), nome: p.congNome || String(p.congId) }); } });
@@ -1827,9 +1823,9 @@
     if (window._ajudaCongSel && !_congsAjuda.some(c => c.id === String(window._ajudaCongSel))) window._ajudaCongSel = null;
     const pedidosFiltrados = window._ajudaCongSel ? pedidos.filter(p => String(p.congId) === window._ajudaCongSel) : pedidos;
 
-    const ajudaCongPillsHtml = _congsAjuda.length > 1 ? `
+    const ajudaCongFiltroHtml = `
       <div style="margin-bottom:1rem;padding:.75rem;background:#fffaf5;border-radius:10px;border:1px solid #fde8c7;">
-        <div style="font-size:.78rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">🏠 Filtrar por congregação</div>
+        <div style="font-size:.78rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">🏠 Congregação</div>
         <div style="display:flex;flex-wrap:wrap;gap:.35rem;">
           <button onclick="window._ajudaCongSel=null;renderPedidosAjuda();"
             style="padding:.3rem .7rem;border-radius:99px;border:2px solid ${!window._ajudaCongSel ? '#d97706' : '#ccc'};
@@ -1848,13 +1844,17 @@
             </button>`;
           }).join('')}
         </div>
-      </div>` : '';
+      </div>`;
+
+    if (!pedidosFiltrados.length) {
+      el.innerHTML = ajudaCongFiltroHtml + `<div style="text-align:center;padding:2rem;color:var(--gray);">${pedidos.length ? 'Nenhum pedido para a congregação selecionada.' : isTapaBuracoAdmin ? 'Nenhum pedido de ajuda aberto no momento.' : 'Nenhum pedido de ajuda atribuído a você no seu setor.'}</div>`;
+      return;
+    }
 
     const congs = DB.get('congregacoes', []).filter(c => c.confirmada);
     const tbCfg = getTapaBuracoConfig();
 
-    const _pedidosCards = pedidosFiltrados.length ? pedidosFiltrados : null;
-    el.innerHTML = ajudaCongPillsHtml + (_pedidosCards ? _pedidosCards.map(pedido => {
+    el.innerHTML = ajudaCongFiltroHtml + pedidosFiltrados.map(pedido => {
       const classe = pedido.status === 'fechado' ? 'help-card closed' : 'help-card pending';
       const sugestoesTb = getTapaBuracoSuggestionsByPedido(tbCfg, pedido.id);
       const designacoesPendentesTb = getTapaBuracoPendingAssignmentsByPedido(tbCfg, pedido.id);
@@ -1938,7 +1938,7 @@
             ${pedido.tapaBuracoStatus === 'encaminhado' ? `<div class="mini-note" style="margin-top:.6rem;">🛠️ Encaminhado ao tapa-buraco por ${pedido.tapaBuracoEncaminhadoPorNome || session.nome} em ${pedido.tapaBuracoEncaminhadoEm || '—'}.</div>` : ''}
           `}
         </div>`;
-    }).join('') : `<div style="text-align:center;padding:1.5rem;color:var(--gray);">Nenhum pedido para a congregação selecionada.</div>`);
+    }).join('');
   }
 
   window.fecharPedidoAjuda = function(id) {

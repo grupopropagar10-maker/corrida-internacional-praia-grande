@@ -2044,12 +2044,25 @@
       return (cfg.turnos?.[desigStr]?.[p.slotKey] || []).length >= efetivo;
     };
     const _isResolvido = p => p.status !== 'aberto' || _slotJaCompleto(p) || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status) && !s.autoIndicado).length >= (p.faltaQtd || 0);
-    const pedidosTodos = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado' && (p.status === 'aberto' || p.status === 'fechado'));
-    const pedidosProntos = pedidosTodos.filter(p => _isResolvido(p));
-    const pedidosPendentes = pedidosTodos.filter(p => !_isResolvido(p));
-    const pedidosEncaminhados = window._tbCatSel
-      ? pedidosPendentes.filter(p => String(p.categoriaId) === String(window._tbCatSel) || p.categoriaNome === (todasCats.find(c => c.id === window._tbCatSel)?.nome))
-      : pedidosPendentes;
+    // ── Buckets de pedidos para as abas do painel ──
+    const _matchCat = p => !window._tbCatSel || String(p.categoriaId) === String(window._tbCatSel) || p.categoriaNome === (todasCats.find(c => c.id === window._tbCatSel)?.nome);
+    const _encaminhados  = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado');
+    const _bCancelados   = _encaminhados.filter(p => p.status === 'cancelado');
+    const _naoCancelados = _encaminhados.filter(p => p.status !== 'cancelado');
+    const _bFinalizados  = _naoCancelados.filter(p => _isResolvido(p));
+    const _bEmVigor      = _naoCancelados.filter(p => !_isResolvido(p));
+    // Pedidos do setor ainda NAO encaminhados ao tapa-buraco (somente visualizacao/auditoria)
+    const _bNaoEnc       = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus !== 'encaminhado' && p.status === 'aberto');
+    const pedidosTodos   = _encaminhados.concat(_bNaoEnc); // base das pilulas de modalidade
+    const _abasPedido = [
+      { id: 'vigor',  label: 'Em vigor',         icon: '🟡', lista: _bEmVigor },
+      { id: 'final',  label: 'Finalizados',      icon: '✅', lista: _bFinalizados },
+      { id: 'canc',   label: 'Cancelados',       icon: '✖️', lista: _bCancelados },
+      { id: 'naoenc', label: 'Não encaminhados', icon: '👁️', lista: _bNaoEnc },
+    ];
+    if (!_abasPedido.some(a => a.id === window._tbAbaPedido)) window._tbAbaPedido = 'vigor';
+    const _abaAtual = _abasPedido.find(a => a.id === window._tbAbaPedido) || _abasPedido[0];
+    const pedidosEncaminhados = _abaAtual.lista.filter(_matchCat); // lista exibida (aba + modalidade)
     const catsOptionsHtml = catsFiltro
       .map(c => `<option value="${c.id}">${c.numero != null ? `Nº ${String(c.numero).padStart(2,'0')} · ` : ''}${escapeHtml(c.nome || '')}</option>`)
       .join('');
@@ -2096,8 +2109,7 @@
         }).join('') || `<div style="color:var(--gray);font-size:.84rem;">Nenhum resultado para "<strong>${escapeHtml(_tbBusca)}</strong>".</div>`
       : '<div style="color:var(--gray);font-size:.84rem;">Nenhum tapa-buraco cadastrado ainda.</div>';
 
-    const pedidosHtml = pedidosEncaminhados.length
-      ? pedidosEncaminhados.map(pedido => {
+    const _cardVigor = pedido => {
           const sugestoes = suggestions.filter(item => item.pedidoId === pedido.id);
           const sugestoesAtivas = sugestoes.filter(s => ['sugerido','designado','aceito'].includes(s.status)).length;
           const _sugsRecusadas = sugestoes.filter(s => s.status === 'recusado').map(s => s.inviteId);
@@ -2175,8 +2187,52 @@
                   : `<button class="btn btn-outline btn-sm" onclick="abrirAutoSelecionavel('${pedido.id}')">🙋 Abrir candidaturas</button>`}
               </div>
             </div>`;
-        }).join('')
-      : '<div style="color:var(--gray);font-size:.84rem;">Nenhum pedido encaminhado ao tapa-buraco no momento.</div>';
+    };
+    const _cardFinal = pedido => {
+      const sugs = suggestions.filter(s => s.pedidoId === pedido.id && ['designado','aceito'].includes(s.status));
+      return `<div class="help-card" style="background:#f0faf3;border-color:#b7e4c7;margin-bottom:.6rem;">
+        <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <strong>${escapeHtml(pedido.congNome)}</strong>
+            <div class="mini-note">📍 ${escapeHtml(pedido.postoNome || 'Posto')} · ${escapeHtml(pedido.categoriaNome || '')} · ${escapeHtml(pedido.dataFmt || pedido.data || '—')} · ${escapeHtml(pedido.slotLabel || '')}</div>
+          </div>
+          <span class="badge badge-ativo">${pedido.status === 'fechado' ? '✅ Fechado pelo setor' : '✅ Preenchido'}</span>
+        </div>
+        <div style="margin-top:.4rem;font-size:.8rem;color:#2d6a4f;">
+          ${sugs.map(s => `<div>👤 ${escapeHtml(s.inviteNome)} — ${s.status === 'aceito' ? 'aceitou' : 'designado no setor'}</div>`).join('') || '<div>Resolvido pelo setor / congregação.</div>'}
+        </div>
+      </div>`;
+    };
+    const _cardCanc = pedido => `
+      <div class="help-card" style="background:#fff5f5;border-color:#f3c2c2;margin-bottom:.6rem;">
+        <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <strong>${escapeHtml(pedido.congNome)}</strong>
+            <div class="mini-note">📍 ${escapeHtml(pedido.postoNome || 'Posto')} · ${escapeHtml(pedido.categoriaNome || '')} · ${escapeHtml(pedido.dataFmt || pedido.data || '—')} · ${escapeHtml(pedido.slotLabel || '')}</div>
+          </div>
+          <span class="badge badge-perigo">✖️ Cancelado</span>
+        </div>
+        <div style="margin-top:.4rem;font-size:.8rem;color:#b42333;">${escapeHtml(pedido.motivoCancelamento || 'Pedido cancelado.')}${pedido.canceladoEm ? ` · ${escapeHtml(pedido.canceladoEm)}` : ''}</div>
+      </div>`;
+    const _cardNaoEnc = pedido => `
+      <div class="help-card" style="margin-bottom:.6rem;">
+        <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <strong>${escapeHtml(pedido.congNome)}</strong>
+            <div class="mini-note">📍 ${escapeHtml(pedido.postoNome || 'Posto')} · ${escapeHtml(pedido.categoriaNome || '')} · ${escapeHtml(pedido.dataFmt || pedido.data || '—')} · ${escapeHtml(pedido.slotLabel || '')}</div>
+            <div class="mini-note">Sub-admin do setor: ${escapeHtml(pedido.subAdminNome || '—')} · faltam ${pedido.faltaQtd} pessoa(s)</div>
+          </div>
+          <span class="badge badge-standby">👁️ Ainda no setor</span>
+        </div>
+        <div class="mini-note" style="margin-top:.4rem;">Ainda não encaminhado ao tapa-buraco — visualização apenas.</div>
+      </div>`;
+    const _cardByAba = { vigor: _cardVigor, final: _cardFinal, canc: _cardCanc, naoenc: _cardNaoEnc };
+    const _abasHtml = `<div style="display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0 .2rem;">
+      ${_abasPedido.map(a => { const ativa = a.id === _abaAtual.id; const n = a.lista.filter(_matchCat).length; return `<button onclick="window._tbAbaPedido='${a.id}';renderTapaBuraco();" style="padding:.35rem .7rem;border-radius:99px;border:2px solid ${ativa ? 'var(--primary)' : '#ccc'};background:${ativa ? 'var(--primary)' : 'white'};color:${ativa ? 'white' : 'var(--gray)'};font-size:.8rem;font-weight:700;cursor:pointer;">${a.icon} ${a.label} (${n})</button>`; }).join('')}
+    </div>`;
+    const pedidosHtml = pedidosEncaminhados.length
+      ? pedidosEncaminhados.map(_cardByAba[_abaAtual.id]).join('')
+      : `<div style="color:var(--gray);font-size:.84rem;">Nenhum pedido nesta aba${window._tbCatSel ? ' para a modalidade selecionada' : ''}.</div>`;
 
     // Seletor de modalidade/categoria
     const catPillsHtml = catsFiltro.length > 1 ? `
@@ -2187,10 +2243,10 @@
             style="padding:.35rem .75rem;border-radius:99px;border:2px solid ${!window._tbCatSel ? 'var(--primary)' : '#ccc'};
               background:${!window._tbCatSel ? 'var(--primary)' : 'white'};color:${!window._tbCatSel ? 'white' : 'var(--gray)'};
               font-size:.8rem;font-weight:700;cursor:pointer;">
-            Todas (${pedidosTodos.length})
+            Todas (${_abaAtual.lista.length})
           </button>
           ${catsFiltro.map(cat => {
-            const qtd = pedidosTodos.filter(p => String(p.categoriaId) === String(cat.id) || p.categoriaNome === cat.nome).length;
+            const qtd = _abaAtual.lista.filter(p => String(p.categoriaId) === String(cat.id) || p.categoriaNome === cat.nome).length;
             const ativa = window._tbCatSel === cat.id;
             return `<button onclick="window._tbCatSel=${cat.id};renderTapaBuraco();"
               style="padding:.35rem .75rem;border-radius:99px;border:2px solid ${ativa ? cat.cor || 'var(--primary)' : '#ccc'};
@@ -2212,7 +2268,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:.75rem;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;flex:1;">
           <div class="setor-stat"><strong>${invites.length}</strong><span>Tapa-buracos ativos</span></div>
-          <div class="setor-stat warn"><strong>${pedidosEncaminhados.length}</strong><span>Pedidos encaminhados</span></div>
+          <div class="setor-stat warn"><strong>${_bEmVigor.length}</strong><span>Pedidos em vigor</span></div>
           <div class="setor-stat"><strong>${suggestions.filter(item => item.status === 'sugerido').length}</strong><span>Nomes aguardando setor</span></div>
           <div class="setor-stat success"><strong>${assignments.filter(item => item.status === 'aceito').length}</strong><span>Designações aceitas</span></div>
         </div>
@@ -2244,32 +2300,11 @@
         <div style="margin-top:.8rem;">${convitesHtml}</div>
       </div>
       <div class="help-card" style="margin-bottom:1rem;">
-        <strong>Pedidos encaminhados pelos setores</strong>
+        <strong>Pedidos dos setores</strong>
         ${catPillsHtml ? `<div style="margin-top:.75rem;margin-bottom:-.2rem;">${catPillsHtml}</div>` : ''}
+        ${_abasHtml}
         <div style="margin-top:.8rem;">${pedidosHtml}</div>
-      </div>
-      ${pedidosProntos.length ? `
-      <div class="help-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="window._tbProntosAberto=!window._tbProntosAberto;renderTapaBuraco();">
-          <strong>✅ Prontos (${pedidosProntos.length})</strong>
-          <span style="font-size:.85rem;color:var(--gray);">${window._tbProntosAberto ? '▲ Recolher' : '▼ Ver todos'}</span>
-        </div>
-        ${window._tbProntosAberto ? `<div style="margin-top:.8rem;">${pedidosProntos.map(pedido => {
-          const sugestoes = suggestions.filter(s => s.pedidoId === pedido.id && ['designado','aceito'].includes(s.status));
-          return `<div class="help-card" style="background:#f0faf3;border-color:#b7e4c7;margin-bottom:.6rem;">
-            <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
-              <div>
-                <strong>${escapeHtml(pedido.congNome)}</strong>
-                <div class="mini-note">📍 ${escapeHtml(pedido.postoNome || 'Posto')} · ${escapeHtml(pedido.categoriaNome || '')} · ${escapeHtml(pedido.dataFmt || pedido.data || '—')} · ${escapeHtml(pedido.slotLabel || '')}</div>
-              </div>
-              <span class="badge badge-ativo">${pedido.status === 'fechado' ? '✅ Fechado pelo setor' : '✅ Preenchido'}</span>
-            </div>
-            <div style="margin-top:.4rem;font-size:.8rem;color:#2d6a4f;">
-              ${sugestoes.map(s => `<div>👤 ${escapeHtml(s.inviteNome)} — ${s.status === 'aceito' ? 'aceitou' : 'designado no setor'}</div>`).join('')}
-            </div>
-          </div>`;
-        }).join('')}</div>` : ''}
-      </div>` : ''}`;
+      </div>`;
 
     if (_tbNome) { const el2 = document.getElementById('tb-nome'); if (el2) el2.value = _tbNome; }
     if (_tbWhats) { const el2 = document.getElementById('tb-whatsapp'); if (el2) el2.value = _tbWhats; }

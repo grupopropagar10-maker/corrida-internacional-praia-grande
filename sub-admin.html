@@ -2755,6 +2755,7 @@
       alternateRowStyles: { fillColor: [245, 247, 255] },
       margin: { left: M, right: M },
     });
+    y = doc.lastAutoTable.finalY + 10;
 
     // ---- SECAO 5: Resumo por Setor — Quem Aceitou ----
     if (y > 240) { doc.addPage(); y = 18; }
@@ -2810,7 +2811,6 @@
           data.cell.styles.fillColor = [220, 230, 250];
           data.cell.styles.fontSize = 8;
           data.cell.styles.textColor = [30, 50, 120];
-          data.cell.colSpan = 4;
         }
       },
       alternateRowStyles: false,
@@ -2862,7 +2862,7 @@
         let bg = '#f3f4f6'; let cor = '#6b7280'; let label = s.status;
         if (a?.status === 'aceito')    { bg='#d1fae5'; cor='#065f46'; label='ACEITOU'; }
         else if (a?.status === 'pendente')  { bg='#fef3c7'; cor='#92400e'; label='PENDENTE'; }
-        else if (a?.status === 'recusado' || sug?.status === 'recusado')  { bg='#fee2e2'; cor='#991b1b'; label='RECUSOU'; }
+        else if (a?.status === 'recusado' || s?.status === 'recusado')    { bg='#fee2e2'; cor='#991b1b'; label='RECUSOU'; }
         else if (a?.status === 'cancelado') { bg='#f3f4f6'; cor='#9ca3af'; label='CANCELADO'; }
         else if (s.status === 'sugerido')   { bg='#dbeafe'; cor='#1e40af'; label='AGUARD. SETOR'; }
         else if (s.status === 'designado')  { bg='#fef3c7'; cor='#92400e'; label='ENVIADO'; }

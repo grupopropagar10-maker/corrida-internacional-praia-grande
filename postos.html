@@ -697,6 +697,8 @@
     let faltando = 0;
     let capacidade = 0;
     let pessoasEscaladas = 0;
+    let vagasAceitas = 0;    // posições "aceitas em falta" em turnos fechados formalmente
+    let slotsFinalizados = 0;
     designacoesPosto.forEach(desig => {
       const cfg = congCfgAll?.[desig.congId] || {};
       const escalaKey = getEscalaKey(desig, posto);
@@ -711,6 +713,10 @@
         const efetivo = (fechadoCom2 || slotFinalizado) ? pessoas.length : agenda.maxPorTurno;
         capacidade += efetivo;
         faltando += Math.max(0, efetivo - pessoas.length);
+        if (slotFinalizado || fechadoCom2) {
+          slotsFinalizados++;
+          vagasAceitas += Math.max(0, agenda.maxPorTurno - pessoas.length);
+        }
       });
     });
     return {
@@ -719,6 +725,8 @@
       capacidade,
       pessoasEscaladas,
       faltando,
+      vagasAceitas,
+      slotsFinalizados,
       completo: designacoesPosto.length > 0 && totalSlots > 0 && faltando === 0,
     };
   }
@@ -1089,16 +1097,20 @@
 
     // Cobertura dos postos filtrados.
     const cob = postos.map(p => getCoberturaPosto(p, designacoes, congCfgAll));
-    const escaladas    = cob.reduce((s, c) => s + c.pessoasEscaladas, 0); // lugares já preenchidos nos turnos
-    const disponiveis  = cob.reduce((s, c) => s + c.faltando, 0);         // lugares de turno ainda vazios
-    const arranjoTotal = cob.reduce((s, c) => s + c.capacidade, 0);       // capacidade total = escaladas + disponíveis
+    const escaladas      = cob.reduce((s, c) => s + c.pessoasEscaladas, 0);
+    const disponiveis    = cob.reduce((s, c) => s + c.faltando, 0);        // turnos NÃO fechados com vagas abertas
+    const vagasAceitas   = cob.reduce((s, c) => s + c.vagasAceitas, 0);    // turnos fechados com menos de 3 pessoas
+    const arranjoTotal   = cob.reduce((s, c) => s + c.capacidade, 0);
+    const totalSlotsTudo = cob.reduce((s, c) => s + c.totalSlots, 0);
+    const slotsFinalizados = cob.reduce((s, c) => s + c.slotsFinalizados, 0);
     const pct = arranjoTotal > 0 ? Math.round((escaladas / arranjoTotal) * 100) : 0;
+    const pctFechado = totalSlotsTudo > 0 ? Math.round((slotsFinalizados / totalSlotsTudo) * 100) : 0;
 
-    const item = (icon, valor, titulo, desc, cor) => `
+    const item = (icon, valor, titulo, desc, cor, extra = '') => `
       <div style="flex:1 1 180px;min-width:160px;display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);">
         <div style="font-size:1.6rem;line-height:1;">${icon}</div>
         <div>
-          <div style="font-size:1.5rem;font-weight:800;color:${cor};line-height:1.1;">${valor}</div>
+          <div style="font-size:1.5rem;font-weight:800;color:${cor};line-height:1.1;">${valor}${extra}</div>
           <div style="font-weight:600;font-size:.82rem;color:var(--dark,#333);">${titulo}</div>
           <div style="font-size:.7rem;color:var(--gray,#888);">${desc}</div>
         </div>
@@ -1109,8 +1121,10 @@
       <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
         ${item('🧑‍🤝‍🧑', cadastradas, 'Pessoas cadastradas', 'publicadores nas congregações', 'var(--primary,#2c3e9e)')}
         ${item('✅', escaladas, 'Pessoas escaladas', `já alocadas nos turnos (${pct}%)`, '#1e9e5a')}
-        ${item('🪑', disponiveis, 'Vagas ainda disponíveis', 'lugares de turno em aberto', '#d97706')}
+        ${item('🪑', disponiveis, 'Vagas em aberto', 'turnos ainda não fechados com falta', '#d97706')}
+        ${item('🔒', vagasAceitas, 'Vagas aceitas ao fechar', 'turnos fechados com menos de 3 pessoas', '#b45309')}
         ${item('🎯', arranjoTotal, 'Total no arranjo completo', 'escaladas + vagas em aberto', '#7c3aed')}
+        ${item('📋', slotsFinalizados, 'Turnos fechados', `${pctFechado}% dos turnos formalmente encerrados`, '#0369a1')}
       </div>`;
   }
 

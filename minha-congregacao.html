@@ -2201,7 +2201,8 @@ function renderResumoEscala() {
   el.className = resumo.todosFechados ? 'escala-status-box' : 'escala-status-box warning';
   el.innerHTML = resumo.todosFechados
     ? `✅ Escala fechada: ${resumo.totalSlots} horário(s) completos, ${resumo.totalPessoas} escala(s) registradas. PDF liberado.`
-    : `⏳ Faltam ${resumo.faltando} pessoa(s) para fechar a escala. Complete os horários ou peça ajuda antes de baixar o PDF.`;
+    : `⏳ Faltam ${resumo.faltando} vaga(s) em horários ainda não encerrados.
+       <button onclick="fecharTodosArranjos()" style="margin-left:.75rem;background:none;border:1px solid #7c3aed;color:#7c3aed;border-radius:6px;padding:.18rem .6rem;font-size:.75rem;cursor:pointer;font-weight:600;" title="Fecha todos os horários desta congregação com senha de admin — libera o PDF geral">🔒 Fechar todos os arranjos</button>`;
   exportBtn.disabled = !resumo.todosFechados;
   exportBtn.style.opacity = resumo.todosFechados ? '1' : '.55';
   exportBtn.style.cursor = resumo.todosFechados ? 'pointer' : 'not-allowed';
@@ -2999,6 +3000,10 @@ function renderEscalaSectorActions() {
     const responsavel = group.responsavel
       ? `👤 ${group.responsavel.nome} · ${group.responsavel.whatsapp.formatted}`
       : 'WhatsApp liberado somente com 1 responsavel do setor';
+    const catArg = group.categoriaId === null ? 'null' : group.categoriaId;
+    const btnFecharSetor = !group.resumo.todosFechados
+      ? `<button class="btn btn-outline btn-sm" style="border-color:#7c3aed;color:#7c3aed;" onclick="fecharSetorAdmin(${catArg})" title="Fecha todos os postos deste setor com senha do administrador">🔒 Fechar setor inteiro</button>`
+      : '';
     return `
       <div class="escala-sector-card">
         <div>
@@ -3007,7 +3012,8 @@ function renderEscalaSectorActions() {
           <div class="escala-sector-meta">${responsavel}</div>
         </div>
         <div class="escala-sector-buttons">
-          <button class="btn btn-outline btn-sm" onclick="exportarPdfSetor(${group.categoriaId === null ? 'null' : group.categoriaId})" ${disabled}>📄 PDF geral do setor</button>
+          ${btnFecharSetor}
+          <button class="btn btn-outline btn-sm" onclick="exportarPdfSetor(${catArg})" ${disabled}>📄 PDF geral do setor</button>
           ${group.categoriaId && group.responsavel ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${group.categoriaId})" ${disabled}>📱 WhatsApp do setor</button>` : ''}
         </div>
       </div>`;
@@ -3171,7 +3177,12 @@ function renderPostosTurnos() {
         </div>
         ${actionsHtml}
         <div style="display:flex;justify-content:flex-end;gap:.4rem;padding:.2rem .7rem .05rem;flex-wrap:wrap;">
-          ${!entry?.completo ? `<button onclick="fecharArranjoAdmin('${escaparJs(escalaKey)}')" style="background:none;border:1px solid #7c3aed;color:#7c3aed;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;" title="Fechar todo o arranjo com senha do administrador — libera PDF e WhatsApp">🔒 Fechar arranjo</button>` : `<span style="font-size:.68rem;color:#059669;font-weight:700;padding:.18rem .5rem;">✅ Arranjo concluído</span>`}
+          ${(function() {
+            const todosFormalizados = entry?.slots?.every(s => s.slotFinalizado || s.fechadoCom2);
+            if (todosFormalizados) return `<span style="font-size:.68rem;color:#059669;font-weight:700;padding:.18rem .5rem;">✅ Arranjo fechado</span>`;
+            if (!entry?.completo) return `<button onclick="fecharArranjoAdmin('${escaparJs(escalaKey)}')" style="background:none;border:1px solid #7c3aed;color:#7c3aed;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;" title="Fechar todo o arranjo com senha do administrador — libera PDF e WhatsApp">🔒 Fechar arranjo</button>`;
+            return `<button onclick="fecharArranjoAdmin('${escaparJs(escalaKey)}')" style="background:none;border:1px solid #0369a1;color:#0369a1;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;" title="Arranjo completo mas ainda não fechado formalmente — clique para registrar o fechamento e liberar o PDF">🔒 Fechar formalmente</button>`;
+          })()}
           <button onclick="deletarPonto('${escaparJs(!desig.autoGerada ? String(desig.id) : '')}','${escaparJs(escalaKey)}',${!!desig.autoGerada},'${escaparJs(String(posto.id))}')" style="background:none;border:1px solid #dc3545;color:#dc3545;border-radius:6px;padding:.18rem .5rem;font-size:.68rem;cursor:pointer;opacity:.75;" title="Deletar este ponto (requer senha do administrador)">🗑️ Deletar ponto</button>
         </div>
         <div class="turnos-row">${slotsHtml || '<div style="color:var(--gray);padding:.5rem;">Horários não definidos.</div>'}</div>
@@ -3307,6 +3318,81 @@ window.fecharArranjoAdmin = function(escalaKey) {
   });
 
   showToast('Arranjo fechado ✅ — PDF e WhatsApp do setor liberados.', 'success');
+  renderPostosTurnos();
+};
+
+// Fecha todos os postos de um setor (ou de toda a congregação se categoriaId=null) de uma vez.
+window.fecharSetorAdmin = function(categoriaId) {
+  const senha = prompt('🔐 Senha do administrador para fechar todos os postos deste setor:');
+  if (!senha) return;
+  if (senha !== 'Julioxj310648') {
+    alert('Senha incorreta.');
+    return;
+  }
+
+  const entries = categoriaId === null
+    ? getEscalaEntries(e => !e.posto.categoriaId)
+    : getEscalaEntries(e => String(e.posto.categoriaId) === String(categoriaId));
+
+  if (!entries.length) { showToast('Nenhum posto encontrado neste setor.', 'warning'); return; }
+
+  const turnos = getCongConfig().turnos || {};
+  const agora  = new Date().toLocaleString('pt-BR');
+  let slotsEncerrados = 0;
+
+  entries.forEach(entry => {
+    const escalaKey = entry.desigKey;
+    const agendaCfg = getAgendaConfig(escalaKey);
+    entry.slots.forEach(slot => {
+      if (getSlotFinalizadoInfo(agendaCfg, slot.inicio)?.ativo) return;
+      const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
+      setSlotFinalizado(escalaKey, slot.inicio, true, {
+        ativo: true,
+        expectedQtd: pessoas.length,
+        fechadoPeloAdmin: true,
+        fechadoEm: agora,
+      });
+      slotsEncerrados++;
+    });
+  });
+
+  showToast(`Setor fechado ✅ — ${slotsEncerrados} horário(s) encerrado(s). PDF liberado.`, 'success');
+  renderPostosTurnos();
+};
+
+// Fecha todos os horários de TODOS os postos desta congregação de uma vez.
+window.fecharTodosArranjos = function() {
+  const senha = prompt('🔐 Senha do administrador para fechar TODOS os arranjos desta congregação:');
+  if (!senha) return;
+  if (senha !== 'Julioxj310648') {
+    alert('Senha incorreta.');
+    return;
+  }
+
+  const entries = getEscalaEntries();
+  if (!entries.length) { showToast('Nenhum posto encontrado.', 'warning'); return; }
+
+  const turnos = getCongConfig().turnos || {};
+  const agora  = new Date().toLocaleString('pt-BR');
+  let slotsEncerrados = 0;
+
+  entries.forEach(entry => {
+    const escalaKey = entry.desigKey;
+    const agendaCfg = getAgendaConfig(escalaKey);
+    entry.slots.forEach(slot => {
+      if (getSlotFinalizadoInfo(agendaCfg, slot.inicio)?.ativo) return;
+      const pessoas = getPessoasDoSlot(turnos, escalaKey, slot.inicio);
+      setSlotFinalizado(escalaKey, slot.inicio, true, {
+        ativo: true,
+        expectedQtd: pessoas.length,
+        fechadoPeloAdmin: true,
+        fechadoEm: agora,
+      });
+      slotsEncerrados++;
+    });
+  });
+
+  showToast(`Todos os arranjos fechados ✅ — ${slotsEncerrados} horário(s) encerrado(s). PDF geral liberado.`, 'success');
   renderPostosTurnos();
 };
 

@@ -597,7 +597,7 @@
 ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="js/firebase-db.js?v=20260616s"></script>
+<script src="js/firebase-db.js?v=20260616t"></script>
 <script src="js/app.js?v=20260616f"></script>
 <script src="js/auth.js?v=20260616f"></script>
 <script>
@@ -2030,7 +2030,7 @@
       const efetivo = fechadoCom2 ? 2 : maxPorTurno;
       return (cfg.turnos?.[desigStr]?.[p.slotKey] || []).length >= efetivo;
     };
-    const _isResolvido = p => p.status !== 'aberto' || _slotJaCompleto(p) || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status)).length >= (p.faltaQtd || 0);
+    const _isResolvido = p => p.status !== 'aberto' || _slotJaCompleto(p) || suggestions.filter(s => s.pedidoId === p.id && ['designado','aceito'].includes(s.status) && !s.autoIndicado).length >= (p.faltaQtd || 0);
     const pedidosTodos = getPedidosAjuda().filter(p => _pedidoValido(p) && p.tapaBuracoStatus === 'encaminhado' && (p.status === 'aberto' || p.status === 'fechado'));
     const pedidosProntos = pedidosTodos.filter(p => _isResolvido(p));
     const pedidosPendentes = pedidosTodos.filter(p => !_isResolvido(p));

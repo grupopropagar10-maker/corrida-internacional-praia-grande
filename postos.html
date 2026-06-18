@@ -416,6 +416,8 @@
       }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -450,23 +452,43 @@
 
 <!-- FILTROS + BOTÃO NOVO -->
 <section class="section" style="padding-top:1rem; padding-bottom:0;">
-  <div class="card">
-    <div class="flex-between flex-wrap gap-1">
-      <div class="filter-bar">
-        <input class="form-control search-input" id="search-posto" placeholder="🔍 Buscar posto..." type="text"/>
-        <select class="form-control congregacao-select" id="filter-congregacao">
-          <option value="">🏢 Selecionar congregação...</option>
-        </select>
-        <button class="filter-btn active" data-filter="todos">Todos</button>
-        <button class="filter-btn" data-filter="ativo">✅ Ativos</button>
-        <button class="filter-btn" data-filter="standby">⏳ Standby</button>
-        <button class="filter-btn" data-filter="inativo">❌ Inativos</button>
-        <button class="filter-btn" data-filter="escala-quase">⚠️ Quase terminando</button>
-        <button class="filter-btn" data-filter="escala-finalizada">🏁 Já finalizaram</button>
-        <button class="filter-btn" data-filter="escala-pronto">✅ Prontos</button>
+  <div class="card" style="padding:1rem 1.25rem;">
+
+    <!-- Linha 1: busca + congregação + ações -->
+    <div style="display:flex;gap:.65rem;align-items:center;flex-wrap:wrap;margin-bottom:.85rem;">
+      <input class="form-control search-input" id="search-posto"
+             placeholder="🔍 Buscar posto..." type="text"
+             style="flex:1;min-width:170px;max-width:290px;"/>
+      <select class="form-control congregacao-select" id="filter-congregacao"
+              style="flex:1;min-width:200px;max-width:280px;">
+        <option value="">🏢 Selecionar congregação...</option>
+      </select>
+      <div style="display:flex;gap:.5rem;margin-left:auto;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btn-novo-posto" style="white-space:nowrap;">➕ Novo Posto</button>
+        <button onclick="exportarRelatorioCongregacoes()"
+                style="white-space:nowrap;padding:.45rem 1rem;border-radius:8px;border:1.5px solid #0369a1;background:#fff;color:#0369a1;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .15s;"
+                onmouseover="this.style.background='#EFF6FF'" onmouseout="this.style.background='#fff'">
+          📊 PDF Congregações
+        </button>
       </div>
-      <button class="btn btn-primary" id="btn-novo-posto">➕ Novo Posto</button>
     </div>
+
+    <!-- Linha 2: filtros agrupados -->
+    <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;">
+      <span style="font-size:.65rem;font-weight:700;color:#b0b8c8;text-transform:uppercase;letter-spacing:.07em;">Status</span>
+      <button class="filter-btn active" data-filter="todos">Todos</button>
+      <button class="filter-btn" data-filter="ativo">✅ Ativos</button>
+      <button class="filter-btn" data-filter="standby">⏳ Standby</button>
+      <button class="filter-btn" data-filter="inativo">❌ Inativos</button>
+
+      <div style="width:1px;height:18px;background:#e2e8f0;margin:0 .3rem;flex-shrink:0;"></div>
+
+      <span style="font-size:.65rem;font-weight:700;color:#b0b8c8;text-transform:uppercase;letter-spacing:.07em;">Escala</span>
+      <button class="filter-btn" data-filter="escala-quase">⚠️ Quase terminando</button>
+      <button class="filter-btn" data-filter="escala-finalizada">🏁 Já finalizaram</button>
+      <button class="filter-btn" data-filter="escala-pronto">✅ Prontos</button>
+    </div>
+
   </div>
 </section>
 
@@ -1443,6 +1465,117 @@
       renderPostos();
     });
   }
+
+  // ---- PDF RELATÓRIO DE CONGREGAÇÕES ----
+
+  function getRelatorioCongregacoes() {
+    const allDesigs   = getDesignacoesEfetivas();
+    const congCfgAll  = DB.get('cong_config', {});
+    const congregacoes = DB.get('congregacoes', []);
+    const todosPostos  = DB.get('postos', []);
+
+    const congIds = [...new Set(todosPostos.filter(p => p.congId).map(p => String(p.congId)))];
+
+    return congIds.map(congId => {
+      const cong  = congregacoes.find(c => String(c.id) === String(congId));
+      const posts = todosPostos.filter(p => String(p.congId) === String(congId));
+      let escaladas = 0, faltando = 0, capacidade = 0;
+      posts.forEach(posto => {
+        const cob = getCoberturaPosto(posto, allDesigs, congCfgAll);
+        escaladas  += cob.pessoasEscaladas;
+        faltando   += cob.faltando;
+        capacidade += cob.capacidade;
+      });
+      const pct = capacidade > 0 ? Math.round((escaladas / capacidade) * 100) : 0;
+      return { nome: cong?.nome || `Congregação ${congId}`, postos: posts.length, escaladas, capacidade, faltando, pct };
+    }).sort((a, b) => b.faltando - a.faltando);
+  }
+
+  function exportarRelatorioCongregacoes() {
+    if (!window.jspdf) { showToast('PDF ainda carregando, tente em segundos.', 'warning'); return; }
+    showToast('Gerando PDF das congregações...', 'info');
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const eventoNome = DB.get('evento_config', {})?.nomeEvento || 'Corrida Internacional Praia Grande 2026';
+    const dados = getRelatorioCongregacoes();
+
+    const totalPostos    = dados.reduce((s, c) => s + c.postos, 0);
+    const totalEscaladas = dados.reduce((s, c) => s + c.escaladas, 0);
+    const totalCapac     = dados.reduce((s, c) => s + c.capacidade, 0);
+    const totalFaltando  = dados.reduce((s, c) => s + c.faltando, 0);
+    const pctGeral       = totalCapac > 0 ? Math.round((totalEscaladas / totalCapac) * 100) : 0;
+    const dataHora       = new Date().toLocaleString('pt-BR');
+
+    // Cabeçalho
+    doc.setFillColor(44, 62, 158);
+    doc.rect(0, 0, 210, 22, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Congregações', 14, 10);
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text(eventoNome, 14, 16);
+    doc.text(`Gerado em ${dataHora}`, 196, 16, { align: 'right' });
+
+    // Resumo geral
+    doc.setTextColor(50, 50, 80);
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('Resumo geral', 14, 30);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    doc.text(`${dados.length} congregações  ·  ${totalPostos} postos  ·  ${totalEscaladas} / ${totalCapac} pessoas (${pctGeral}%)  ·  ${totalFaltando} ainda faltando`, 14, 36);
+
+    const statusLabel = c =>
+      c.faltando === 0     ? '✅ Completo'    :
+      c.pct >= 80          ? '⚠️ Quase pronto' :
+      c.pct >= 50          ? '🔶 Em andamento' :
+                             '🔴 Incompleto';
+
+    doc.autoTable({
+      startY: 42,
+      head: [['#', 'Congregação', 'Postos', 'Escaladas', 'Capacidade', 'Faltando', 'Status']],
+      body: dados.map((c, i) => [
+        String(i + 1).padStart(2, '0'),
+        c.nome,
+        c.postos,
+        c.escaladas,
+        c.capacidade,
+        c.faltando,
+        statusLabel(c),
+      ]),
+      styles: { fontSize: 8, cellPadding: 2.2, valign: 'middle' },
+      headStyles: { fillColor: [44, 62, 158], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        2: { halign: 'center', cellWidth: 16 },
+        3: { halign: 'center', cellWidth: 22 },
+        4: { halign: 'center', cellWidth: 22 },
+        5: { halign: 'center', cellWidth: 18 },
+        6: { halign: 'center', cellWidth: 30 },
+      },
+      alternateRowStyles: { fillColor: [245, 248, 255] },
+      didParseCell(data) {
+        if (data.section !== 'body') return;
+        if (data.column.index === 5) {
+          const v = Number(data.cell.raw);
+          data.cell.styles.textColor = v === 0 ? [5, 150, 105] : [220, 38, 38];
+          if (v > 0) data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 6) {
+          const s = String(data.cell.raw);
+          data.cell.styles.textColor =
+            s.startsWith('✅') ? [5, 150, 105] :
+            s.startsWith('⚠️') ? [161, 83, 9]  :
+            s.startsWith('🔶') ? [180, 100, 0] :
+                                 [220, 38, 38];
+        }
+      },
+    });
+
+    const filename = `congregacoes-${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(filename);
+    showToast(`PDF baixado com ${dados.length} congregações ✅`, 'success');
+  }
+
 </script>
 </body>
 </html>

@@ -1172,9 +1172,9 @@
       ${grupo('#2c3e9e', '👥 Pessoas',
         card('🧑‍🤝‍🧑', cadastradas,               'Pessoas cadastradas',    'publicadores nas congregações',                    'var(--primary,#2c3e9e)') +
         card('✅',      `${escaladas} (${pct}%)`, 'Pessoas escaladas',      'alocadas nos turnos do evento',                    '#1e9e5a') +
-        card('🪑',      disponiveis,              'Vagas em aberto',        'turnos ainda não fechados com falta',               disponiveis    === 0    ? '#1e9e5a' : '#d97706') +
-        card('🔒',      vagasAceitas,             'Vagas aceitas ao fechar','turnos fechados com menos do máximo esperado',      '#b45309') +
-        card('📋',      `${pctFechado}%`,         'Turnos fechados',        `${slotsFinalizados} de ${totalSlotsTudo} encerrados`, pctFechado === 100    ? '#1e9e5a' : '#0369a1')
+        card('🪑',      disponiveis,              'Vagas em aberto',        'turnos ainda não fechados com falta',          disponiveis === 0 ? '#1e9e5a' : '#d97706') +
+        card('🔒',      vagasAceitas,             'Vagas aceitas ao fechar','turnos fechados com menos do máximo esperado', '#b45309') +
+        card('🎯',      arranjoTotal,             'Total no arranjo',       `capacidade completa do evento (${pct}% preenchido)`, '#7c3aed')
       )}
 
       ${blocoEvento}`;

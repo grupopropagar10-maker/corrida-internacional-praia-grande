@@ -1091,44 +1091,91 @@
 
   // ---- DIMENSIONAMENTO DE PESSOAS ----
   function renderStatsPessoas(postos, designacoes, congCfgAll) {
-    // Pessoas cadastradas: publicadores registrados pelas congregações ("Adicionar nomes").
     const cadastradas = Object.values(congCfgAll || {})
       .reduce((s, cfg) => s + (Array.isArray(cfg?.membros) ? cfg.membros.length : 0), 0);
 
-    // Cobertura dos postos filtrados.
-    const cob = postos.map(p => getCoberturaPosto(p, designacoes, congCfgAll));
+    const cob            = postos.map(p => getCoberturaPosto(p, designacoes, congCfgAll));
     const escaladas      = cob.reduce((s, c) => s + c.pessoasEscaladas, 0);
-    const disponiveis    = cob.reduce((s, c) => s + c.faltando, 0);        // turnos NÃO fechados com vagas abertas
-    const vagasAceitas   = cob.reduce((s, c) => s + c.vagasAceitas, 0);    // turnos fechados com menos de 3 pessoas
+    const disponiveis    = cob.reduce((s, c) => s + c.faltando, 0);
+    const vagasAceitas   = cob.reduce((s, c) => s + c.vagasAceitas, 0);
     const arranjoTotal   = cob.reduce((s, c) => s + c.capacidade, 0);
     const totalSlotsTudo = cob.reduce((s, c) => s + c.totalSlots, 0);
     const slotsFinalizados = cob.reduce((s, c) => s + c.slotsFinalizados, 0);
     const postosComDesig = cob.filter(c => c.designacoes > 0).length;
+    const postosProntos  = cob.filter(c => c.completo).length;
     const totalPostos    = postos.length;
-    const pct = arranjoTotal > 0 ? Math.round((escaladas / arranjoTotal) * 100) : 0;
+    const pct       = arranjoTotal   > 0 ? Math.round((escaladas       / arranjoTotal)   * 100) : 0;
     const pctFechado = totalSlotsTudo > 0 ? Math.round((slotsFinalizados / totalSlotsTudo) * 100) : 0;
 
-    const item = (icon, valor, titulo, desc, cor, extra = '') => `
-      <div style="flex:1 1 180px;min-width:160px;display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);">
-        <div style="font-size:1.6rem;line-height:1;">${icon}</div>
-        <div>
-          <div style="font-size:1.5rem;font-weight:800;color:${cor};line-height:1.1;">${valor}${extra}</div>
-          <div style="font-weight:600;font-size:.82rem;color:var(--dark,#333);">${titulo}</div>
-          <div style="font-size:.7rem;color:var(--gray,#888);">${desc}</div>
+    const totalCongas  = DB.get('congregacoes', []).length;
+    const congasAtivas = [...new Set(designacoes.map(d => d.congId))].length;
+
+    const pedidosAbertos = DB.get('pedidos_ajuda_escala', []).filter(p => p.status === 'aberto').length;
+
+    const distribuicoes  = DB.get('distribuicoes', []);
+    const pubsDist       = distribuicoes.filter(r => r.tipo === 'publicacao').reduce((s, r) => s + (r.qty || 0), 0);
+    const pubsRestantes  = postos.reduce((s, p) => s + (p.publicacoes || 0), 0);
+    const pubsTotal      = pubsDist + pubsRestantes;
+    const postosComReg   = [...new Set(distribuicoes.map(r => r.postoId))].length;
+    const totalExp       = Object.values(congCfgAll || {}).reduce((s, cfg) => {
+      const exp = cfg?.registroCampo?.experiencias;
+      return s + (Array.isArray(exp) ? exp.length : 0);
+    }, 0);
+    const temDadosDia = distribuicoes.length > 0 || totalExp > 0;
+
+    const card = (icon, valor, titulo, desc, cor) => `
+      <div style="flex:1 1 155px;min-width:145px;display:flex;align-items:center;gap:.6rem;
+                  padding:.7rem .9rem;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);">
+        <div style="font-size:1.45rem;line-height:1;flex-shrink:0;">${icon}</div>
+        <div style="min-width:0;">
+          <div style="font-size:1.25rem;font-weight:800;color:${cor};line-height:1.15;white-space:nowrap;">${valor}</div>
+          <div style="font-weight:700;font-size:.76rem;color:var(--dark,#333);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${titulo}</div>
+          <div style="font-size:.64rem;color:var(--gray,#888);line-height:1.35;">${desc}</div>
         </div>
       </div>`;
 
-    document.getElementById('stats-pessoas').innerHTML = `
-      <div style="font-size:.8rem;font-weight:700;color:var(--gray,#777);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">👥 Dimensionamento de pessoas</div>
-      <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
-        ${item('📍', `${postosComDesig}/${totalPostos}`, 'Postos cobertos', 'postos com ao menos uma congregação designada', postosComDesig === totalPostos ? '#1e9e5a' : '#d97706')}
-        ${item('🧑‍🤝‍🧑', cadastradas, 'Pessoas cadastradas', 'publicadores nas congregações', 'var(--primary,#2c3e9e)')}
-        ${item('✅', escaladas, 'Pessoas escaladas', `já alocadas nos turnos (${pct}%)`, '#1e9e5a')}
-        ${item('🪑', disponiveis, 'Vagas em aberto', 'turnos ainda não fechados com falta', '#d97706')}
-        ${item('🔒', vagasAceitas, 'Vagas aceitas ao fechar', 'turnos fechados com menos de 3 pessoas', '#b45309')}
-        ${item('🎯', arranjoTotal, 'Total no arranjo completo', 'escaladas + vagas em aberto', '#7c3aed')}
-        ${item('📋', slotsFinalizados, 'Turnos fechados', `${pctFechado}% dos turnos formalmente encerrados`, '#0369a1')}
+    const grupo = (accentColor, label, cardsHtml) => `
+      <div style="margin-bottom:.9rem;">
+        <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.45rem;">
+          <div style="width:3px;height:13px;background:${accentColor};border-radius:2px;flex-shrink:0;"></div>
+          <span style="font-size:.66rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.07em;">${label}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;">${cardsHtml}</div>
       </div>`;
+
+    const blocoEvento = temDadosDia ? grupo('#0369a1', '📖 Dia do Evento',
+      card('📖',
+        pubsTotal > 0 ? `${pubsDist.toLocaleString('pt-BR')} / ${pubsTotal.toLocaleString('pt-BR')}` : pubsDist.toLocaleString('pt-BR'),
+        'Publicações distribuídas',
+        pubsTotal > 0 ? `restam ${pubsRestantes.toLocaleString('pt-BR')} nos postos` : 'total saído pelos postos',
+        pubsTotal > 0 && pubsDist >= pubsTotal ? '#1e9e5a' : '#0369a1') +
+      (totalExp > 0 ? card('✨', totalExp, 'Experiências registradas', 'relatos dos irmãos no campo', '#7c3aed') : '') +
+      card('🏪', `${postosComReg} / ${totalPostos}`, 'Postos com registro', 'ao menos um lançamento feito', postosComReg === totalPostos ? '#1e9e5a' : '#7c3aed')
+    ) : '';
+
+    document.getElementById('stats-pessoas').innerHTML = `
+      <div style="font-size:.8rem;font-weight:700;color:var(--gray,#777);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.8rem;">
+        👥 Dimensionamento de Pessoas
+      </div>
+
+      ${grupo('#d97706', '📍 Cobertura de Postos',
+        card('📍', `${postosComDesig} / ${totalPostos}`, 'Postos cobertos',    'com ao menos uma congregação designada',  postosComDesig === totalPostos ? '#1e9e5a' : '#d97706') +
+        card('✅', `${postosProntos} / ${totalPostos}`,  'Postos prontos',     'todos os turnos preenchidos ou fechados',  postosProntos  === totalPostos ? '#1e9e5a' : '#0369a1') +
+        card('🏘️', `${congasAtivas} / ${totalCongas}`,  'Congregações',       'com ao menos uma designação ativa',        congasAtivas   === totalCongas ? '#1e9e5a' : '#7c3aed') +
+        (pedidosAbertos > 0
+          ? card('🆘', pedidosAbertos, 'Pedidos de ajuda abertos', 'requerem atenção do administrador', '#dc2626')
+          : card('✔️', '0 abertos',    'Pedidos de ajuda',         'nenhum pedido pendente no momento',  '#1e9e5a'))
+      )}
+
+      ${grupo('#2c3e9e', '👥 Pessoas',
+        card('🧑‍🤝‍🧑', cadastradas,               'Pessoas cadastradas',    'publicadores nas congregações',                    'var(--primary,#2c3e9e)') +
+        card('✅',      `${escaladas} (${pct}%)`, 'Pessoas escaladas',      'alocadas nos turnos do evento',                    '#1e9e5a') +
+        card('🪑',      disponiveis,              'Vagas em aberto',        'turnos ainda não fechados com falta',               disponiveis    === 0    ? '#1e9e5a' : '#d97706') +
+        card('🔒',      vagasAceitas,             'Vagas aceitas ao fechar','turnos fechados com menos do máximo esperado',      '#b45309') +
+        card('📋',      `${pctFechado}%`,         'Turnos fechados',        `${slotsFinalizados} de ${totalSlotsTudo} encerrados`, pctFechado === 100    ? '#1e9e5a' : '#0369a1')
+      )}
+
+      ${blocoEvento}`;
   }
 
   // ---- RENDER GRID ----

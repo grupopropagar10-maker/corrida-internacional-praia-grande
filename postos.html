@@ -1128,8 +1128,12 @@
     const postosComDesig = cob.filter(c => c.designacoes > 0).length;
     const postosProntos  = cob.filter(c => c.completo).length;
     const totalPostos    = postos.length;
+    // Postos "realmente ativos": os que têm turnos a preencher (designação + ao menos 1 slot).
+    // É o universo onde "ficar pronto" faz sentido — postos sem turno nunca poderiam contar.
+    const postosAtivos   = cob.filter(c => c.totalSlots > 0).length;
     const pct       = arranjoTotal   > 0 ? Math.round((escaladas       / arranjoTotal)   * 100) : 0;
     const pctFechado = totalSlotsTudo > 0 ? Math.round((slotsFinalizados / totalSlotsTudo) * 100) : 0;
+    const pctProntos = postosAtivos   > 0 ? Math.round((postosProntos    / postosAtivos)   * 100) : 0;
 
     const totalCongas  = DB.get('congregacoes', []).length;
     const congasAtivas = [...new Set(designacoes.map(d => d.congId))].length;
@@ -1184,7 +1188,7 @@
 
       ${grupo('#d97706', '📍 Cobertura de Postos',
         card('📍', `${postosComDesig} / ${totalPostos}`, 'Postos cobertos',    'com ao menos uma congregação designada',  postosComDesig === totalPostos ? '#1e9e5a' : '#d97706') +
-        card('✅', `${postosProntos} / ${totalPostos}`,  'Postos prontos',     'todos os turnos preenchidos ou fechados',  postosProntos  === totalPostos ? '#1e9e5a' : '#0369a1') +
+        card('✅', `${postosProntos} / ${postosAtivos} (${pctProntos}%)`,  'Postos prontos',     'todos os turnos preenchidos ou fechados',  postosProntos  === postosAtivos ? '#1e9e5a' : '#0369a1') +
         card('🏘️', `${congasAtivas} / ${totalCongas}`,  'Congregações',       'com ao menos uma designação ativa',        congasAtivas   === totalCongas ? '#1e9e5a' : '#7c3aed') +
         (pedidosAbertos > 0
           ? card('🆘', pedidosAbertos, 'Pedidos de ajuda abertos', 'requerem atenção do administrador', '#dc2626')

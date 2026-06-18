@@ -620,7 +620,9 @@
 
   function buildAutoDesignacoesForPosto(posto) {
     const categoria = getCategoriaById(posto?.categoriaId);
-    const datas = getCategoriaDatas(categoria);
+    const todasDatas = getCategoriaDatas(categoria);
+    const excluidas  = Array.isArray(posto?.datasExcluidas) ? posto.datasExcluidas : [];
+    const datas = todasDatas.filter(d => !excluidas.includes(d));
     if (!posto?.congId || !categoria || !datas.length || !categoria.horario || !categoria.horarioFim) return [];
     return datas.map((data, idx) => ({
       id: `${posto.id}-${idx}`,

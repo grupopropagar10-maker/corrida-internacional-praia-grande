@@ -645,6 +645,23 @@
         });
       });
 
+      if (!fromAssignments.length && !fromSlots.length) {
+        const allAssignmentsForInvite = cfg.assignments.filter(a => a.inviteId === inviteId);
+        const turnosComInvite = [];
+        Object.entries(allCongConfig).forEach(([cid, cd]) => {
+          Object.entries(cd?.turnos || {}).forEach(([did, sm]) => {
+            Object.entries(sm || {}).forEach(([sk, pp]) => {
+              const lista = Array.isArray(pp) ? pp : Object.values(pp || {});
+              if (lista.some(p => p?.liveInviteId === inviteId)) turnosComInvite.push({ cid, did, sk });
+            });
+          });
+        });
+        console.warn('[TB-DIAG] inviteId:', inviteId,
+          '| assignments para este invite:', allAssignmentsForInvite.map(a => ({ id: a.id, status: a.status, pedidoId: a.pedidoId })),
+          '| turnos com este liveInviteId:', turnosComInvite,
+          '| pedidos para esses pedidoIds:', allAssignmentsForInvite.map(a => pedidosById.get(a.pedidoId)).filter(Boolean).map(p => ({ id: p.id, status: p.status }))
+        );
+      }
       return [...fromAssignments, ...fromSlots]
         .sort((a, b) => (String(a.data) + String(a.slotKey)).localeCompare(String(b.data) + String(b.slotKey)));
     }

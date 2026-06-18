@@ -1103,6 +1103,8 @@
     const arranjoTotal   = cob.reduce((s, c) => s + c.capacidade, 0);
     const totalSlotsTudo = cob.reduce((s, c) => s + c.totalSlots, 0);
     const slotsFinalizados = cob.reduce((s, c) => s + c.slotsFinalizados, 0);
+    const postosComDesig = cob.filter(c => c.designacoes > 0).length;
+    const totalPostos    = postos.length;
     const pct = arranjoTotal > 0 ? Math.round((escaladas / arranjoTotal) * 100) : 0;
     const pctFechado = totalSlotsTudo > 0 ? Math.round((slotsFinalizados / totalSlotsTudo) * 100) : 0;
 
@@ -1119,6 +1121,7 @@
     document.getElementById('stats-pessoas').innerHTML = `
       <div style="font-size:.8rem;font-weight:700;color:var(--gray,#777);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">👥 Dimensionamento de pessoas</div>
       <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+        ${item('📍', `${postosComDesig}/${totalPostos}`, 'Postos cobertos', 'postos com ao menos uma congregação designada', postosComDesig === totalPostos ? '#1e9e5a' : '#d97706')}
         ${item('🧑‍🤝‍🧑', cadastradas, 'Pessoas cadastradas', 'publicadores nas congregações', 'var(--primary,#2c3e9e)')}
         ${item('✅', escaladas, 'Pessoas escaladas', `já alocadas nos turnos (${pct}%)`, '#1e9e5a')}
         ${item('🪑', disponiveis, 'Vagas em aberto', 'turnos ainda não fechados com falta', '#d97706')}

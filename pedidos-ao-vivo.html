@@ -571,13 +571,21 @@
     function getTapaBuracoAssignments(inviteId) {
       const cfg = getTapaBuracoConfig();
       const pedidosById = new Map(DB.get('pedidos_ajuda_escala', []).map(p => [p.id, p]));
+      const allCongConfig = DB.get('cong_config', {});
       return cfg.assignments
         .filter(item => item.inviteId === inviteId && ['pendente', 'aceito'].includes(item.status))
         // Esconde designacoes PENDENTES cujo pedido ja nao esta aberto (cancelado/fechado pela
         // congregacao ou setor). Aceitas continuam visiveis pois a pessoa ja entrou na escala.
-        // Se o pedido ainda nao carregou (nao encontrado), nao esconde para evitar flicker.
+        // Excecao: se o invite ja esta fisicamente no slot (cong_config.turnos), mostra mesmo
+        // que o pedido nao esteja mais aberto — isso acontece quando a escrita de 'aceito' ao
+        // evento_config falhou por race-condition ou rede no celular, mas o cong_config chegou.
         .filter(item => {
           if (item.status === 'aceito') return true;
+          const congTurnos = allCongConfig[item.congId]?.turnos;
+          if (congTurnos && item.designacaoId && item.slotKey) {
+            const pessoasNoSlot = congTurnos[item.designacaoId]?.[item.slotKey] || [];
+            if (pessoasNoSlot.some(p => p && typeof p === 'object' && p.liveInviteId === inviteId)) return true;
+          }
           const pedido = pedidosById.get(item.pedidoId);
           if (!pedido) return true;
           return pedido.status === 'aberto';
@@ -991,7 +999,11 @@
       if (!pedido) return;
       const cfgCong = getCongConfigById(pedido.congId);
       const atuais = getPessoasDoSlot(cfgCong.turnos || {}, pedido.designacaoId, pedido.slotKey);
-      const faltamAgora = Math.max(0, 3 - atuais.length);
+      // Respeita "Fechado com 2 irmãos" (slotsOverride): se o slot foi marcado como fechado com 2,
+      // o max efetivo é 2, nao 3 — sem isso o pedido nunca fecha e fica 'aberto' para ser cancelado.
+      const agendaCfgCong = cfgCong.agendaConfig?.[pedido.designacaoId] || {};
+      const maxEfetivo = agendaCfgCong.slotsOverride?.[pedido.slotKey] === true ? 2 : 3;
+      const faltamAgora = Math.max(0, maxEfetivo - atuais.length);
       const _cfgTB = getTapaBuracoConfig();
       const nomesConfirmados = (_cfgTB.assignments || [])
         .filter(item => item.pedidoId === pedidoId && item.status === 'aceito')

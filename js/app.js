@@ -26,6 +26,20 @@ function formatPostoLabel(posto) {
   return n ? `Nº ${n} — ${nome}` : nome;
 }
 
+// Link "deep link" do Uber com destino nas coordenadas do posto.
+// No celular abre o app do Uber (ou a versão web) com o destino já preenchido;
+// a origem é a localização atual da pessoa. Retorna '' se não houver coordenadas.
+function getUberUrl(lat, lng, nome) {
+  // null/undefined/'' viram 0 ao passar por Number(), o que geraria um destino
+  // falso em 0,0 (oceano). Por isso rejeitamos esses casos antes de converter.
+  if (lat == null || lng == null || lat === '' || lng === '') return '';
+  const la = Number(lat), ln = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return '';
+  if (la === 0 && ln === 0) return '';
+  const nick = encodeURIComponent(nome || 'Destino');
+  return `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${la}&dropoff[longitude]=${ln}&dropoff[nickname]=${nick}`;
+}
+
 // Garante que todo posto tenha um número fixo. Atribui aos que faltam,
 // na ordem de criação (id ascendente), continuando do maior já usado.
 // Idempotente: só grava se algo mudou. Não renumera nem altera os existentes.

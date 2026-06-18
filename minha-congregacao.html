@@ -1135,6 +1135,7 @@
             <div class="reg-inline-actions">
               <button class="btn btn-accent" id="btn-salvar-publicacoes">💾 Salvar total do dia</button>
               <button class="btn btn-outline" id="btn-abrir-maps-reg">📍 Ver ponto no mapa</button>
+              <button class="btn btn-outline" id="btn-abrir-uber-reg" style="border-color:#000;color:#000;">🚗 Pedir Uber</button>
             </div>
           </div>
 
@@ -1245,7 +1246,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="js/firebase-db.js?v=20260616r"></script>
-<script src="js/app.js?v=20260616r"></script>
+<script src="js/app.js?v=20260618uber"></script>
 <script src="js/auth.js?v=20260616r"></script>
 <script>
 (async function() {
@@ -1592,13 +1593,15 @@ document.querySelectorAll('[data-tab]').forEach(a => {
   const mapsUrlPosto = (typeof postoP.lat === 'number' && typeof postoP.lng === 'number')
     ? `https://www.google.com/maps?q=${postoP.lat},${postoP.lng}`
     : postoP.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(postoP.local)}` : '';
+  const uberUrlPosto = getUberUrl(postoP.lat, postoP.lng, postoP.nome);
   document.getElementById('ph-detail').innerHTML = `
     ${postoP.numero != null ? `<span>🔢 Posto Nº ${String(postoP.numero).padStart(2,'0')}</span>` : ''}
     <span>📌 ${postoP.local || 'Local não informado'}</span>
     <span>📊 Status: ${postoP.status==='ativo'?'🟢 Ativo':postoP.status==='standby'?'🟡 Standby':'🔴 Inativo'}</span>
     ${postoP.responsavel ? `<span>👤 Responsável geral: ${postoP.responsavel}</span>` : ''}
     ${resumoCategoria ? `<span>${resumoCategoria}</span>` : ''}
-    ${mapsUrlPosto ? `<a href="${mapsUrlPosto}" target="_blank" rel="noopener" style="color:white;text-decoration:underline;font-weight:600;">🗺️ Ver no mapa</a>` : ''}`;
+    ${mapsUrlPosto ? `<a href="${mapsUrlPosto}" target="_blank" rel="noopener" style="color:white;text-decoration:underline;font-weight:600;">🗺️ Ver no mapa</a>` : ''}
+    ${uberUrlPosto ? `<a href="${uberUrlPosto}" target="_blank" rel="noopener" style="color:white;text-decoration:underline;font-weight:600;">🚗 Pedir Uber</a>` : ''}`;
 
   const rows = desigs.map(d => {
     const p  = todosPos.find(x => x.id === d.postoId);
@@ -1609,7 +1612,7 @@ document.querySelectorAll('[data-tab]').forEach(a => {
       <td>${(() => { const cat = getCategoriaById(p?.categoriaId); return cat ? `${cat.numero != null ? `<span style="background:var(--primary);color:#fff;border-radius:4px;padding:.05rem .35rem;font-size:.7rem;font-weight:800;margin-right:.3rem;">Nº ${String(cat.numero).padStart(2,'0')}</span>` : ''}${cat.nome}` : '—'; })()}</td>
       <td>
         ${d.obs ? `<div style="font-size:.8rem;color:var(--gray);margin-bottom:.3rem;">${d.obs}</div>` : ''}
-        ${(() => { const url = (typeof p?.lat === 'number' && typeof p?.lng === 'number') ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving` : p?.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.local)}` : ''; return url ? `<a href="${url}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.2rem .55rem;">🗺️ Ver</a>` : '—'; })()}
+        ${(() => { const url = (typeof p?.lat === 'number' && typeof p?.lng === 'number') ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving` : p?.local ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.local)}` : ''; const uber = getUberUrl(p?.lat, p?.lng, p?.nome); return (url ? `<a href="${url}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.2rem .55rem;">🗺️ Ver</a>` : '—') + (uber ? ` <a href="${uber}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:.72rem;padding:.2rem .55rem;border-color:#000;color:#000;">🚗 Uber</a>` : ''); })()}
       </td>
     </tr>`;
   }).join('');
@@ -3164,9 +3167,11 @@ function renderPostosTurnos() {
       posto,
       localLabel: posto.local || '',
     });
+    const uberUrlCard = getUberUrl(posto.lat, posto.lng, posto.nome);
     const actionsHtml = entry ? `
       <div class="carrinho-actions">
         ${mapsUrl ? `<a class="btn btn-outline btn-sm" href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver rota da designacao ${String(desigIndex + 1).padStart(2, '0')}</a>` : ''}
+        ${uberUrlCard ? `<a class="btn btn-outline btn-sm" href="${uberUrlCard}" target="_blank" rel="noopener" style="border-color:#000;color:#000;">🚗 Uber</a>` : ''}
         <button class="btn btn-outline btn-sm" onclick="exportarPdfPosto('${escaparJs(escalaKey)}')" ${entry.completo ? '' : 'disabled'}>📄 PDF individual</button>
         ${posto.categoriaId && responsavelSetor ? `<button class="btn btn-sm" style="background:#25D366;color:white;" onclick="enviarSetorWhatsApp(${posto.categoriaId})" ${entry.completo ? '' : 'disabled'}>📱 WhatsApp do setor</button>` : ''}
       </div>` : '';
@@ -3942,11 +3947,13 @@ function renderRegisterForm() {
   const summary = document.getElementById('reg-assignment-summary');
   const totalInput = document.getElementById('reg-total-publicacoes');
   const mapsBtn = document.getElementById('btn-abrir-maps-reg');
+  const uberBtn = document.getElementById('btn-abrir-uber-reg');
   if (!summary || !totalInput || !mapsBtn) return;
   if (!assignment) {
     summary.innerHTML = '<strong>Nenhum arranjo disponível</strong>';
     totalInput.value = '0';
     mapsBtn.style.display = 'none';
+    if (uberBtn) uberBtn.style.display = 'none';
     return;
   }
   const report = getPublicationRecordForAssignment(registroCampo, assignment.desigId);
@@ -3959,6 +3966,11 @@ function renderRegisterForm() {
   const mapsUrl = getMapsUrlForAssignment(assignment);
   mapsBtn.style.display = mapsUrl ? 'inline-flex' : 'none';
   mapsBtn.onclick = () => { if (mapsUrl) window.open(mapsUrl, '_blank', 'noopener'); };
+  if (uberBtn) {
+    const uberUrl = getUberUrl(assignment?.posto?.lat, assignment?.posto?.lng, assignment?.postoNome || assignment?.posto?.nome);
+    uberBtn.style.display = uberUrl ? 'inline-flex' : 'none';
+    uberBtn.onclick = () => { if (uberUrl) window.open(uberUrl, '_blank', 'noopener'); };
+  }
 }
 
 function compressImage(file) {

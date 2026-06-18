@@ -3526,7 +3526,9 @@ window.removeFromSlot = function(desigId, slotKey, nome) {
     if (invId) {
       const all        = DB.get('evento_config', {});
       const invites    = Array.isArray(all?.tapaBuraco?.invites)    ? all.tapaBuraco.invites    : [];
-      const assignments = Array.isArray(all?.tapaBuraco?.assignments) ? all.tapaBuraco.assignments : [];
+      const rawAssignments = all?.tapaBuraco?.assignments;
+      const assignments = Array.isArray(rawAssignments) ? rawAssignments.filter(Boolean)
+        : (rawAssignments && typeof rawAssignments === 'object') ? Object.values(rawAssignments).filter(Boolean) : [];
       const pedidoId   = rawPessoa?.helperRequestId;
 
       // Grava notificação no invite
@@ -3554,7 +3556,7 @@ window.removeFromSlot = function(desigId, slotKey, nome) {
         assign.removedAt = new Date().toLocaleString('pt-BR');
         all.tapaBuraco.assignments = assignments;
         if (typeof setPathResilient === 'function')
-          setPathResilient('evento_config/tapaBuraco/assignments', assignments);
+          setPathResilient(`evento_config/tapaBuraco/assignments/${assign.id}`, assign);
       }
 
       localStorage.setItem('evento_config', JSON.stringify(all));

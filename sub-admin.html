@@ -1427,17 +1427,23 @@
     return DB.get('evento_config', {});
   }
 
+  function normalizeArrOrObj(raw) {
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    if (raw && typeof raw === 'object') return Object.values(raw).filter(Boolean);
+    return [];
+  }
+
   function getTapaBuracoConfig() {
     const evento = getEventoConfig();
     const raw = evento.tapaBuraco && typeof evento.tapaBuraco === 'object' ? evento.tapaBuraco : {};
     return {
       invites: Array.isArray(raw.invites) ? raw.invites : [],
       suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : [],
-      assignments: Array.isArray(raw.assignments) ? raw.assignments : [],
+      assignments: normalizeArrOrObj(raw.assignments),
     };
   }
 
-  function saveTapaBuracoConfig(cfg, { saveInvites = false } = {}) {
+  function saveTapaBuracoConfig(cfg, { saveInvites = false, changedAssignmentIds = null } = {}) {
     const evento = DB.get('evento_config', {});
     if (!evento.tapaBuraco || typeof evento.tapaBuraco !== 'object') evento.tapaBuraco = {};
     if (saveInvites && Array.isArray(cfg?.invites)) {
@@ -1453,7 +1459,15 @@
     if (Array.isArray(cfg?.assignments)) {
       evento.tapaBuraco.assignments = cfg.assignments;
       localStorage.setItem('evento_config', JSON.stringify(evento));
-      if (typeof setPathResilient === 'function') setPathResilient('evento_config/tapaBuraco/assignments', cfg.assignments);
+      if (typeof setPathResilient === 'function') {
+        const ids = changedAssignmentIds != null
+          ? (Array.isArray(changedAssignmentIds) ? changedAssignmentIds : [changedAssignmentIds])
+          : cfg.assignments.map(a => a?.id).filter(Boolean);
+        ids.forEach(id => {
+          const a = cfg.assignments.find(x => x?.id === id);
+          if (a) setPathResilient(`evento_config/tapaBuraco/assignments/${a.id}`, a);
+        });
+      }
     }
   }
 
@@ -2027,6 +2041,7 @@
     // Reparo automático: restaura assignments cancelados pelo bug de expiração
     // (bug antigo fazia status='cancelado' em vez de _slotExpired=true)
     let _reparados = 0;
+    const _repIds = [];
     (cfg.assignments || []).forEach(a => {
       if (a.status === 'cancelado' && a.autoIndicado && a._expiresAt && !a.cancelReason) {
         const sug = (cfg.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId);
@@ -2034,25 +2049,26 @@
           a.status = 'pendente';
           a._slotExpired = true;
           _reparados++;
+          _repIds.push(a.id);
         }
       }
     });
     if (_reparados) {
-      saveTapaBuracoConfig(cfg);
+      saveTapaBuracoConfig(cfg, { changedAssignmentIds: _repIds });
       showToast(`✅ ${_reparados} acesso(s) restaurado(s) automaticamente.`, 'success');
     }
 
     // Marcar candidaturas auto-indicadas expiradas como _slotExpired para liberar a vaga
     // (NÃO cancela o assignment — pessoa ainda pode ver e responder)
     const _tsAgora = Date.now();
-    let _expirou = false;
+    const _expirouIds = [];
     (cfg.assignments || []).forEach(a => {
       if (a.status === 'pendente' && a.autoIndicado && a._expiresAt && _tsAgora > a._expiresAt && !a._slotExpired) {
         a._slotExpired = true;
-        _expirou = true;
+        _expirouIds.push(a.id);
       }
     });
-    if (_expirou) saveTapaBuracoConfig(cfg);
+    if (_expirouIds.length) saveTapaBuracoConfig(cfg, { changedAssignmentIds: _expirouIds });
     const invites = cfg.invites.slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
     const suggestions = cfg.suggestions || [];
     const assignments = cfg.assignments || [];
@@ -2489,10 +2505,13 @@
     showToast(fechar ? 'Candidaturas encerradas.' : 'Candidaturas abertas!', fechar ? 'info' : 'success');
   };
 
-  window.designarSugestoesTapaBuraco = function(pedidoId) {
+  window.designarSugestoesTapaBuraco = async function(pedidoId) {
     const lista = getPedidosAjuda();
     const pedido = lista.find(item => item.id === pedidoId && item.subAdminId === session.subAdminId && item.status === 'aberto');
     if (!pedido) { showToast('Pedido não encontrado ou já encerrado.', 'warning'); return; }
+    if (typeof pullKeyResilient === 'function') {
+      try { await pullKeyResilient('evento_config'); } catch (e) { /* continua com cache local */ }
+    }
     const cfg = getTapaBuracoConfig();
     const vagas = getVagasRestantesPedido(pedido, cfg);
     if (!vagas) { showToast('Não há vagas livres para novas designações neste pedido.', 'warning'); return; }
@@ -2507,13 +2526,15 @@
 
     const invitesById = new Map((cfg.invites || []).map(item => [item.id, item]));
     const agora = new Date().toLocaleString('pt-BR');
+    const newAssignmentIds = [];
+    let _tNow = Date.now();
     sugestoes.forEach(item => {
       item.status = 'designado';
       item.designadoEm = agora;
       item.designadoPorId = session.subAdminId;
       item.designadoPorNome = session.nome;
       cfg.assignments.unshift({
-        id: `tb_assign_${Date.now()}_${item.inviteId}`,
+        id: `tb_assign_${_tNow++}_${item.inviteId}`,
         inviteId: item.inviteId,
         inviteNome: item.inviteNome,
         inviteCongNome: item.inviteCongNome || '',
@@ -2541,13 +2562,14 @@
         setorSubAdminNome: session.nome,
         suggestionId: item.id,
       });
+      newAssignmentIds.push(cfg.assignments[0].id);
       const invite = invitesById.get(item.inviteId);
       if (invite) abrirWhatsAppTapaBuraco(invite, item);
     });
 
     pedido.tapaBuracoUltimaSugestaoEm = agora;
     pedido.tapaBuracoUltimaSugestaoPara = sugestoes.map(item => item.inviteNome).join(', ');
-    saveTapaBuracoConfig(cfg);
+    saveTapaBuracoConfig(cfg, { changedAssignmentIds: newAssignmentIds });
     savePedidosAjuda(lista);
     Auth.registrarAtividade('Designou nomes do tapa-buraco', `${pedido.congNome} · ${pedido.slotLabel}`);
     renderTapaBuraco();
@@ -2776,6 +2798,7 @@
     const n = pendentes.length;
     if (!confirm(`Resetar ${n} designação(ões) pendente(s)?\n\nIsso cancela as designações que ainda não foram respondidas pelo voluntário, liberando os slots para nova designação.`)) return;
     const agora = new Date().toLocaleString('pt-BR');
+    const resetIds = pendentes.map(a => a.id);
     pendentes.forEach(a => {
       a.status = 'cancelado';
       a.cancelReason = 'Resetado pelo administrador';
@@ -2783,7 +2806,7 @@
       const sug = (cfg.suggestions || []).find(s => s.inviteId === a.inviteId && s.pedidoId === a.pedidoId && s.status === 'designado');
       if (sug) { sug.status = 'recusado'; sug.declinedAt = agora; }
     });
-    saveTapaBuracoConfig(cfg);
+    saveTapaBuracoConfig(cfg, { changedAssignmentIds: resetIds });
     showToast(`${n} designação(ões) pendente(s) cancelada(s).`, 'success');
     renderTapaBuraco();
   };

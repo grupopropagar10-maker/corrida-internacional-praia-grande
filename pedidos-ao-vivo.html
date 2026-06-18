@@ -572,49 +572,80 @@
       const cfg = getTapaBuracoConfig();
       const pedidosById = new Map(DB.get('pedidos_ajuda_escala', []).map(p => [p.id, p]));
       const allCongConfig = DB.get('cong_config', {});
-      return cfg.assignments
-        .filter(item => item.inviteId === inviteId && ['pendente', 'aceito'].includes(item.status))
-        // Esconde designacoes PENDENTES cujo pedido ja nao esta aberto (cancelado/fechado pela
-        // congregacao ou setor). Aceitas continuam visiveis pois a pessoa ja entrou na escala.
-        // Excecao: se o invite ja esta fisicamente no slot (cong_config.turnos), mostra mesmo
-        // que o pedido nao esteja mais aberto — isso acontece quando a escrita de 'aceito' ao
-        // evento_config falhou por race-condition ou rede no celular, mas o cong_config chegou.
-        .filter(item => {
-          if (item.status === 'aceito') return true;
-          const congTurnos = allCongConfig[item.congId]?.turnos;
-          if (congTurnos && item.designacaoId && item.slotKey) {
-            const pessoasNoSlot = congTurnos[item.designacaoId]?.[item.slotKey] || [];
-            if (pessoasNoSlot.some(p => p && typeof p === 'object' && p.liveInviteId === inviteId)) return true;
-          }
+      const postos = DB.get('postos', []);
+
+      function mapItem(item) {
+        const posto = postos.find(p => p.id === item.postoId) || {
+          id: item.postoId, nome: item.postoNome || 'Posto',
+          local: item.localLabel || 'Local nao informado', lat: null, lng: null,
+        };
+        const categoria = getCategoriaById(item.categoriaId) || { id: item.categoriaId, nome: item.categoriaNome || 'Sem setor' };
+        return {
+          ...item, key: item.id || item.key, source: 'tapa_buraco', posto, categoria,
+          desig: { id: item.designacaoId, data: item.data || '', responsavel: item.managerNome || '' },
+          slotKey: item.slotKey, slotFim: item.slotFim || '',
+          resumo: `${item.postoNome || posto.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey || '—'}`,
+        };
+      }
+
+      // Parte 1: assignments normais (incluindo cancelados/removidos se ja estao no slot)
+      const fromAssignments = cfg.assignments.filter(item => {
+        if (item.inviteId !== inviteId) return false;
+        if (item.status === 'aceito') return true;
+        // Race condition: escrita de 'aceito' ao evento_config falhou mas cong_config chegou
+        const pessoasNoSlot = allCongConfig[item.congId]?.turnos?.[item.designacaoId]?.[item.slotKey];
+        const noSlot = Array.isArray(pessoasNoSlot)
+          ? pessoasNoSlot.some(p => p?.liveInviteId === inviteId)
+          : pessoasNoSlot && typeof pessoasNoSlot === 'object'
+            ? Object.values(pessoasNoSlot).some(p => p?.liveInviteId === inviteId)
+            : false;
+        if (noSlot) return true;
+        if (item.status === 'pendente') {
           const pedido = pedidosById.get(item.pedidoId);
           if (!pedido) return true;
           return pedido.status === 'aberto';
-        })
-        .map(item => {
-          const posto = DB.get('postos', []).find(p => p.id === item.postoId) || {
-            id: item.postoId,
-            nome: item.postoNome || 'Posto',
-            local: item.localLabel || 'Local nao informado',
-            lat: null,
-            lng: null,
-          };
-          const categoria = getCategoriaById(item.categoriaId) || { id: item.categoriaId, nome: item.categoriaNome || 'Sem setor' };
-          return {
-            ...item,
-            key: item.id,
-            source: 'tapa_buraco',
-            posto,
-            categoria,
-            desig: {
-              id: item.designacaoId,
-              data: item.data || '',
-              responsavel: item.managerNome || '',
-            },
-            slotKey: item.slotKey,
-            slotFim: item.slotFim || '',
-            resumo: `${item.postoNome || posto.nome || 'Posto'} · ${item.data || '—'} · ${item.slotLabel || item.slotKey || '—'}`,
-          };
-        })
+        }
+        return false;
+      }).map(mapItem);
+
+      // Parte 2: fallback — varre cong_config.turnos para slots onde este invite esta presente
+      // mas cujo assignment foi apagado/sobrescrito por race condition no Firebase
+      const coveredKeys = new Set(fromAssignments.map(a => `${a.congId}|${a.designacaoId}|${a.slotKey}`));
+      const fromSlots = [];
+      Object.entries(allCongConfig).forEach(([congId, congData]) => {
+        const turnos = congData?.turnos;
+        if (!turnos) return;
+        Object.entries(turnos).forEach(([desigId, slotMap]) => {
+          if (!slotMap) return;
+          const slotEntries = Array.isArray(slotMap) ? slotMap.entries() : Object.entries(slotMap);
+          for (const [slotKey, pessoas] of slotEntries) {
+            const lista = Array.isArray(pessoas) ? pessoas
+              : (pessoas && typeof pessoas === 'object') ? Object.values(pessoas) : [];
+            const meuEntry = lista.find(p => p?.liveInviteId === inviteId);
+            if (!meuEntry) continue;
+            const key = `${congId}|${desigId}|${slotKey}`;
+            if (coveredKeys.has(key)) continue;
+            const pedido = meuEntry.helperRequestId ? pedidosById.get(meuEntry.helperRequestId) : null;
+            const posto = postos.find(p => String(p.id) === String(pedido?.postoId || '')) || null;
+            const categoria = pedido?.categoriaId ? getCategoriaById(pedido.categoriaId) : null;
+            fromSlots.push(mapItem({
+              id: `slot_${key}`, inviteId, inviteNome: meuEntry.nome,
+              congId, pedidoId: meuEntry.helperRequestId || null,
+              postoId: pedido?.postoId || posto?.id || null,
+              postoNome: pedido?.postoNome || posto?.nome || 'Posto',
+              localLabel: pedido?.localLabel || posto?.local || '',
+              categoriaId: pedido?.categoriaId || categoria?.id || null,
+              categoriaNome: pedido?.categoriaNome || categoria?.nome || 'Sem setor',
+              designacaoId: desigId, data: pedido?.data || '', dataFmt: pedido?.dataFmt || pedido?.data || '—',
+              slotKey, slotLabel: pedido?.slotLabel || slotKey, slotFim: pedido?.slotFim || '',
+              managerNome: pedido?.subAdminNome || '',
+              status: 'aceito',
+            }));
+          }
+        });
+      });
+
+      return [...fromAssignments, ...fromSlots]
         .sort((a, b) => (String(a.data) + String(a.slotKey)).localeCompare(String(b.data) + String(b.slotKey)));
     }
 

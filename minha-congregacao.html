@@ -2673,7 +2673,10 @@ const PDF_MAP_IMAGE_CACHE = new Map();
 
 async function fetchJsonSafely(url, options = {}) {
   try {
-    const response = await fetch(url, options);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
     if (!response.ok) return null;
     return await response.json();
   } catch (_) {
@@ -2683,7 +2686,10 @@ async function fetchJsonSafely(url, options = {}) {
 
 async function fetchImageDataUrl(url) {
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
     if (!response.ok) return null;
     const blob = await response.blob();
     return await new Promise((resolve) => {
@@ -2799,12 +2805,17 @@ async function buildPdfPayload(mode, entries, options = {}) {
     : mode === 'setor'
       ? `escala-setor-${sanitizeFileSegment(options.setorNome)}-${dataArquivo}.pdf`
       : `escala-geral-${sanitizeFileSegment(cong?.nome)}-${dataArquivo}.pdf`;
-  const enrichedEntries = await Promise.all(entries.map(async entry => ({
-    ...entry,
-    locationContext: await getLocationContextForPosto(entry.posto),
-    staticMapImage: await getStaticMapImageForPosto(entry.posto),
-    orientacoesPdf: getPdfOrientacoes(entry),
-  })));
+  // Serializa as chamadas externas (Nominatim/Overpass/Yandex) para evitar
+  // rate limiting e travamento: uma por vez, sem paralelo.
+  const enrichedEntries = [];
+  for (const entry of entries) {
+    enrichedEntries.push({
+      ...entry,
+      locationContext: await getLocationContextForPosto(entry.posto),
+      staticMapImage: await getStaticMapImageForPosto(entry.posto),
+      orientacoesPdf: getPdfOrientacoes(entry),
+    });
+  }
   return { evento, membros, resumo, titulo, subtitulo, filename, entries: enrichedEntries };
 }
 
@@ -3724,7 +3735,7 @@ async function exportarEscalaPDF() {
     showToast('Feche todos os horários antes de baixar o PDF.', 'warning');
     return;
   }
-  showToast('Montando PDF geral com orientacoes e localizacao...', 'info');
+  showToast(`Montando PDF geral — ${entries.length} posto(s), pode levar alguns segundos...`, 'info');
   const payload = await buildPdfPayload('geral', entries);
   downloadPdfDoc(createPdfDoc(payload), payload.filename);
 }

@@ -457,9 +457,12 @@
       const exp = cfg?.registroCampo?.experiencias;
       return s + (Array.isArray(exp) ? exp.length : 0);
     }, 0);
-    const postosAtivosCount = postos.filter(p => p.status === 'ativo').length;
-    const postosComReg = new Set(pubsDiaEntries.map(r => String(r.postoId)).filter(Boolean)).size;
-    const denomPostosReg = postosAtivosCount || postos.length;
+    const congsComReg    = Object.values(congCfgAll).filter(cfg => {
+      const pubs = cfg?.registroCampo?.publicacoesDia || [];
+      const exps = cfg?.registroCampo?.experiencias   || [];
+      return pubs.length > 0 || exps.length > 0;
+    }).length;
+    const denomCongsReg  = DB.get('congregacoes', []).length || 1;
     const temDadosDia = pubsDiaEntries.length > 0 || totalExp > 0;
 
     const blocoEventoDash = temDadosDia ? `
@@ -475,8 +478,8 @@
             <div style="font-size:.75rem;color:var(--dark);font-weight:600;">Experiências registradas</div>
           </div>
           <div style="flex:1 1 120px;text-align:center;">
-            <div style="font-size:1.6rem;font-weight:800;color:${postosComReg === denomPostosReg ? '#1e9e5a' : '#7c3aed'};">${postosComReg} / ${denomPostosReg}</div>
-            <div style="font-size:.75rem;color:var(--dark);font-weight:600;">Postos com registro</div>
+            <div style="font-size:1.6rem;font-weight:800;color:${congsComReg === denomCongsReg ? '#1e9e5a' : '#7c3aed'};">${congsComReg} / ${denomCongsReg}</div>
+            <div style="font-size:.75rem;color:var(--dark);font-weight:600;">Congregações com registro</div>
           </div>
         </div>
       </div>` : '';
@@ -491,8 +494,8 @@
         <div class="stat-info"><h3>${totalExp}</h3><p>Experiências registradas</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:${postosComReg === denomPostosReg ? '#1e9e5a' : '#7c3aed'};">🏪</div>
-        <div class="stat-info"><h3>${postosComReg} / ${denomPostosReg}</h3><p>Postos com registro</p></div>
+        <div class="stat-icon" style="background:${congsComReg === denomCongsReg ? '#1e9e5a' : '#7c3aed'};">🏢</div>
+        <div class="stat-info"><h3>${congsComReg} / ${denomCongsReg}</h3><p>Congregações com registro</p></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#7b4f00;">👥</div>

@@ -1144,9 +1144,12 @@
     const pubsDist       = pubsDiaEntries.reduce((s, r) => s + (r.quantidade || 0), 0);
     const pubsRestantes  = postos.reduce((s, p) => s + (p.publicacoes || 0), 0);
     const pubsTotal      = pubsDist + pubsRestantes;
-    const postosComReg   = new Set(pubsDiaEntries.map(r => String(r.postoId)).filter(Boolean)).size;
-    const postosAtivosCount = postos.filter(p => p.status === 'ativo').length;
-    const denomPostosReg = postosAtivosCount || totalPostos;
+    const congsComReg    = Object.values(congCfgAll || {}).filter(cfg => {
+      const pubs = cfg?.registroCampo?.publicacoesDia || [];
+      const exps = cfg?.registroCampo?.experiencias   || [];
+      return pubs.length > 0 || exps.length > 0;
+    }).length;
+    const denomCongsReg  = totalCongas || DB.get('congregacoes', []).length;
     const totalExp       = Object.values(congCfgAll || {}).reduce((s, cfg) => {
       const exp = cfg?.registroCampo?.experiencias;
       return s + (Array.isArray(exp) ? exp.length : 0);
@@ -1189,7 +1192,7 @@
             pubsTotal > 0 ? `restam ${pubsRestantes.toLocaleString('pt-BR')} nos postos` : 'total saído pelos postos',
             pubsTotal > 0 && pubsDist >= pubsTotal ? '#1e9e5a' : '#0369a1')}
           ${totalExp > 0 ? card('✨', totalExp, 'Experiências registradas', 'relatos dos irmãos no campo', '#7c3aed') : ''}
-          ${card('🏪', `${postosComReg} / ${denomPostosReg}`, 'Postos com registro', 'ao menos um lançamento feito', postosComReg === denomPostosReg ? '#1e9e5a' : '#7c3aed')}
+          ${card('🏢', `${congsComReg} / ${denomCongsReg}`, 'Congregações com registro', 'ao menos um lançamento feito', congsComReg === denomCongsReg ? '#1e9e5a' : '#7c3aed')}
         </div>
       </div>` : '';
 

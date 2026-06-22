@@ -450,23 +450,49 @@
     } = collectDashboardData();
     const percentualProntos = postosComEscala ? Math.round((postosProntos / postosComEscala) * 100) : 0;
 
-    // ---- KPI ----
-    const totalPub    = dist.reduce((s, r) => s + (r.qty || 1), 0);
-    const totalCont   = dist.filter(r => r.tipo === 'conversa' || r.tipo === 'contato_especial').length;
-    const totalQR     = dist.filter(r => r.tipo === 'qrcode').length;
+    // ---- KPI: lê de registroCampo.publicacoesDia (não de distribuicoes) ----
+    const pubsDiaEntries = Object.values(congCfgAll).flatMap(cfg => cfg?.registroCampo?.publicacoesDia || []);
+    const totalPub    = pubsDiaEntries.reduce((s, r) => s + (r.quantidade || 0), 0);
+    const totalExp    = Object.values(congCfgAll).reduce((s, cfg) => {
+      const exp = cfg?.registroCampo?.experiencias;
+      return s + (Array.isArray(exp) ? exp.length : 0);
+    }, 0);
+    const postosAtivosCount = postos.filter(p => p.status === 'ativo').length;
+    const postosComReg = new Set(pubsDiaEntries.map(r => String(r.postoId)).filter(Boolean)).size;
+    const denomPostosReg = postosAtivosCount || postos.length;
+    const temDadosDia = pubsDiaEntries.length > 0 || totalExp > 0;
+
+    const blocoEventoDash = temDadosDia ? `
+      <div class="stat-card" style="grid-column: span 2;">
+        <div style="width:100%;padding:.3rem 0 .8rem;font-size:.72rem;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #e0f0ff;margin-bottom:.8rem;">📖 Dia do Evento</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.8rem;width:100%;">
+          <div style="flex:1 1 120px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#0057A8;">${totalPub.toLocaleString('pt-BR')}</div>
+            <div style="font-size:.75rem;color:var(--dark);font-weight:600;">Publicações distribuídas</div>
+          </div>
+          <div style="flex:1 1 120px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#7c3aed;">${totalExp}</div>
+            <div style="font-size:.75rem;color:var(--dark);font-weight:600;">Experiências registradas</div>
+          </div>
+          <div style="flex:1 1 120px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:${postosComReg === denomPostosReg ? '#1e9e5a' : '#7c3aed'};">${postosComReg} / ${denomPostosReg}</div>
+            <div style="font-size:.75rem;color:var(--dark);font-weight:600;">Postos com registro</div>
+          </div>
+        </div>
+      </div>` : '';
 
     document.getElementById('kpi-cards').innerHTML = `
       <div class="stat-card">
         <div class="stat-icon blue">📖</div>
-        <div class="stat-info"><h3>${totalPub}</h3><p>Publicações entregues</p></div>
+        <div class="stat-info"><h3>${totalPub.toLocaleString('pt-BR')}</h3><p>Publicações distribuídas</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon orange">💬</div>
-        <div class="stat-info"><h3>${totalCont}</h3><p>Conversas realizadas</p></div>
+        <div class="stat-icon" style="background:#7c3aed;">✨</div>
+        <div class="stat-info"><h3>${totalExp}</h3><p>Experiências registradas</p></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">📱</div>
-        <div class="stat-info"><h3>${totalQR}</h3><p>QR Codes escaneados</p></div>
+        <div class="stat-icon" style="background:${postosComReg === denomPostosReg ? '#1e9e5a' : '#7c3aed'};">🏪</div>
+        <div class="stat-info"><h3>${postosComReg} / ${denomPostosReg}</h3><p>Postos com registro</p></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#7b4f00;">👥</div>
@@ -493,12 +519,14 @@
 
     // ---- CHART: Publicações por posto ----
     const pubPorPosto = {};
-    dist.forEach(r => {
-      pubPorPosto[r.postoNome] = (pubPorPosto[r.postoNome] || 0) + (r.qty || 1);
+    pubsDiaEntries.forEach(r => {
+      const nome = r.postoNome || String(r.postoId) || 'Desconhecido';
+      pubPorPosto[nome] = (pubPorPosto[nome] || 0) + (r.quantidade || 0);
     });
+    const postosComPub = Object.entries(pubPorPosto).filter(([, v]) => v > 0);
 
-    const labels1 = Object.keys(pubPorPosto);
-    const data1   = Object.values(pubPorPosto);
+    const labels1 = postosComPub.map(([k]) => k);
+    const data1   = postosComPub.map(([, v]) => v);
 
     if (chartPostos) chartPostos.destroy();
     chartPostos = new Chart(document.getElementById('chart-postos'), {
@@ -519,22 +547,15 @@
       }
     });
 
-    // ---- CHART: Tipos ----
-    const tipos = {
-      publicacao:       dist.filter(r => r.tipo === 'publicacao').reduce((s,r) => s+(r.qty||1), 0),
-      conversa:         dist.filter(r => r.tipo === 'conversa').length,
-      qrcode:           dist.filter(r => r.tipo === 'qrcode').length,
-      contato_especial: dist.filter(r => r.tipo === 'contato_especial').length,
-    };
-
+    // ---- CHART: Publicações vs Experiências ----
     if (chartTipos) chartTipos.destroy();
     chartTipos = new Chart(document.getElementById('chart-tipos'), {
       type: 'doughnut',
       data: {
-        labels: ['Publicação', 'Conversa', 'QR Code', 'Contato Esp.'],
+        labels: ['Publicações distribuídas', 'Experiências registradas'],
         datasets: [{
-          data: [tipos.publicacao, tipos.conversa, tipos.qrcode, tipos.contato_especial],
-          backgroundColor: ['#0057A8', '#FF6B00', '#28A745', '#9B59B6'],
+          data: [totalPub || 0, totalExp || 0],
+          backgroundColor: ['#0057A8', '#7c3aed'],
           borderWidth: 3,
           borderColor: 'white',
         }]
@@ -579,10 +600,18 @@
       </div>
     `;
 
-    // ---- CHART: Distribuições por congregação ----
+    // ---- CHART: Publicações por congregação (de registroCampo.publicacoesDia) ----
+    const congregacoesList = DB.get('congregacoes', []);
+    const congNomeById = {};
+    congregacoesList.forEach(c => { congNomeById[String(c.id)] = c.nome; });
     const pubPorCong = {};
-    dist.forEach(r => {
-      if (r.congNome) pubPorCong[r.congNome] = (pubPorCong[r.congNome] || 0) + (r.qty || 1);
+    Object.entries(congCfgAll).forEach(([congId, cfg]) => {
+      const pubs = cfg?.registroCampo?.publicacoesDia || [];
+      const qtd = pubs.reduce((s, r) => s + (r.quantidade || 0), 0);
+      if (qtd > 0) {
+        const nome = congNomeById[congId] || congId;
+        pubPorCong[nome] = (pubPorCong[nome] || 0) + qtd;
+      }
     });
     const labelsCong = Object.keys(pubPorCong);
     const canvasCong = document.getElementById('chart-congs');
@@ -652,17 +681,18 @@
       `).join('')
       : '<p style="color:var(--gray);text-align:center;padding:1rem;">Sem dados de contatos ainda.</p>';
 
-    // ---- TIMELINE ----
-    const dotClass = { publicacao: '', conversa: 'orange', qrcode: 'green', contato_especial: 'orange' };
-    const recent = dist.slice(0, 8);
+    // ---- TIMELINE (publicacoesDia, mais recentes primeiro) ----
+    const recentPubs = [...pubsDiaEntries]
+      .sort((a, b) => (b.ts || '').localeCompare(a.ts || ''))
+      .slice(0, 8);
 
-    document.getElementById('timeline').innerHTML = recent.length ?
-      recent.map(r => `
+    document.getElementById('timeline').innerHTML = recentPubs.length ?
+      recentPubs.map(r => `
         <div class="tl-item">
-          <div class="tl-dot ${dotClass[r.tipo] || ''}"></div>
+          <div class="tl-dot"></div>
           <div class="tl-text">
-            <strong>${r.pubIcon} ${r.qty}× ${r.pub}</strong>
-            <small>📍 ${r.postoNome} &nbsp;|&nbsp; 🕐 ${r.hora} ${r.obs ? '&nbsp;|&nbsp; 💬 ' + r.obs : ''}</small>
+            <strong>📖 ${r.quantidade || 0}× publicação — ${escapeHtml(r.postoNome || '')}</strong>
+            <small>📅 ${escapeHtml(r.dataRef || '')} ${r.horario ? '&nbsp;|&nbsp; 🕐 ' + escapeHtml(r.horario) : ''} ${r.ts ? '&nbsp;|&nbsp; registrado ' + escapeHtml(r.ts) : ''}</small>
           </div>
         </div>
       `).join('')
@@ -714,7 +744,7 @@
   document.getElementById('btn-export-csv').addEventListener('click', () => {
     const {
       postos,
-      dist,
+      congCfgAll: cfgForCsv,
       cadastradosSet,
       totalParticipantes,
       coberturaPostos,
@@ -722,6 +752,12 @@
       postosPendentes,
       postosSemEscala,
     } = collectDashboardData();
+    const pubsDiaCsv = Object.values(cfgForCsv).flatMap(cfg => cfg?.registroCampo?.publicacoesDia || []);
+    const totalPubCsv = pubsDiaCsv.reduce((s, r) => s + (r.quantidade || 0), 0);
+    const totalExpCsv = Object.values(cfgForCsv).reduce((s, cfg) => {
+      const exp = cfg?.registroCampo?.experiencias;
+      return s + (Array.isArray(exp) ? exp.length : 0);
+    }, 0);
     let csv = 'Posto,Responsável,Status,Escala,Publicações Disp.,Contatos\n';
     postos.forEach(p => {
       const cobertura = coberturaPostos.find(item => String(item.posto.id) === String(p.id)) || { designacoes: 0, faltando: 0, completo: false };
@@ -732,10 +768,10 @@
           : `${cobertura.faltando} faltando`;
       csv += `"${p.nome}","${p.responsavel}","${p.status}","${escalaTexto}",${p.publicacoes},${p.contatos || 0}\n`;
     });
-    csv += `\nResumo\nNomes cadastrados únicos,${cadastradosSet.size}\nIrmãos participantes únicos,${totalParticipantes}\nPostos prontos,${postosProntos}\nPostos pendentes,${postosPendentes}\nPostos sem escala,${postosSemEscala}\n`;
-    csv += '\nRegistros de Distribuição\nHora,Posto,Publicação,Tipo,Qty,Observação\n';
-    dist.forEach(r => {
-      csv += `"${r.hora}","${r.postoNome}","${r.pub}","${r.tipo}",${r.qty},"${r.obs || ''}"\n`;
+    csv += `\nResumo\nNomes cadastrados únicos,${cadastradosSet.size}\nIrmãos participantes únicos,${totalParticipantes}\nPostos prontos,${postosProntos}\nPostos pendentes,${postosPendentes}\nPostos sem escala,${postosSemEscala}\nTotal publicações distribuídas,${totalPubCsv}\nTotal experiências,${totalExpCsv}\n`;
+    csv += '\nRegistros do Dia do Evento\nData,Posto,Quantidade,Horário,Registrado em\n';
+    pubsDiaCsv.forEach(r => {
+      csv += `"${r.dataRef || ''}","${r.postoNome || ''}",${r.quantidade || 0},"${r.horario || ''}","${r.ts || ''}"\n`;
     });
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);

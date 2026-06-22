@@ -1140,16 +1140,18 @@
 
     const pedidosAbertos = DB.get('pedidos_ajuda_escala', []).filter(p => p.status === 'aberto').length;
 
-    const distribuicoes  = DB.get('distribuicoes', []);
-    const pubsDist       = distribuicoes.filter(r => r.tipo === 'publicacao').reduce((s, r) => s + (r.qty || 0), 0);
+    const pubsDiaEntries = Object.values(congCfgAll || {}).flatMap(cfg => cfg?.registroCampo?.publicacoesDia || []);
+    const pubsDist       = pubsDiaEntries.reduce((s, r) => s + (r.quantidade || 0), 0);
     const pubsRestantes  = postos.reduce((s, p) => s + (p.publicacoes || 0), 0);
     const pubsTotal      = pubsDist + pubsRestantes;
-    const postosComReg   = [...new Set(distribuicoes.map(r => r.postoId))].length;
+    const postosComReg   = new Set(pubsDiaEntries.map(r => String(r.postoId)).filter(Boolean)).size;
+    const postosAtivosCount = postos.filter(p => p.status === 'ativo').length;
+    const denomPostosReg = postosAtivosCount || totalPostos;
     const totalExp       = Object.values(congCfgAll || {}).reduce((s, cfg) => {
       const exp = cfg?.registroCampo?.experiencias;
       return s + (Array.isArray(exp) ? exp.length : 0);
     }, 0);
-    const temDadosDia = distribuicoes.length > 0 || totalExp > 0;
+    const temDadosDia = pubsDiaEntries.length > 0 || totalExp > 0;
 
     const card = (icon, valor, titulo, desc, cor) => `
       <div style="flex:1 1 155px;min-width:145px;display:flex;align-items:center;gap:.6rem;
@@ -1171,15 +1173,25 @@
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;">${cardsHtml}</div>
       </div>`;
 
-    const blocoEvento = temDadosDia ? grupo('#0369a1', '📖 Dia do Evento',
-      card('📖',
-        pubsTotal > 0 ? `${pubsDist.toLocaleString('pt-BR')} / ${pubsTotal.toLocaleString('pt-BR')}` : pubsDist.toLocaleString('pt-BR'),
-        'Publicações distribuídas',
-        pubsTotal > 0 ? `restam ${pubsRestantes.toLocaleString('pt-BR')} nos postos` : 'total saído pelos postos',
-        pubsTotal > 0 && pubsDist >= pubsTotal ? '#1e9e5a' : '#0369a1') +
-      (totalExp > 0 ? card('✨', totalExp, 'Experiências registradas', 'relatos dos irmãos no campo', '#7c3aed') : '') +
-      card('🏪', `${postosComReg} / ${totalPostos}`, 'Postos com registro', 'ao menos um lançamento feito', postosComReg === totalPostos ? '#1e9e5a' : '#7c3aed')
-    ) : '';
+    const blocoEvento = temDadosDia ? `
+      <div style="margin-bottom:.9rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.45rem;">
+          <div style="display:flex;align-items:center;gap:.4rem;">
+            <div style="width:3px;height:13px;background:#0369a1;border-radius:2px;flex-shrink:0;"></div>
+            <span style="font-size:.66rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.07em;">📖 Dia do Evento</span>
+          </div>
+          <button onclick="exportarRelatorioDiaEvento()" style="font-size:.65rem;padding:.25rem .55rem;border:1.5px solid #0369a1;border-radius:5px;background:#fff;color:#0369a1;cursor:pointer;font-weight:700;line-height:1.2;">📄 PDF</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+          ${card('📖',
+            pubsTotal > 0 ? `${pubsDist.toLocaleString('pt-BR')} / ${pubsTotal.toLocaleString('pt-BR')}` : pubsDist.toLocaleString('pt-BR'),
+            'Publicações distribuídas',
+            pubsTotal > 0 ? `restam ${pubsRestantes.toLocaleString('pt-BR')} nos postos` : 'total saído pelos postos',
+            pubsTotal > 0 && pubsDist >= pubsTotal ? '#1e9e5a' : '#0369a1')}
+          ${totalExp > 0 ? card('✨', totalExp, 'Experiências registradas', 'relatos dos irmãos no campo', '#7c3aed') : ''}
+          ${card('🏪', `${postosComReg} / ${denomPostosReg}`, 'Postos com registro', 'ao menos um lançamento feito', postosComReg === denomPostosReg ? '#1e9e5a' : '#7c3aed')}
+        </div>
+      </div>` : '';
 
     document.getElementById('stats-pessoas').innerHTML = `
       <div style="font-size:.8rem;font-weight:700;color:var(--gray,#777);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.8rem;">
@@ -1578,6 +1590,145 @@
     const filename = `congregacoes-${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(filename);
     showToast(`PDF baixado com ${dados.length} congregações ✅`, 'success');
+  }
+
+  function exportarRelatorioDiaEvento() {
+    if (!window.jspdf) { showToast('PDF ainda carregando, tente em segundos.', 'warning'); return; }
+    showToast('Gerando PDF do dia do evento...', 'info');
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const eventoNome = DB.get('evento_config', {})?.nomeEvento || 'Corrida Internacional Praia Grande 2026';
+    const congCfgAll = DB.get('cong_config', {});
+    const congregacoes = DB.get('congregacoes', []);
+    const dataHora = new Date().toLocaleString('pt-BR');
+
+    const congNomeById = {};
+    congregacoes.forEach(c => { congNomeById[String(c.id)] = c.nome; });
+
+    const dadosPorCong = [];
+    Object.entries(congCfgAll).forEach(([congId, cfg]) => {
+      const pubs = cfg?.registroCampo?.publicacoesDia || [];
+      const exps = cfg?.registroCampo?.experiencias || [];
+      if (!pubs.length && !exps.length) return;
+      const nome = congNomeById[congId] || congId;
+      const qtdPub = pubs.reduce((s, r) => s + (r.quantidade || 0), 0);
+      dadosPorCong.push({ nome, registros: pubs.length, publicacoes: qtdPub, experiencias: exps.length, expDetalhes: exps });
+    });
+    dadosPorCong.sort((a, b) => b.publicacoes - a.publicacoes);
+
+    const totalPub = dadosPorCong.reduce((s, c) => s + c.publicacoes, 0);
+    const totalExp = dadosPorCong.reduce((s, c) => s + c.experiencias, 0);
+    const totalRegistraram = dadosPorCong.length;
+
+    // Cabecalho
+    doc.setFillColor(3, 105, 161);
+    doc.rect(0, 0, 210, 22, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text('Relatorio do Dia do Evento', 14, 10);
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text(eventoNome, 14, 16);
+    doc.text(`Gerado em ${dataHora}`, 196, 16, { align: 'right' });
+
+    // Boxes de resumo
+    const boxY = 28;
+    const boxW = 57;
+    const boxes = [
+      { label: 'Publicacoes distribuidas', valor: totalPub.toLocaleString('pt-BR'), cor: [0, 87, 168] },
+      { label: 'Experiencias registradas', valor: String(totalExp), cor: [124, 58, 237] },
+      { label: 'Congregacoes que registraram', valor: String(totalRegistraram), cor: [5, 150, 105] },
+    ];
+    boxes.forEach((box, i) => {
+      const x = 14 + i * (boxW + 4.5);
+      doc.setFillColor(...box.cor);
+      doc.roundedRect(x, boxY, boxW, 18, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+      doc.text(box.valor, x + boxW / 2, boxY + 9.5, { align: 'center' });
+      doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+      doc.text(box.label, x + boxW / 2, boxY + 15, { align: 'center' });
+    });
+
+    // Tabela por congregacao
+    doc.setTextColor(50, 50, 80);
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('Detalhamento por congregacao', 14, 55);
+
+    doc.autoTable({
+      startY: 58,
+      head: [['Congregacao', 'Registros feitos', 'Pub. distribuidas', 'Experiencias']],
+      body: dadosPorCong.map(c => [c.nome, c.registros, c.publicacoes, c.experiencias]),
+      styles: { fontSize: 8.5, cellPadding: 2.8, valign: 'middle' },
+      headStyles: { fillColor: [3, 105, 161], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      columnStyles: {
+        1: { halign: 'center', cellWidth: 34 },
+        2: { halign: 'center', cellWidth: 34 },
+        3: { halign: 'center', cellWidth: 28 },
+      },
+      alternateRowStyles: { fillColor: [240, 248, 255] },
+      didParseCell(data) {
+        if (data.section !== 'body') return;
+        if (data.column.index === 2) {
+          const v = Number(data.cell.raw);
+          data.cell.styles.textColor = v > 0 ? [5, 150, 105] : [140, 140, 140];
+          if (v > 0) data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 3) {
+          const v = Number(data.cell.raw);
+          if (v > 0) { data.cell.styles.textColor = [124, 58, 237]; data.cell.styles.fontStyle = 'bold'; }
+        }
+      },
+    });
+
+    // Pagina de experiencias
+    if (totalExp > 0) {
+      doc.addPage();
+      doc.setFillColor(124, 58, 237);
+      doc.rect(0, 0, 210, 16, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text('Experiencias Registradas', 14, 11);
+
+      let y = 24;
+
+      dadosPorCong.forEach(c => {
+        c.expDetalhes.forEach(exp => {
+          const texto = exp.detalhes || '(sem detalhes)';
+          const linhas = doc.splitTextToSize(texto, 182);
+          const alturaBloco = 10 + linhas.length * 4.5 + 6;
+
+          if (y + alturaBloco > 275) { doc.addPage(); y = 14; }
+
+          // Cabecalho da experiencia
+          doc.setFillColor(237, 233, 254);
+          doc.roundedRect(12, y, 186, 9, 1.5, 1.5, 'F');
+          doc.setTextColor(80, 30, 150);
+          doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
+          doc.text(c.nome, 16, y + 6);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          const infoLabel = [exp.dataRef, exp.horario, exp.postoNome].filter(Boolean).join(' | ');
+          doc.text(infoLabel, 196, y + 6, { align: 'right' });
+
+          y += 12;
+
+          // Texto da experiencia
+          doc.setTextColor(40, 40, 60);
+          doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+          linhas.forEach(linha => {
+            if (y > 272) { doc.addPage(); y = 14; }
+            doc.text(linha, 14, y);
+            y += 4.5;
+          });
+
+          y += 6;
+        });
+      });
+    }
+
+    doc.save(`dia-evento-${new Date().toISOString().slice(0, 10)}.pdf`);
+    showToast('PDF baixado com sucesso!', 'success');
   }
 
 </script>

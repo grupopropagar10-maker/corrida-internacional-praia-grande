@@ -1797,9 +1797,7 @@
                  <span style="font-size:.72rem;font-weight:700;color:#16a34a;background:#dcfce7;padding:.25rem .55rem;border-radius:5px;">✅ Fechada</span>
                  <button onclick="toggleFechamentoCong('${cong.id}', false)" style="font-size:.68rem;padding:.2rem .45rem;border:1px solid #94a3b8;border-radius:5px;background:#fff;color:#64748b;cursor:pointer;">Reabrir</button>
                </div>`
-            : temDados
-              ? `<button onclick="toggleFechamentoCong('${cong.id}', true)" style="font-size:.75rem;padding:.3rem .7rem;border:1.5px solid #0369a1;border-radius:6px;background:#0369a1;color:#fff;cursor:pointer;font-weight:700;">Fechar ✓</button>`
-              : `<span style="font-size:.72rem;color:#94a3b8;font-style:italic;">sem dados</span>`
+            : `<button onclick="toggleFechamentoCong('${cong.id}', true)" style="font-size:.75rem;padding:.3rem .7rem;border:1.5px solid #0369a1;border-radius:6px;background:#0369a1;color:#fff;cursor:pointer;font-weight:700;">Fechar ✓</button>`
           }
         </div>
       </div>

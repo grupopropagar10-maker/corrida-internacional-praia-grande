@@ -756,8 +756,13 @@
       pubsPorDia[k].push(p);
     });
 
+    // Só publicações de dias válidos do evento para o detalhamento por posto
+    const pubsEvento = eventoISOs.size > 0
+      ? pubsEntries.filter(p => { const iso = toISO(p.dataRef); return iso && eventoISOs.has(iso); })
+      : pubsEntries;
+
     const pubsPorPosto = {};
-    pubsEntries.forEach(p => {
+    pubsEvento.forEach(p => {
       const k = p.postoNome || '—';
       pubsPorPosto[k] = (pubsPorPosto[k] || 0) + (p.quantidade || 0);
     });
@@ -767,16 +772,32 @@
       if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [d,m,y] = s.split('/'); return new Date(`${y}-${m}-${d}T12:00:00`); }
       return null;
     }
+    function toISO(s) {
+      if (!s) return null;
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [d,m,y] = s.split('/'); return `${y}-${m}-${d}`; }
+      return null;
+    }
     function diaSemana(dateStr) {
       const dt = parseDataStr(dateStr);
       if (!dt) return dateStr;
       return ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'][dt.getDay()];
     }
 
-    const diasOrdenados = Object.keys(pubsPorDia).sort((a, b) => {
-      const pa = parseDataStr(a), pb = parseDataStr(b);
-      return (pa?.getTime() || 0) - (pb?.getTime() || 0);
-    });
+    // Datas válidas do evento (vindas das categorias)
+    const eventoISOs = new Set();
+    categorias.forEach(cat => (cat.datas || []).forEach(d => { if (d) eventoISOs.add(d.slice(0, 10)); }));
+
+    const diasOrdenados = Object.keys(pubsPorDia)
+      .filter(data => {
+        if (eventoISOs.size === 0) return true; // sem categorias, mostra tudo
+        const iso = toISO(data);
+        return iso && eventoISOs.has(iso);
+      })
+      .sort((a, b) => {
+        const pa = parseDataStr(a), pb = parseDataStr(b);
+        return (pa?.getTime() || 0) - (pb?.getTime() || 0);
+      });
 
     const totalPubs     = pubsEntries.reduce((s, p) => s + (p.quantidade || 0), 0);
     const totalExps     = expsAll.length;
@@ -791,6 +812,61 @@
     const subAdminsArea = subAdminsList.filter(sa => sa.modoEspecial !== 'tapa_buraco');
     function getCatNome(id) {
       return categorias.find(c => String(c.id) === String(id))?.nome || `Cat. ${id}`;
+    }
+
+    // Pessoas cadastradas e escaladas
+    const cadastradosSet = new Set();
+    const escaladosSet   = new Set();
+    Object.values(congCfgAll).forEach(cfg => {
+      (cfg?.membros || []).forEach(m => {
+        const n = typeof m === 'string' ? m : m?.nome;
+        if (n) cadastradosSet.add(n.trim().toLowerCase());
+      });
+      Object.values(cfg?.turnos || {}).forEach(slotMap => {
+        Object.values(slotMap || {}).forEach(pessoas => {
+          (pessoas || []).forEach(p => {
+            const n = typeof p === 'string' ? p : p?.nome;
+            if (n) escaladosSet.add(n.trim().toLowerCase());
+          });
+        });
+      });
+    });
+
+    // Designações para o mapa (manuais — têm congId explícito)
+    const designacoes = DB.get('designacoes', [])
+      .filter(d => d.postoId && d.congId && d.data);
+
+    // Mapa geral: agrupa por posto → array de designações ordenadas por data
+    const mapaGeral = {};
+    designacoes.forEach(d => {
+      const posto = postos.find(p => String(p.id) === String(d.postoId));
+      const cong  = congById[String(d.congId)];
+      const key   = String(d.postoId);
+      if (!mapaGeral[key]) mapaGeral[key] = { posto, desigs: [] };
+      mapaGeral[key].desigs.push({ ...d, congNome: cong?.nome || '—' });
+    });
+    Object.values(mapaGeral).forEach(m => {
+      m.desigs.sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')));
+    });
+
+    // Mapa por congregação: agrupa por congregação → array de designações
+    const mapaCong = {};
+    designacoes.forEach(d => {
+      const cong  = congById[String(d.congId)];
+      const posto = postos.find(p => String(p.id) === String(d.postoId));
+      const key   = String(d.congId);
+      if (!mapaCong[key]) mapaCong[key] = { cong: cong || { nome: '—', id: d.congId }, desigs: [] };
+      mapaCong[key].desigs.push({ ...d, postoNomeMap: posto?.nome || '—', postoKm: posto?.km || '—' });
+    });
+    Object.values(mapaCong).forEach(m => {
+      m.desigs.sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')));
+    });
+
+    function formatData(iso) {
+      if (!iso) return '—';
+      const dt = new Date(iso + 'T12:00:00');
+      const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      return `${dias[dt.getDay()]} ${dt.toLocaleDateString('pt-BR')}`;
     }
 
     const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -855,11 +931,13 @@ ${secao('1. Visão Geral do Evento', `
   <div class="kpi"><div class="val">${postos.length}</div><div class="lab">Postos Totais</div></div>
   <div class="kpi"><div class="val">${postosAtivos}</div><div class="lab">Postos Ativos</div></div>
   <div class="kpi"><div class="val">${totalCongsPartic}</div><div class="lab">Congregações Participantes</div></div>
-  <div class="kpi"><div class="val">${totalPubs.toLocaleString('pt-BR')}</div><div class="lab">Publicações Distribuídas</div></div>
+  <div class="kpi"><div class="val">${cadastradosSet.size}</div><div class="lab">Pessoas Cadastradas</div></div>
+  <div class="kpi"><div class="val">${escaladosSet.size}</div><div class="lab">Pessoas Escaladas</div></div>
+  <div class="kpi"><div class="val">${pubsEvento.reduce((s,p)=>s+(p.quantidade||0),0).toLocaleString('pt-BR')}</div><div class="lab">Publicações Distribuídas</div></div>
   <div class="kpi"><div class="val">${totalExps}</div><div class="lab">Experiências Registradas</div></div>
   <div class="kpi"><div class="val">${tbInvites.filter(i=>i.ativo!==false).length}</div><div class="lab">Equipe de Apoio</div></div>
   <div class="kpi"><div class="val">${subAdminsArea.length}</div><div class="lab">Sub-Administradores</div></div>
-  <div class="kpi"><div class="val">${categorias.length}</div><div class="lab">Categorias do Evento</div></div>
+  <div class="kpi"><div class="val">${categorias.length}</div><div class="lab">Categorias / Dias</div></div>
 </div>`)}
 
 ${secao('2. Publicações Distribuídas por Dia', diasOrdenados.length
@@ -930,7 +1008,56 @@ ${secao('5. Sub-Administradores por Área', subAdminsArea.length
   : '<p style="color:#888;font-size:11px">Nenhum sub-administrador cadastrado.</p>'
 )}
 
-${secao('6. Experiências do Campo', expsAll.length
+${secao('6. Mapa Geral de Postos', Object.keys(mapaGeral).length
+  ? Object.values(mapaGeral)
+      .sort((a, b) => (a.posto?.nome || '').localeCompare(b.posto?.nome || ''))
+      .map(({ posto, desigs }) => `
+        <div class="dia-bloco" style="margin-bottom:12px">
+          <div class="dia-hdr">
+            <span>📍 ${esc(posto?.nome || '—')} ${posto?.km ? `· Km ${esc(posto.km)}` : ''}</span>
+            <span>${desigs.length} designação(ões)</span>
+          </div>
+          <table>
+            <tr><th>Congregação</th><th>Data</th><th>Horário</th></tr>
+            ${desigs.map(d => `
+              <tr>
+                <td><strong>${esc(d.congNome)}</strong></td>
+                <td>${formatData(d.data)}</td>
+                <td>${esc(d.inicio||'—')} – ${esc(d.fim||'—')}</td>
+              </tr>`).join('')}
+          </table>
+        </div>`).join('')
+  : '<p style="color:#888;font-size:11px">Nenhuma designação registrada.</p>'
+)}
+
+${secao('7. Mapa Detalhado por Congregação', Object.keys(mapaCong).length
+  ? Object.values(mapaCong)
+      .sort((a, b) => (a.cong?.nome || '').localeCompare(b.cong?.nome || ''))
+      .map(({ cong, desigs }) => {
+        const c = congById[String(cong?.id)] || cong || {};
+        return `
+        <div style="margin-bottom:14px;page-break-inside:avoid">
+          <div style="background:#f0f4ff;border-left:4px solid #1a3a8f;padding:6px 10px;border-radius:4px;margin-bottom:4px">
+            <strong style="font-size:12px;color:#1a3a8f">${esc(c.nome||cong?.nome||'—')}</strong>
+            ${c.contato  ? `<span style="color:#555;font-size:10.5px;margin-left:10px">👤 ${esc(c.contato)}</span>` : ''}
+            ${c.telefone ? `<span style="color:#555;font-size:10.5px;margin-left:8px">📞 ${esc(c.telefone)}</span>` : ''}
+          </div>
+          <table>
+            <tr><th>Posto</th><th>Km</th><th>Data</th><th>Horário</th></tr>
+            ${desigs.map(d => `
+              <tr>
+                <td>${esc(d.postoNomeMap)}</td>
+                <td>${esc(d.postoKm)}</td>
+                <td>${formatData(d.data)}</td>
+                <td>${esc(d.inicio||'—')} – ${esc(d.fim||'—')}</td>
+              </tr>`).join('')}
+          </table>
+        </div>`;
+      }).join('')
+  : '<p style="color:#888;font-size:11px">Nenhuma designação registrada.</p>'
+)}
+
+${secao('8. Experiências do Campo — Relatos para o Betel', expsAll.length
   ? expsAll.map(exp => `
       <div class="exp-card">
         <div class="exp-meta">
@@ -946,7 +1073,7 @@ ${secao('6. Experiências do Campo', expsAll.length
   : '<p style="color:#888;font-size:11px">Nenhuma experiência registrada.</p>'
 )}
 
-${secao('7. Detalhamento por Congregação', `
+${secao('9. Detalhamento por Congregação', `
 <table>
   <tr><th>Congregação</th><th>Responsável</th><th>Telefone</th><th style="text-align:right">Publicações</th><th style="text-align:right">Experiências</th><th>Status</th></tr>
   ${congregacoes.filter(c=>c.confirmada).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(c => {
@@ -965,7 +1092,7 @@ ${secao('7. Detalhamento por Congregação', `
   }).join('')}
 </table>`)}
 
-${secao('8. Sobre o Sistema de Gestão', `
+${secao('10. Sobre o Sistema de Gestão', `
 <p style="font-size:11px;color:#555;margin-bottom:10px">
   Este evento foi gerenciado por um sistema web desenvolvido especificamente para a Corrida Internacional Praia Grande 2026,
   com sincronização em tempo real via Firebase e acesso por dispositivos móveis.

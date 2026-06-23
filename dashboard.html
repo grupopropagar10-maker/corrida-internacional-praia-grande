@@ -155,7 +155,7 @@
   <div class="export-bar">
     <button class="btn btn-outline btn-sm" id="btn-refresh">🔄 Atualizar</button>
     <button class="btn btn-primary btn-sm" id="btn-export-csv">📥 Exportar CSV</button>
-    <button class="btn btn-success btn-sm" id="btn-export-print">🖨️ Imprimir Relatório</button>
+    <button class="btn btn-success btn-sm" id="btn-export-print">📄 Relatório Betel</button>
   </div>
 </section>
 
@@ -183,23 +183,12 @@
   </div>
 </section>
 
-<!-- RANKING + TIMELINE -->
+<!-- STATUS DOS POSTOS -->
 <section class="section" style="padding-top:0;">
-  <div class="grid grid-2" style="align-items:start;">
-
-    <!-- RANKING -->
-    <div class="chart-wrap">
-      <h3>🏆 Ranking de Postos (por contatos)</h3>
-      <div id="ranking-list"></div>
-    </div>
-
-    <!-- STATUS DOS POSTOS -->
-    <div class="chart-wrap">
-      <h3>📍 Status dos Postos</h3>
-      <canvas id="chart-status" style="max-height:220px;"></canvas>
-      <div id="status-detalhes" style="margin-top:1rem;"></div>
-    </div>
-
+  <div class="chart-wrap">
+    <h3>📍 Status dos Postos</h3>
+    <canvas id="chart-status" style="max-height:220px;"></canvas>
+    <div id="status-detalhes" style="margin-top:1rem;"></div>
   </div>
 </section>
 
@@ -661,28 +650,6 @@
         <div style="font-size:.8rem;opacity:.85;">publicações previstas (${congsConf.length} congregação(ões))</div>
       </div>`;
 
-    // ---- RANKING ----
-    const sorted = [...postos].sort((a, b) => (b.contatos || 0) - (a.contatos || 0));
-    const maxCont = sorted[0]?.contatos || 1;
-    const posClasses = ['gold', 'silver', 'bronze'];
-
-    document.getElementById('ranking-list').innerHTML = sorted.length ?
-      sorted.map((p, i) => `
-        <div class="rank-item">
-          <div class="rank-pos ${posClasses[i] || ''}">${i + 1}</div>
-          <div class="rank-info">
-            <strong>${p.nome}</strong>
-            <small>👤 ${p.responsavel}</small>
-          </div>
-          <div class="rank-bar-wrap">
-            <div class="progress-bar">
-              <div class="progress-fill" style="width:${maxCont > 0 ? Math.round(((p.contatos||0)/maxCont)*100) : 0}%"></div>
-            </div>
-          </div>
-          <span class="rank-num">${p.contatos || 0}</span>
-        </div>
-      `).join('')
-      : '<p style="color:var(--gray);text-align:center;padding:1rem;">Sem dados de contatos ainda.</p>';
 
     // ---- TIMELINE (publicacoesDia, mais recentes primeiro) ----
     const recentPubs = [...pubsDiaEntries]
@@ -743,6 +710,286 @@
     `;
   }
 
+  // ---- RELATÓRIO BETEL ----
+  function gerarRelatorioBetel() {
+    const postos        = DB.get('postos', []);
+    const congregacoes  = DB.get('congregacoes', []);
+    const congCfgAll    = DB.get('cong_config', {});
+    const categorias    = DB.get('categorias', []);
+    const subAdminsList = DB.get('sub_admins', []);
+    const eventoConfig  = DB.get('evento_config', {});
+    const tapaBuraco    = eventoConfig?.tapaBuraco || {};
+    const tbInvites     = Array.isArray(tapaBuraco.invites) ? tapaBuraco.invites : [];
+    const tbAssignmentsRaw = tapaBuraco.assignments;
+    const tbAssignments = Array.isArray(tbAssignmentsRaw)
+      ? tbAssignmentsRaw
+      : Object.values(tbAssignmentsRaw || {});
+
+    const congById = {};
+    congregacoes.forEach(c => { congById[String(c.id)] = c; });
+
+    const pubsEntries = [];
+    Object.entries(congCfgAll).forEach(([congId, cfg]) => {
+      const cong = congById[String(congId)] || {};
+      (cfg?.registroCampo?.publicacoesDia || []).forEach(p => {
+        pubsEntries.push({ ...p, congId, congNome: cong.nome || '—' });
+      });
+    });
+
+    const expsAll = [];
+    Object.entries(congCfgAll).forEach(([congId, cfg]) => {
+      const cong = congById[String(congId)] || {};
+      (cfg?.registroCampo?.experiencias || []).forEach(exp => {
+        expsAll.push({
+          ...exp,
+          congNome:     cong.nome     || '—',
+          congContato:  cong.contato  || '—',
+          congTelefone: cong.telefone || '—',
+        });
+      });
+    });
+
+    const pubsPorDia = {};
+    pubsEntries.forEach(p => {
+      const k = p.dataRef || 'Sem data';
+      if (!pubsPorDia[k]) pubsPorDia[k] = [];
+      pubsPorDia[k].push(p);
+    });
+
+    const pubsPorPosto = {};
+    pubsEntries.forEach(p => {
+      const k = p.postoNome || '—';
+      pubsPorPosto[k] = (pubsPorPosto[k] || 0) + (p.quantidade || 0);
+    });
+
+    function parseDataStr(s) {
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s + 'T12:00:00');
+      if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [d,m,y] = s.split('/'); return new Date(`${y}-${m}-${d}T12:00:00`); }
+      return null;
+    }
+    function diaSemana(dateStr) {
+      const dt = parseDataStr(dateStr);
+      if (!dt) return dateStr;
+      return ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'][dt.getDay()];
+    }
+
+    const diasOrdenados = Object.keys(pubsPorDia).sort((a, b) => {
+      const pa = parseDataStr(a), pb = parseDataStr(b);
+      return (pa?.getTime() || 0) - (pb?.getTime() || 0);
+    });
+
+    const totalPubs     = pubsEntries.reduce((s, p) => s + (p.quantidade || 0), 0);
+    const totalExps     = expsAll.length;
+    const postosAtivos  = postos.filter(p => p.status === 'ativo').length;
+    const totalCongsPartic = congregacoes.filter(c => {
+      const cfg = congCfgAll[String(c.id)];
+      return (cfg?.registroCampo?.publicacoesDia || []).length > 0
+          || (cfg?.registroCampo?.experiencias   || []).length > 0
+          || cfg?.registroCampo?.fechada === true;
+    }).length;
+
+    const subAdminsArea = subAdminsList.filter(sa => sa.modoEspecial !== 'tapa_buraco');
+    function getCatNome(id) {
+      return categorias.find(c => String(c.id) === String(id))?.nome || `Cat. ${id}`;
+    }
+
+    const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const dataGeracao = new Date().toLocaleString('pt-BR');
+    const secao = (titulo, corpo) => `<div class="secao"><h2>${titulo}</h2>${corpo}</div>`;
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório Operacional — Corrida Internacional Praia Grande 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:0 22px}
+@page{size:A4;margin:18mm 15mm}
+@media print{body{padding:0}.no-print{display:none}}
+.capa{text-align:center;padding:40px 0 28px;border-bottom:3px solid #1a3a8f;margin-bottom:28px}
+.capa h1{font-size:22px;color:#1a3a8f;margin-bottom:5px}
+.capa h2{font-size:14px;color:#444;font-weight:normal;margin-bottom:3px}
+.capa .sub{font-size:11px;color:#777;margin-top:6px}
+.capa .gen{font-size:10px;color:#aaa;margin-top:8px}
+.secao{margin-bottom:26px;page-break-inside:avoid}
+h2{font-size:13px;color:#1a3a8f;border-left:4px solid #1a3a8f;padding-left:8px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+h3{font-size:11.5px;color:#333;margin:10px 0 6px;font-weight:700}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
+.kpi{background:#f0f4ff;border-radius:6px;padding:9px 10px;text-align:center}
+.kpi .val{font-size:20px;font-weight:800;color:#1a3a8f}
+.kpi .lab{font-size:9.5px;color:#555;margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:11px}
+th{background:#1a3a8f;color:#fff;padding:5px 8px;text-align:left;font-weight:700}
+td{padding:4px 8px;border-bottom:1px solid #e8e8e8;vertical-align:top}
+tr:nth-child(even) td{background:#f8f9ff}
+.dia-bloco{margin-bottom:14px;border:1px solid #c8d0ee;border-radius:6px;overflow:hidden;page-break-inside:avoid}
+.dia-hdr{background:#1a3a8f;color:#fff;padding:6px 12px;font-weight:700;font-size:12px;display:flex;justify-content:space-between}
+.dia-bloco table{margin:0}
+.exp-card{border:1px solid #d8d8ee;border-radius:6px;padding:9px 12px;margin-bottom:9px;page-break-inside:avoid}
+.exp-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:5px;font-size:10.5px;color:#555}
+.exp-meta strong{color:#1a3a8f}
+.exp-texto{font-size:11.5px;line-height:1.55;color:#222;border-top:1px solid #eee;padding-top:5px;margin-top:4px}
+.tag{display:inline-block;background:#e8eeff;color:#1a3a8f;border-radius:4px;padding:2px 6px;font-size:9.5px;font-weight:700;margin-right:3px}
+.tag-green{background:#e8f5e9;color:#1a7a3a}
+.sis-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sis-item{border:1px solid #dde;border-radius:6px;padding:7px 10px}
+.sis-item h4{font-size:11px;color:#1a3a8f;margin-bottom:3px}
+.sis-item p{font-size:10.5px;color:#555;line-height:1.4}
+.btn-print{position:fixed;top:14px;right:14px;background:#1a3a8f;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.rodape{border-top:2px solid #1a3a8f;margin-top:28px;padding-top:7px;text-align:center;font-size:10px;color:#888}
+</style>
+</head>
+<body>
+<button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+
+<div class="capa">
+  <h1>⚡ Relatório Operacional</h1>
+  <h2>Corrida Internacional Praia Grande — 2026</h2>
+  <div class="sub">Destinatário: Betel Brasil — Departamento de Corridas</div>
+  <div class="gen">Gerado em ${dataGeracao} · Sistema de Gestão de Voluntários</div>
+</div>
+
+${secao('1. Visão Geral do Evento', `
+<div class="kpi-grid">
+  <div class="kpi"><div class="val">${postos.length}</div><div class="lab">Postos Totais</div></div>
+  <div class="kpi"><div class="val">${postosAtivos}</div><div class="lab">Postos Ativos</div></div>
+  <div class="kpi"><div class="val">${totalCongsPartic}</div><div class="lab">Congregações Participantes</div></div>
+  <div class="kpi"><div class="val">${totalPubs.toLocaleString('pt-BR')}</div><div class="lab">Publicações Distribuídas</div></div>
+  <div class="kpi"><div class="val">${totalExps}</div><div class="lab">Experiências Registradas</div></div>
+  <div class="kpi"><div class="val">${tbInvites.filter(i=>i.ativo!==false).length}</div><div class="lab">Equipe de Apoio</div></div>
+  <div class="kpi"><div class="val">${subAdminsArea.length}</div><div class="lab">Sub-Administradores</div></div>
+  <div class="kpi"><div class="val">${categorias.length}</div><div class="lab">Categorias do Evento</div></div>
+</div>`)}
+
+${secao('2. Publicações Distribuídas por Dia', diasOrdenados.length
+  ? diasOrdenados.map(data => {
+      const entradas = pubsPorDia[data];
+      const total    = entradas.reduce((s, p) => s + (p.quantidade || 0), 0);
+      const porPosto = {};
+      entradas.forEach(e => {
+        const k = e.postoNome || '—';
+        if (!porPosto[k]) porPosto[k] = { qtd: 0, congs: [] };
+        porPosto[k].qtd += (e.quantidade || 0);
+        if (e.congNome && !porPosto[k].congs.includes(e.congNome)) porPosto[k].congs.push(e.congNome);
+      });
+      return `<div class="dia-bloco">
+        <div class="dia-hdr"><span>${diaSemana(data)} — ${esc(data)}</span><span>${total.toLocaleString('pt-BR')} publicações</span></div>
+        <table>
+          <tr><th>Posto</th><th>Congregações</th><th style="text-align:right">Qtd.</th></tr>
+          ${Object.entries(porPosto).map(([posto, v]) =>
+            `<tr><td>${esc(posto)}</td><td style="font-size:10px;color:#555">${v.congs.map(esc).join(', ')}</td><td style="text-align:right;font-weight:700">${v.qtd}</td></tr>`
+          ).join('')}
+        </table>
+      </div>`;
+    }).join('')
+  : '<p style="color:#888;font-size:11px">Nenhuma publicação registrada.</p>'
+)}
+
+${secao('3. Total de Publicações por Posto', Object.keys(pubsPorPosto).length
+  ? `<table>
+      <tr><th>Posto</th><th style="text-align:right">Total Distribuído</th></tr>
+      ${Object.entries(pubsPorPosto).sort((a,b)=>b[1]-a[1]).map(([nome,qtd]) =>
+        `<tr><td>${esc(nome)}</td><td style="text-align:right;font-weight:700">${qtd.toLocaleString('pt-BR')}</td></tr>`
+      ).join('')}
+      <tr style="background:#f0f4ff"><td><strong>TOTAL GERAL</strong></td><td style="text-align:right;font-weight:800;color:#1a3a8f">${totalPubs.toLocaleString('pt-BR')}</td></tr>
+    </table>`
+  : '<p style="color:#888;font-size:11px">Nenhuma publicação registrada.</p>'
+)}
+
+${secao('4. Equipe de Apoio', `
+  ${tbInvites.filter(i=>i.ativo!==false).length ? `
+  <h3>Membros da Equipe de Apoio</h3>
+  <table>
+    <tr><th>Nome</th><th>WhatsApp</th><th>Categorias</th></tr>
+    ${tbInvites.filter(i=>i.ativo!==false).map(i =>
+      `<tr><td>${esc(i.nome||'—')}</td><td>${esc(i.whatsapp||'—')}</td>
+       <td>${[i.catId,...(i.categoriasExtra||[]).map(ce=>ce.id)].filter(Boolean).map(id=>`<span class="tag">${esc(getCatNome(id))}</span>`).join('')}</td></tr>`
+    ).join('')}
+  </table>` : '<p style="color:#888;font-size:11px">Nenhum membro na equipe de apoio.</p>'}
+  ${tbAssignments.filter(a=>a.status!=='cancelado').length ? `
+  <h3 style="margin-top:10px">Coberturas Realizadas</h3>
+  <table>
+    <tr><th>Nome</th><th>Posto</th><th>Categoria</th><th>Data</th><th>Turno</th><th>Status</th></tr>
+    ${tbAssignments.filter(a=>a.status!=='cancelado').map(a =>
+      `<tr><td>${esc(a.inviteNome||'—')}</td><td>${esc(a.postoNome||'—')}</td><td>${esc(a.categoriaNome||'—')}</td>
+       <td>${esc(a.dataFmt||a.data||'—')}</td><td>${esc(a.slotLabel||'—')}</td>
+       <td><span class="tag ${a.status==='aceito'?'tag-green':''}">${esc(a.status||'—')}</span></td></tr>`
+    ).join('')}
+  </table>` : ''}
+`)}
+
+${secao('5. Sub-Administradores por Área', subAdminsArea.length
+  ? `<table>
+      <tr><th>Nome</th><th>Áreas / Categorias</th></tr>
+      ${subAdminsArea.map(sa =>
+        `<tr><td><strong>${esc(sa.nome||'—')}</strong></td>
+         <td>${(sa.categorias||[]).map(id=>`<span class="tag">${esc(getCatNome(id))}</span>`).join('')||'—'}</td></tr>`
+      ).join('')}
+    </table>`
+  : '<p style="color:#888;font-size:11px">Nenhum sub-administrador cadastrado.</p>'
+)}
+
+${secao('6. Experiências do Campo', expsAll.length
+  ? expsAll.map(exp => `
+      <div class="exp-card">
+        <div class="exp-meta">
+          <div><strong>Congregação:</strong> ${esc(exp.congNome)}</div>
+          <div><strong>Responsável:</strong> ${esc(exp.congContato)}</div>
+          <div><strong>Telefone:</strong> ${esc(exp.congTelefone)}</div>
+          ${exp.postoNome && exp.postoNome !== 'Registrado pelo admin'
+            ? `<div><strong>Posto:</strong> ${esc(exp.postoNome)}</div>` : ''}
+          ${exp.ts ? `<div style="margin-left:auto;color:#aaa;font-size:10px">${esc(exp.ts)}</div>` : ''}
+        </div>
+        <div class="exp-texto">${esc(exp.detalhes||'—')}</div>
+      </div>`).join('')
+  : '<p style="color:#888;font-size:11px">Nenhuma experiência registrada.</p>'
+)}
+
+${secao('7. Detalhamento por Congregação', `
+<table>
+  <tr><th>Congregação</th><th>Responsável</th><th>Telefone</th><th style="text-align:right">Publicações</th><th style="text-align:right">Experiências</th><th>Status</th></tr>
+  ${congregacoes.filter(c=>c.confirmada).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(c => {
+    const cfg  = congCfgAll[String(c.id)] || {};
+    const pubs = (cfg?.registroCampo?.publicacoesDia||[]).reduce((s,p)=>s+(p.quantidade||0),0);
+    const exps = (cfg?.registroCampo?.experiencias  ||[]).length;
+    const fech = cfg?.registroCampo?.fechada===true;
+    return `<tr>
+      <td><strong>${esc(c.nome)}</strong></td>
+      <td>${esc(c.contato||'—')}</td>
+      <td>${esc(c.telefone||'—')}</td>
+      <td style="text-align:right;font-weight:700">${pubs.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right">${exps}</td>
+      <td><span class="tag ${fech?'tag-green':''}">${fech?'Fechada ✓':'Em aberto'}</span></td>
+    </tr>`;
+  }).join('')}
+</table>`)}
+
+${secao('8. Sobre o Sistema de Gestão', `
+<p style="font-size:11px;color:#555;margin-bottom:10px">
+  Este evento foi gerenciado por um sistema web desenvolvido especificamente para a Corrida Internacional Praia Grande 2026,
+  com sincronização em tempo real via Firebase e acesso por dispositivos móveis.
+</p>
+<div class="sis-grid">
+  <div class="sis-item"><h4>📍 Postos</h4><p>Cadastro e gerenciamento de todos os pontos de distribuição ao longo do trajeto, com controle de status, km, responsável e publicações disponíveis por posto.</p></div>
+  <div class="sis-item"><h4>🏢 Congregações</h4><p>Cadastro das congregações participantes, confirmação de presença e definição de cota de publicações previstas por tipo (Atalaias, Despertar, Bíblia, folheto, livro, site).</p></div>
+  <div class="sis-item"><h4>📋 Designação</h4><p>Designação das congregações por posto e turno. Cada congregação recebe sua escala com data, horário, irmãos a escalar e observações.</p></div>
+  <div class="sis-item"><h4>👥 Sub-Administradores</h4><p>Gestão descentralizada por área/categoria. Cada sub-admin gerencia os postos e designações da sua seção sem interferir nas demais.</p></div>
+  <div class="sis-item"><h4>🤝 Equipe de Apoio</h4><p>Sistema de cobertura de vagas em aberto. Voluntários são cadastrados e designados para suprir turnos sem cobertura, com notificação via WhatsApp.</p></div>
+  <div class="sis-item"><h4>📱 Minha Congregação</h4><p>Portal individual para líderes de congregação gerenciarem sua equipe, visualizarem a escala, fecharem turnos e registrarem publicações e experiências.</p></div>
+  <div class="sis-item"><h4>📖 Registro do Dia do Evento</h4><p>Módulo de registro em tempo real durante o evento. Cada congregação informa publicações distribuídas por turno e registra experiências para envio ao Betel.</p></div>
+  <div class="sis-item"><h4>📊 Dashboard</h4><p>Visão consolidada em tempo real: KPIs de cobertura, dimensionamento de pessoas, publicações distribuídas, experiências e status de cada congregação.</p></div>
+</div>`)}
+
+<div class="rodape">Corrida Internacional Praia Grande 2026 · Relatório gerado em ${dataGeracao} · Sistema de Gestão de Voluntários</div>
+</body></html>`;
+
+    const win = window.open('', '_blank', 'width=920,height=720');
+    if (!win) { showToast('Permita pop-ups para gerar o relatório.', 'warning'); return; }
+    win.document.write(html);
+    win.document.close();
+  }
+
   // ---- EXPORT CSV ----
   document.getElementById('btn-export-csv').addEventListener('click', () => {
     const {
@@ -786,10 +1033,8 @@
     showToast('CSV exportado com sucesso!', 'success');
   });
 
-  // ---- IMPRIMIR ----
-  document.getElementById('btn-export-print').addEventListener('click', () => {
-    window.print();
-  });
+  // ---- RELATÓRIO BETEL ----
+  document.getElementById('btn-export-print').addEventListener('click', gerarRelatorioBetel);
 
   // ---- REFRESH ----
   document.getElementById('btn-refresh').addEventListener('click', () => {

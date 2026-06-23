@@ -1785,8 +1785,12 @@
       <div style="display:flex;align-items:center;gap:.8rem;padding:.75rem .9rem;border-radius:10px;margin-bottom:.4rem;
                   background:${fechada ? '#f0fdf4' : temDados ? '#fafafa' : '#fff'};
                   border:1.5px solid ${fechada ? '#86efac' : temDados ? '#e2e8f0' : '#f1f5f9'};">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:.85rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(cong.nome)}</div>
+        <div style="flex:1;min-width:0;cursor:pointer;" onclick="abrirModalCongRegistro('${cong.id}')"
+             title="Clique para adicionar publicações e experiências">
+          <div style="font-size:.85rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escapeHtml(cong.nome)}
+            <span style="font-size:.65rem;color:#7c3aed;font-weight:600;margin-left:.35rem;">✏️</span>
+          </div>
           <div style="font-size:.72rem;color:#64748b;margin-top:.15rem;">
             📖 ${qtdPub} pub. &nbsp;·&nbsp; ✨ ${exps.length} exp. &nbsp;·&nbsp; 📝 ${pubs.length} registros
           </div>
@@ -1822,7 +1826,201 @@
     if (e.target === e.currentTarget) fecharModalRegistroEvento();
   });
 
+  // ---- MODAL EDIÇÃO DE REGISTRO POR CONGREGAÇÃO ----
+  let _modalCongRegId = null;
+
+  window.abrirModalCongRegistro = function(congId) {
+    _modalCongRegId = String(congId);
+    renderModalCongRegistro();
+    document.getElementById('modal-cong-registro').classList.add('open');
+  };
+
+  function fecharModalCongRegistro() {
+    document.getElementById('modal-cong-registro').classList.remove('open');
+    _modalCongRegId = null;
+  }
+
+  function _saveCongRegistroCampo(congId, registroCampo) {
+    const all = DB.get('cong_config', {});
+    if (!all[congId]) all[congId] = {};
+    all[congId].registroCampo = registroCampo;
+    localStorage.setItem('cong_config', JSON.stringify(all));
+    setPathResilient(`cong_config/${congId}/registroCampo`, registroCampo)
+      .catch(() => showToast('Erro ao salvar — tente novamente', 'error'));
+  }
+
+  function renderModalCongRegistro() {
+    if (!_modalCongRegId) return;
+    const congCfgAll  = DB.get('cong_config', {});
+    const congregacoes = DB.get('congregacoes', []);
+    const cong = congregacoes.find(c => String(c.id) === _modalCongRegId) || { nome: 'Congregação', id: _modalCongRegId };
+    const cfg  = congCfgAll[_modalCongRegId] || {};
+    const pubs = Array.isArray(cfg?.registroCampo?.publicacoesDia) ? cfg.registroCampo.publicacoesDia : [];
+    const exps = Array.isArray(cfg?.registroCampo?.experiencias)   ? cfg.registroCampo.experiencias   : [];
+    const fechada = cfg?.registroCampo?.fechada === true;
+
+    document.getElementById('modal-cong-reg-titulo').textContent = `📋 ${cong.nome}`;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const listaPubs = pubs.length ? pubs.map((p, i) => `
+      <div style="display:flex;align-items:center;gap:.5rem;padding:.45rem .55rem;background:#f8fafc;border-radius:7px;margin-bottom:.3rem;font-size:.78rem;">
+        <span style="flex:1;color:#1e293b;">📖 <strong>${p.quantidade}</strong> — ${escapeHtml(p.postoNome || 'Posto não informado')} <span style="color:#94a3b8;">${p.ts || ''}</span></span>
+        <button onclick="removerPubCongRegistro(${i})" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:.85rem;padding:.1rem .3rem;border-radius:4px;" title="Remover">✕</button>
+      </div>`).join('') : `<div style="color:#94a3b8;font-size:.78rem;padding:.3rem 0;">Nenhuma publicação registrada ainda.</div>`;
+
+    const listaExps = exps.length ? exps.map((e, i) => `
+      <div style="display:flex;align-items:flex-start;gap:.5rem;padding:.45rem .55rem;background:#faf5ff;border-radius:7px;margin-bottom:.3rem;font-size:.78rem;">
+        <span style="flex:1;color:#1e293b;">✨ ${escapeHtml(e.detalhes)} <span style="color:#94a3b8;">${e.ts || ''}</span></span>
+        <button onclick="removerExpCongRegistro(${i})" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:.85rem;padding:.1rem .3rem;border-radius:4px;" title="Remover">✕</button>
+      </div>`).join('') : `<div style="color:#94a3b8;font-size:.78rem;padding:.3rem 0;">Nenhuma experiência registrada ainda.</div>`;
+
+    document.getElementById('modal-cong-reg-body').innerHTML = `
+      <div style="margin-bottom:1.1rem;">
+        <div style="font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">📖 Publicações</div>
+        <div id="lista-pubs-cong">${listaPubs}</div>
+        <div style="display:flex;gap:.4rem;margin-top:.5rem;">
+          <input id="add-pub-posto" type="text" placeholder="Posto / turno (opcional)"
+            style="flex:1;border:1.5px solid #e2e8f0;border-radius:7px;padding:.4rem .6rem;font-size:.8rem;">
+          <input id="add-pub-qtd" type="number" min="0" placeholder="Qtd" value=""
+            style="width:70px;border:1.5px solid #e2e8f0;border-radius:7px;padding:.4rem .5rem;font-size:.8rem;text-align:center;">
+          <button onclick="adicionarPubCongRegistro()"
+            style="background:#0369a1;color:#fff;border:none;border-radius:7px;padding:.4rem .75rem;font-size:.8rem;font-weight:700;cursor:pointer;">+ Add</button>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #f1f5f9;padding-top:1rem;margin-bottom:.5rem;">
+        <div style="font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">✨ Experiências</div>
+        <div id="lista-exps-cong">${listaExps}</div>
+        <div style="display:flex;gap:.4rem;margin-top:.5rem;">
+          <textarea id="add-exp-detalhes" placeholder="Descreva a experiência..."
+            rows="2"
+            style="flex:1;border:1.5px solid #e2e8f0;border-radius:7px;padding:.4rem .6rem;font-size:.8rem;resize:vertical;font-family:inherit;"></textarea>
+          <button onclick="adicionarExpCongRegistro()"
+            style="background:#7c3aed;color:#fff;border:none;border-radius:7px;padding:.4rem .75rem;font-size:.8rem;font-weight:700;cursor:pointer;align-self:flex-start;">+ Add</button>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #f1f5f9;padding-top:.8rem;text-align:right;">
+        ${fechada
+          ? `<button onclick="toggleFechamentoCong('${cong.id}', false); fecharModalCongRegistro();"
+              style="font-size:.75rem;padding:.3rem .7rem;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#64748b;cursor:pointer;">Reabrir registro</button>`
+          : `<button onclick="toggleFechamentoCong('${cong.id}', true); fecharModalCongRegistro();"
+              style="font-size:.75rem;padding:.3rem .7rem;border:1.5px solid #16a34a;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-weight:700;">Fechar registro ✓</button>`
+        }
+      </div>`;
+  }
+
+  window.adicionarPubCongRegistro = function() {
+    if (!_modalCongRegId) return;
+    const qtd = Math.max(0, parseInt(document.getElementById('add-pub-qtd').value, 10) || 0);
+    if (qtd <= 0) { showToast('Informe uma quantidade maior que 0.', 'warning'); return; }
+    const postoNome = document.getElementById('add-pub-posto').value.trim() || 'Registrado pelo admin';
+    const all  = DB.get('cong_config', {});
+    const cfg  = all[_modalCongRegId] || {};
+    if (!cfg.registroCampo) cfg.registroCampo = {};
+    const pubs = Array.isArray(cfg.registroCampo.publicacoesDia) ? cfg.registroCampo.publicacoesDia : [];
+    pubs.unshift({
+      id: `pubdia_${Date.now()}`,
+      desigId: 'admin_direct',
+      postoId: '',
+      postoNome,
+      localLabel: '',
+      categoriaNome: '',
+      dataRef: new Date().toISOString().split('T')[0],
+      horario: '',
+      quantidade: qtd,
+      ts: new Date().toLocaleString('pt-BR'),
+    });
+    cfg.registroCampo.publicacoesDia = pubs;
+    _saveCongRegistroCampo(_modalCongRegId, cfg.registroCampo);
+    all[_modalCongRegId] = cfg;
+    localStorage.setItem('cong_config', JSON.stringify(all));
+    renderModalCongRegistro();
+    renderStats();
+    showToast('Publicações registradas!', 'success');
+  };
+
+  window.adicionarExpCongRegistro = function() {
+    if (!_modalCongRegId) return;
+    const detalhes = document.getElementById('add-exp-detalhes').value.trim();
+    if (!detalhes) { showToast('Descreva a experiência antes de salvar.', 'warning'); return; }
+    const all  = DB.get('cong_config', {});
+    const cfg  = all[_modalCongRegId] || {};
+    if (!cfg.registroCampo) cfg.registroCampo = {};
+    const exps = Array.isArray(cfg.registroCampo.experiencias) ? cfg.registroCampo.experiencias : [];
+    exps.unshift({
+      id: `exp_${Date.now()}`,
+      desigId: 'admin_direct',
+      postoId: '',
+      postoNome: 'Registrado pelo admin',
+      localLabel: '',
+      dataRef: new Date().toISOString().split('T')[0],
+      horario: '',
+      detalhes,
+      imageDataUrl: '',
+      imageName: '',
+      ts: new Date().toLocaleString('pt-BR'),
+    });
+    cfg.registroCampo.experiencias = exps;
+    _saveCongRegistroCampo(_modalCongRegId, cfg.registroCampo);
+    all[_modalCongRegId] = cfg;
+    localStorage.setItem('cong_config', JSON.stringify(all));
+    renderModalCongRegistro();
+    renderStats();
+    showToast('Experiência registrada!', 'success');
+  };
+
+  window.removerPubCongRegistro = function(idx) {
+    if (!_modalCongRegId) return;
+    const all = DB.get('cong_config', {});
+    const cfg = all[_modalCongRegId] || {};
+    if (!cfg.registroCampo) return;
+    const pubs = Array.isArray(cfg.registroCampo.publicacoesDia) ? cfg.registroCampo.publicacoesDia : [];
+    pubs.splice(idx, 1);
+    cfg.registroCampo.publicacoesDia = pubs;
+    _saveCongRegistroCampo(_modalCongRegId, cfg.registroCampo);
+    all[_modalCongRegId] = cfg;
+    localStorage.setItem('cong_config', JSON.stringify(all));
+    renderModalCongRegistro();
+    renderStats();
+    showToast('Publicação removida.', 'info');
+  };
+
+  window.removerExpCongRegistro = function(idx) {
+    if (!_modalCongRegId) return;
+    const all = DB.get('cong_config', {});
+    const cfg = all[_modalCongRegId] || {};
+    if (!cfg.registroCampo) return;
+    const exps = Array.isArray(cfg.registroCampo.experiencias) ? cfg.registroCampo.experiencias : [];
+    exps.splice(idx, 1);
+    cfg.registroCampo.experiencias = exps;
+    _saveCongRegistroCampo(_modalCongRegId, cfg.registroCampo);
+    all[_modalCongRegId] = cfg;
+    localStorage.setItem('cong_config', JSON.stringify(all));
+    renderModalCongRegistro();
+    renderStats();
+    showToast('Experiência removida.', 'info');
+  };
+
+  document.getElementById('modal-cong-registro').addEventListener('click', e => {
+    if (e.target === e.currentTarget) fecharModalCongRegistro();
+  });
+
 </script>
+
+<!-- MODAL: EDIÇÃO DE REGISTRO POR CONGREGAÇÃO -->
+<div class="modal-overlay" id="modal-cong-registro">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="modal-cong-reg-titulo">📋 Congregação</h3>
+      <button class="modal-close" onclick="fecharModalCongRegistro()">✕</button>
+    </div>
+    <div style="padding:0 .2rem;">
+      <div id="modal-cong-reg-body" style="max-height:72vh;overflow-y:auto;padding-right:.2rem;"></div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: REGISTRO DO DIA DO EVENTO -->
 <div class="modal-overlay" id="modal-registro-evento">

@@ -1036,19 +1036,20 @@ ${secao('7. Mapa Detalhado por Congregação', Object.keys(mapaCong).length
       .sort((a, b) => (a.cong?.nome || '').localeCompare(b.cong?.nome || ''))
       .map(({ cong, desigs }) => {
         const c = congById[String(cong?.id)] || cong || {};
+        const contatoInfo = [c.contato, c.telefone].filter(Boolean).join(' · ');
+        const temKm = desigs.some(d => d.postoKm && d.postoKm !== '—');
         return `
-        <div style="margin-bottom:14px;page-break-inside:avoid">
-          <div style="background:#f0f4ff;border-left:4px solid #1a3a8f;padding:6px 10px;border-radius:4px;margin-bottom:4px">
-            <strong style="font-size:12px;color:#1a3a8f">${esc(c.nome||cong?.nome||'—')}</strong>
-            ${c.contato  ? `<span style="color:#555;font-size:10.5px;margin-left:10px">👤 ${esc(c.contato)}</span>` : ''}
-            ${c.telefone ? `<span style="color:#555;font-size:10.5px;margin-left:8px">📞 ${esc(c.telefone)}</span>` : ''}
+        <div class="dia-bloco" style="margin-bottom:12px">
+          <div class="dia-hdr">
+            <span>🏢 ${esc(c.nome||cong?.nome||'—')}${contatoInfo ? ` — ${esc(contatoInfo)}` : ''}</span>
+            <span>${desigs.length} posto(s)</span>
           </div>
           <table>
-            <tr><th>Posto</th><th>Km</th><th>Data</th><th>Horário</th></tr>
+            <tr><th>Posto</th>${temKm ? '<th>Km</th>' : ''}<th>Data</th><th>Horário</th></tr>
             ${desigs.map(d => `
               <tr>
                 <td>${esc(d.postoNomeMap)}</td>
-                <td>${esc(d.postoKm)}</td>
+                ${temKm ? `<td>${d.postoKm && d.postoKm !== '—' ? esc(d.postoKm) : '—'}</td>` : ''}
                 <td>${formatData(d.data)}</td>
                 <td>${esc(d.inicio||'—')} – ${esc(d.fim||'—')}</td>
               </tr>`).join('')}

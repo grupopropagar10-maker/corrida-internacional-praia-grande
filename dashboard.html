@@ -712,6 +712,7 @@
 
   // ---- RELATÓRIO BETEL ----
   function gerarRelatorioBetel() {
+   try {
     const postos        = DB.get('postos', []);
     const congregacoes  = DB.get('congregacoes', []);
     const congCfgAll    = DB.get('cong_config', {});
@@ -749,24 +750,6 @@
       });
     });
 
-    const pubsPorDia = {};
-    pubsEntries.forEach(p => {
-      const k = p.dataRef || 'Sem data';
-      if (!pubsPorDia[k]) pubsPorDia[k] = [];
-      pubsPorDia[k].push(p);
-    });
-
-    // Só publicações de dias válidos do evento para o detalhamento por posto
-    const pubsEvento = eventoISOs.size > 0
-      ? pubsEntries.filter(p => { const iso = toISO(p.dataRef); return iso && eventoISOs.has(iso); })
-      : pubsEntries;
-
-    const pubsPorPosto = {};
-    pubsEvento.forEach(p => {
-      const k = p.postoNome || '—';
-      pubsPorPosto[k] = (pubsPorPosto[k] || 0) + (p.quantidade || 0);
-    });
-
     function parseDataStr(s) {
       if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s + 'T12:00:00');
       if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) { const [d,m,y] = s.split('/'); return new Date(`${y}-${m}-${d}T12:00:00`); }
@@ -787,6 +770,24 @@
     // Datas válidas do evento (vindas das categorias)
     const eventoISOs = new Set();
     categorias.forEach(cat => (cat.datas || []).forEach(d => { if (d) eventoISOs.add(d.slice(0, 10)); }));
+
+    const pubsPorDia = {};
+    pubsEntries.forEach(p => {
+      const k = p.dataRef || 'Sem data';
+      if (!pubsPorDia[k]) pubsPorDia[k] = [];
+      pubsPorDia[k].push(p);
+    });
+
+    // Só publicações de dias válidos do evento para o detalhamento por posto
+    const pubsEvento = eventoISOs.size > 0
+      ? pubsEntries.filter(p => { const iso = toISO(p.dataRef); return iso && eventoISOs.has(iso); })
+      : pubsEntries;
+
+    const pubsPorPosto = {};
+    pubsEvento.forEach(p => {
+      const k = p.postoNome || '—';
+      pubsPorPosto[k] = (pubsPorPosto[k] || 0) + (p.quantidade || 0);
+    });
 
     const diasOrdenados = Object.keys(pubsPorDia)
       .filter(data => {
@@ -1137,6 +1138,10 @@ ${secao('10. Sobre o Sistema de Gestão', `
     document.getElementById('btn-imprimir-rel').onclick = () => {
       iframe.contentWindow.print();
     };
+   } catch (err) {
+     console.error('[Relatório Betel] erro ao gerar:', err);
+     showToast('Erro ao gerar o relatório: ' + (err?.message || err), 'error');
+   }
   }
 
   // ---- EXPORT CSV ----

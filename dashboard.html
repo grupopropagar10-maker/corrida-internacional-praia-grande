@@ -833,9 +833,15 @@
       });
     });
 
-    // Designações para o mapa (manuais — têm congId explícito)
+    // Designações para o mapa (manuais — têm congId explícito).
+    // Filtra apenas datas reais do evento (vindas das categorias).
     const designacoes = DB.get('designacoes', [])
-      .filter(d => d.postoId && d.congId && d.data);
+      .filter(d => d.postoId && d.congId && d.data)
+      .filter(d => {
+        if (eventoISOs.size === 0) return true;
+        const iso = toISO(d.data);
+        return iso && eventoISOs.has(iso);
+      });
 
     // Mapa geral: agrupa por posto → array de designações ordenadas por data
     const mapaGeral = {};

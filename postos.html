@@ -1822,8 +1822,13 @@
     renderStats();
   };
 
-  document.getElementById('modal-registro-evento').addEventListener('click', e => {
-    if (e.target === e.currentTarget) fecharModalRegistroEvento();
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('modal-registro-evento')?.addEventListener('click', e => {
+      if (e.target === e.currentTarget) fecharModalRegistroEvento();
+    });
+    document.getElementById('modal-cong-registro')?.addEventListener('click', e => {
+      if (e.target === e.currentTarget) fecharModalCongRegistro();
+    });
   });
 
   // ---- MODAL EDIÇÃO DE REGISTRO POR CONGREGAÇÃO ----
@@ -2003,9 +2008,6 @@
     showToast('Experiência removida.', 'info');
   };
 
-  document.getElementById('modal-cong-registro').addEventListener('click', e => {
-    if (e.target === e.currentTarget) fecharModalCongRegistro();
-  });
 
 </script>
 

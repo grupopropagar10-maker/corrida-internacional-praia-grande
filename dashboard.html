@@ -940,7 +940,7 @@ ${secao('1. Visão Geral do Evento', `
   <div class="kpi"><div class="val">${totalCongsPartic}</div><div class="lab">Congregações Participantes</div></div>
   <div class="kpi"><div class="val">${cadastradosSet.size}</div><div class="lab">Pessoas Cadastradas</div></div>
   <div class="kpi"><div class="val">${escaladosSet.size}</div><div class="lab">Pessoas Escaladas</div></div>
-  <div class="kpi"><div class="val">${pubsEvento.reduce((s,p)=>s+(p.quantidade||0),0).toLocaleString('pt-BR')}</div><div class="lab">Publicações Distribuídas</div></div>
+  <div class="kpi"><div class="val">${totalPubs.toLocaleString('pt-BR')}</div><div class="lab">Publicações Distribuídas</div></div>
   <div class="kpi"><div class="val">${totalExps}</div><div class="lab">Experiências Registradas</div></div>
   <div class="kpi"><div class="val">${tbInvites.filter(i=>i.ativo!==false).length}</div><div class="lab">Equipe de Apoio</div></div>
   <div class="kpi"><div class="val">${subAdminsArea.length}</div><div class="lab">Sub-Administradores</div></div>
